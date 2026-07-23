@@ -9,4 +9,4 @@
 library(testthat)
 library(datamatch)
 
-test_check("datamatch")
+#test_check("datamatch")

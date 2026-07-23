@@ -1,0 +1,59 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# datamatch
+
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/chross22/datamatch/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/chross22/datamatch/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
+The goal of datamatch is to pull environmental data from Copernicus Marine Service and match spatially and temporally to species occurence data.
+
+## Installation
+
+You can install the development version of datamatch from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("chross22/datamatch")
+```
+
+Before installation, you must install the Copernicus Marine toolbox from Copernicus Marine Service. This requires registering for a Copernicus account if you don't already have one, as you will need these credentials to configure the toolbox. 
+
+To install this toolbox, visit the Copernicus website. In brief, ...
+## Example
+
+This is a basic example which shows you how to solve a common problem:
+
+```{r example}
+library(datamatch)
+## basic example code
+```
+
+What is special about using `README.Rmd` instead of just `README.md`? You can include R chunks like so:
+
+```{r cars}
+summary(cars)
+```
+
+You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this.
+
+You can also embed plots, for example:
+
+```{r pressure, echo = FALSE}
+plot(pressure)
+```
+
+In that case, don't forget to commit and push the resulting figure files, so they display on GitHub and CRAN.
