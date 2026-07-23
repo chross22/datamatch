@@ -1,0 +1,22 @@
+Package: datamatch
+Title: Matches Environmental Data With Species Occurrence Data
+Version: 0.0.0.9000
+Authors@R: 
+    person("Camille", "Ross", email = "camille.ross@maine.edu", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-1428-2294"))
+Description: The datamatch package can be used to spatially and temporally match species observation data (presence absence, density, count, etc.) with environmental data from Copernicus Marine Service. The goal is to eventually add other data stream options. Available data products and variables can be found under the Access Data tab on the Copernicus Marine Service website (https://marine.copernicus.eu/access-data/).
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+Imports:
+    copernicus,
+    dplyr,
+    sf,
+    lubridate,
+    terra
+Remotes:
+    BigelowLab/copernicus
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
