@@ -14,7 +14,8 @@ Imports:
     dplyr,
     sf,
     lubridate,
-    terra
+    terra,
+    fs
 Remotes:
     BigelowLab/copernicus
 Suggests: 
