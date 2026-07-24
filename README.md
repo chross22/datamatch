@@ -4,6 +4,8 @@
 # datamatch
 
 <!-- badges: start -->
+
+[![R-CMD-check](https://github.com/chross22/datamatch/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/chross22/datamatch/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 The goal of datamatch is to pull environmental data from Copernicus
@@ -19,6 +21,15 @@ You can install the development version of datamatch from
 # install.packages("devtools")
 devtools::install_github("chross22/datamatch")
 ```
+
+## Set up
+
+Before installation, you must install the Copernicus Marine toolbox from
+Copernicus Marine Service. This requires registering for a Copernicus
+account if you don’t already have one, as you will need these
+credentials to configure the toolbox.
+
+To install this toolbox, visit the Copernicus website. In brief, …
 
 ## Example
 
@@ -45,10 +56,3 @@ summary(cars)
 
 You’ll still need to render `README.Rmd` regularly, to keep `README.md`
 up-to-date. `devtools::build_readme()` is handy for this.
-
-You can also embed plots, for example:
-
-<img src="man/figures/README-pressure-1.png" width="100%" />
-
-In that case, don’t forget to commit and push the resulting figure
-files, so they display on GitHub and CRAN.

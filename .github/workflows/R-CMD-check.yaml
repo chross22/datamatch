@@ -4,6 +4,7 @@ on:
   push:
     branches: [main, master]
   pull_request:
+    branches: [main, master]
 
 name: R-CMD-check.yaml
 
@@ -30,7 +31,7 @@ jobs:
       R_KEEP_PKG_SOURCE: yes
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
 
       - uses: r-lib/actions/setup-pandoc@v2
 
@@ -38,6 +39,28 @@ jobs:
         with:
           r-version: ${{ matrix.config.r }}
           http-user-agent: ${{ matrix.config.http-user-agent }}
+          use-public-rspm: true
+
+      # sf/terra need these system libraries on Linux runners; macOS and
+      # Windows runners get them bundled via the R binary packages, so this
+      # step is skipped there.
+      - name: Install GDAL/GEOS/PROJ system dependencies (Linux only)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgdal-dev \
+            libgeos-dev \
+            libproj-dev \
+            libudunits2-dev
+
+      # Installs the copernicus package from GitHub since it's not on CRAN
+      # and won't be picked up by the Imports-based dependency resolution below.
+      - name: Install copernicus from GitHub
+        run: |
+          install.packages("remotes")
+          remotes::install_github("BigelowLab/copernicus")
+        shell: Rscript {0}
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
