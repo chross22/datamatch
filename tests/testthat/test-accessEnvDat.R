@@ -1,33 +1,39 @@
-# Captured before any test mocks terra::rast, so this helper doesn't
-# recursively call its own mock once local_mocked_bindings(rast = ...) below
-# is active (that self-recursion previously blew the C stack in every test
-# here, since local_mocked_bindings patches rast inside terra's own
-# namespace, which is exactly what make_fake_raster() itself calls).
-real_rast <- terra::rast
+# These tests deliberately do NOT mock terra::rast.
+#
+# `rast` is an S4 generic whose methods call `rast()` internally. Mocking it with
+# local_mocked_bindings(.package = "terra") replaces the binding inside terra's
+# own namespace, so those internal calls hit the mock too and recurse until the C
+# stack overflows - which is what every test in this file used to do, regardless
+# of how the helper captured the original function first.
+#
+# Writing a real raster to a temp file and pointing accessEnvDat at it avoids the
+# problem entirely, and exercises the actual read path rather than a stand-in.
+# Only `copernicus_path` (where the file lives), `fs::file_exists` (whether it
+# counts as cached), and the downloader itself need mocking.
 
-# Helper: builds a tiny in-memory raster with layers named after `vars`,
-# standing in for what terra::rast(ofile) would normally read from disk.
-make_fake_raster <- function(vars) {
-  r <- real_rast(nrows = 2, ncols = 2, nlyrs = length(vars))
+# Builds a real raster file with one layer per variable. accessEnvDat assigns
+# column names positionally from `vars` after reading, so only the layer *count*
+# has to match.
+write_fake_raster <- function(vars) {
+  path <- tempfile(fileext = ".tif")
+  r <- terra::rast(nrows = 2, ncols = 2, nlyrs = length(vars))
   terra::values(r) <- seq_len(4 * length(vars))
   names(r) <- vars
-  r
+  terra::writeRaster(r, path, overwrite = TRUE)
+  path
 }
 
 test_that("accessEnvDat returns an sf object with correct columns (monthly dataset)", {
   vars <- c("thetao", "so")
+  raster_path <- write_fake_raster(vars)
 
   local_mocked_bindings(
-    copernicus_path = function(...) tempfile(fileext = ".nc"),
+    copernicus_path = function(...) raster_path,
     .package = "copernicus"
   )
   local_mocked_bindings(
     file_exists = function(...) TRUE,
     .package = "fs"
-  )
-  local_mocked_bindings(
-    rast = function(...) make_fake_raster(vars),
-    .package = "terra"
   )
 
   result <- accessEnvDat(
@@ -49,18 +55,15 @@ test_that("accessEnvDat returns an sf object with correct columns (monthly datas
 
 test_that("accessEnvDat loops over all days for a daily dataset", {
   vars <- c("thetao")
+  raster_path <- write_fake_raster(vars)
 
   local_mocked_bindings(
-    copernicus_path = function(...) tempfile(fileext = ".nc"),
+    copernicus_path = function(...) raster_path,
     .package = "copernicus"
   )
   local_mocked_bindings(
     file_exists = function(...) TRUE,
     .package = "fs"
-  )
-  local_mocked_bindings(
-    rast = function(...) make_fake_raster(vars),
-    .package = "terra"
   )
 
   result <- accessEnvDat(
@@ -77,12 +80,15 @@ test_that("accessEnvDat loops over all days for a daily dataset", {
 
 test_that("accessEnvDat calls the downloader when data are not cached locally", {
   vars <- c("thetao")
+  raster_path <- write_fake_raster(vars)
   download_called <- FALSE
 
   local_mocked_bindings(
-    copernicus_path = function(...) tempfile(fileext = ".nc"),
+    copernicus_path = function(...) raster_path,
     .package = "copernicus"
   )
+  # The file is reported as absent so the download branch runs, even though it
+  # is really on disk for the subsequent read.
   local_mocked_bindings(
     file_exists = function(...) FALSE,
     .package = "fs"
@@ -93,10 +99,6 @@ test_that("accessEnvDat calls the downloader when data are not cached locally", 
       TRUE
     },
     .package = "copernicus"
-  )
-  local_mocked_bindings(
-    rast = function(...) make_fake_raster(vars),
-    .package = "terra"
   )
 
   accessEnvDat(
@@ -113,10 +115,11 @@ test_that("accessEnvDat calls the downloader when data are not cached locally", 
 
 test_that("accessEnvDat re-downloads when overwrite = TRUE, even if cached", {
   vars <- c("thetao")
+  raster_path <- write_fake_raster(vars)
   download_called <- FALSE
 
   local_mocked_bindings(
-    copernicus_path = function(...) tempfile(fileext = ".nc"),
+    copernicus_path = function(...) raster_path,
     .package = "copernicus"
   )
   local_mocked_bindings(
@@ -130,10 +133,6 @@ test_that("accessEnvDat re-downloads when overwrite = TRUE, even if cached", {
     },
     .package = "copernicus"
   )
-  local_mocked_bindings(
-    rast = function(...) make_fake_raster(vars),
-    .package = "terra"
-  )
 
   accessEnvDat(
     product_id = "GLOBAL_TEST",
@@ -146,4 +145,66 @@ test_that("accessEnvDat re-downloads when overwrite = TRUE, even if cached", {
   )
 
   expect_true(download_called)
+})
+
+test_that("accessEnvDat does not download when data are already cached", {
+  vars <- c("thetao")
+  raster_path <- write_fake_raster(vars)
+  download_called <- FALSE
+
+  local_mocked_bindings(
+    copernicus_path = function(...) raster_path,
+    .package = "copernicus"
+  )
+  local_mocked_bindings(
+    file_exists = function(...) TRUE,
+    .package = "fs"
+  )
+  local_mocked_bindings(
+    download_copernicus_cli_subset = function(...) {
+      download_called <<- TRUE
+      TRUE
+    },
+    .package = "copernicus"
+  )
+
+  accessEnvDat(
+    product_id = "GLOBAL_TEST",
+    dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1M-m",
+    vars = vars,
+    years = 2020,
+    months = 1,
+    bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45)
+  )
+
+  # The point of the cache: a file already on disk is read, not re-fetched.
+  expect_false(download_called)
+})
+
+test_that("accessEnvDat covers every requested year and month", {
+  vars <- c("thetao")
+  raster_path <- write_fake_raster(vars)
+
+  local_mocked_bindings(
+    copernicus_path = function(...) raster_path,
+    .package = "copernicus"
+  )
+  local_mocked_bindings(
+    file_exists = function(...) TRUE,
+    .package = "fs"
+  )
+
+  result <- accessEnvDat(
+    product_id = "GLOBAL_TEST",
+    dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1M-m",
+    vars = vars,
+    years = c(2019, 2020),
+    months = c(1, 6, 12),
+    bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45)
+  )
+
+  expect_equal(sort(unique(result$YEAR)), c(2019, 2020))
+  expect_equal(sort(unique(result$MONTH)), c(1, 6, 12))
+  # One grid (4 cells) per year x month combination.
+  expect_equal(nrow(result), 4 * 2 * 3)
 })
