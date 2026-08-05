@@ -1,7 +1,14 @@
+# Captured before any test mocks terra::rast, so this helper doesn't
+# recursively call its own mock once local_mocked_bindings(rast = ...) below
+# is active (that self-recursion previously blew the C stack in every test
+# here, since local_mocked_bindings patches rast inside terra's own
+# namespace, which is exactly what make_fake_raster() itself calls).
+real_rast <- terra::rast
+
 # Helper: builds a tiny in-memory raster with layers named after `vars`,
 # standing in for what terra::rast(ofile) would normally read from disk.
 make_fake_raster <- function(vars) {
-  r <- terra::rast(nrows = 2, ncols = 2, nlyrs = length(vars))
+  r <- real_rast(nrows = 2, ncols = 2, nlyrs = length(vars))
   terra::values(r) <- seq_len(4 * length(vars))
   names(r) <- vars
   r

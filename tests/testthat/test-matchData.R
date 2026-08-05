@@ -17,17 +17,23 @@ make_species_dat <- function(year_col = "YEAR", month_col = "MONTH", day_col = "
   sf::st_as_sf(df, coords = c("lon", "lat"), crs = 4326, remove = FALSE)
 }
 
-# Environmental data: a small grid of points per YEAR/MONTH, each carrying
-# a "thetao" value. Grid points are placed exactly on top of the species
-# points so nearest-feature matching is deterministic.
+# Environmental data: a small grid of points per YEAR/MONTH/DAY (matching
+# accessEnvDat()'s real daily-resolution output shape), each carrying a
+# "thetao" value. Grid points are placed exactly on top of the species points
+# so nearest-feature matching is deterministic. Jan has two days (1 and 15,
+# matching the two January species points below) with deliberately different
+# thetao values at the same locations, so a test can confirm matchData()
+# picks the value for the correct day rather than whichever day happens to
+# come first in envDat.
 make_env_dat <- function() {
   grid <- expand.grid(
     lon = c(-70.0, -69.5, -69.0),
     lat = c(42.0, 42.5, 43.0)
   )
-  jan <- cbind(grid, YEAR = 2020, MONTH = 1, thetao = 10 + seq_len(nrow(grid)))
-  feb <- cbind(grid, YEAR = 2020, MONTH = 2, thetao = 20 + seq_len(nrow(grid)))
-  df <- rbind(jan, feb)
+  jan1 <- cbind(grid, YEAR = 2020, MONTH = 1, DAY = 1, thetao = 10 + seq_len(nrow(grid)))
+  jan15 <- cbind(grid, YEAR = 2020, MONTH = 1, DAY = 15, thetao = 110 + seq_len(nrow(grid)))
+  feb1 <- cbind(grid, YEAR = 2020, MONTH = 2, DAY = 1, thetao = 20 + seq_len(nrow(grid)))
+  df <- rbind(jan1, jan15, feb1)
 
   sf::st_as_sf(df, coords = c("lon", "lat"), crs = 4326, remove = FALSE)
 }
@@ -43,15 +49,20 @@ test_that("matchData renames YEAR/MONTH/DAY columns regardless of input naming",
   expect_true(all(c("YEAR", "MONTH", "DAY") %in% names(result)))
 })
 
-test_that("matchData joins the correct environmental value via nearest feature", {
+test_that("matchData joins the correct environmental value via nearest feature and matching day", {
   speciesDat <- make_species_dat()
   envDat <- make_env_dat()
 
   result <- matchData(speciesDat, envDat)
 
-  # Species point 1 sits exactly on env grid point 1 for Jan 2020
+  # Species point 1: Jan 1 2020, sits exactly on env grid point 1 -> the Jan-1 value
   expect_equal(result$thetao[result$id == 1], 11)
-  # Species point 3 is in Feb 2020, should pull from the Feb subset
+  # Species point 2: Jan 15 2020 at lon=-69.5/lat=42.5 (grid point 5) - must
+  # pull the Jan-15 value (115), not Jan-1's (15) at that same location, which
+  # is exactly the bug this test guards against (matching by YEAR/MONTH only,
+  # ignoring DAY, previously let the join pick either day's value arbitrarily)
+  expect_equal(result$thetao[result$id == 2], 115)
+  # Species point 3: Feb 1 2020, should pull from the Feb subset
   expect_equal(result$thetao[result$id == 3], 29)
 })
 

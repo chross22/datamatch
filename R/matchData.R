@@ -8,10 +8,16 @@
 #' @return envDat <sf object> sf object containing requested environmental data from Copernicus Marine Service
 matchData <- function(speciesDat, envDat) {
 
-  # Determine names of year,  month, and day columns
-  year_name <- names(speciesDat |> dplyr::select(dplyr::starts_with("year", ignore.case = TRUE)))
-  month_name <- names(speciesDat |> dplyr::select(dplyr::starts_with("month", ignore.case = TRUE)))
-  day_name <- names(speciesDat |> dplyr::select(dplyr::starts_with("day", ignore.case = TRUE)))
+  # Determine names of year, month, and day columns. sf's select() method
+  # always keeps the geometry column "sticky" in its result regardless of the
+  # select criteria, so without excluding it here, year_name/month_name/day_name
+  # would each also include the geometry column name - and the rename() below
+  # would then rename the geometry column itself, corrupting the sf object's
+  # tracked geometry-column name.
+  geom_col <- attr(speciesDat, "sf_column")
+  year_name <- setdiff(names(speciesDat |> dplyr::select(dplyr::starts_with("year", ignore.case = TRUE))), geom_col)
+  month_name <- setdiff(names(speciesDat |> dplyr::select(dplyr::starts_with("month", ignore.case = TRUE))), geom_col)
+  day_name <- setdiff(names(speciesDat |> dplyr::select(dplyr::starts_with("day", ignore.case = TRUE))), geom_col)
 
   speciesDat <- speciesDat |>
     dplyr::rename(YEAR = dplyr::all_of(year_name),
@@ -29,9 +35,9 @@ matchData <- function(speciesDat, envDat) {
       for (day in sort(unique(month_dat$DAY))) {
         day_dat <- dplyr::filter(month_dat, DAY == day)
         envDat_filtered <- envDat |>
-          dplyr::filter(YEAR == year, MONTH == month)
+          dplyr::filter(YEAR == year, MONTH == month, DAY == day)
 
-        cols_to_drop <- c("YEAR", "MONTH")
+        cols_to_drop <- c("YEAR", "MONTH", "DAY")
         envDat_filtered <- envDat_filtered[, !(names(envDat_filtered) %in% cols_to_drop)] |>
           sf::st_transform(sf::st_crs(envDat))
         temp_data <- sf::st_join(day_dat, envDat_filtered, join = sf::st_nearest_feature) |>
