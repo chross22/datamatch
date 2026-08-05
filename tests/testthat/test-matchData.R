@@ -96,3 +96,118 @@ test_that("matchData drops YEAR/MONTH duplication from the env side", {
   expect_equal(sum(names(result) == "YEAR"), 1)
   expect_equal(sum(names(result) == "MONTH"), 1)
 })
+
+# Monthly-resolution environmental data ------------------------------------
+
+# Monthly products (e.g. Copernicus "...P1M-m" means) carry one time step per
+# month, conventionally stamped on a single nominal day. Observations still fall
+# on arbitrary days, so a day-exact join would match nothing.
+make_monthly_env_dat <- function(nominal_day = 1) {
+  grid <- expand.grid(
+    lon = c(-70.0, -69.5, -69.0),
+    lat = c(42.0, 42.5, 43.0)
+  )
+  jan <- cbind(grid, YEAR = 2020, MONTH = 1, DAY = nominal_day, thetao = 10 + seq_len(nrow(grid)))
+  feb <- cbind(grid, YEAR = 2020, MONTH = 2, DAY = nominal_day, thetao = 20 + seq_len(nrow(grid)))
+  df <- rbind(jan, feb)
+
+  sf::st_as_sf(df, coords = c("lon", "lat"), crs = 4326, remove = FALSE)
+}
+
+test_that("detect_temporal_resolution reads resolution off the time steps", {
+  expect_equal(detect_temporal_resolution(make_env_dat()), "day")
+  expect_equal(detect_temporal_resolution(make_monthly_env_dat()), "month")
+})
+
+test_that("detect_temporal_resolution prefers month over year when ambiguous", {
+  # One month of monthly data looks identical to one year of annual data. Falling
+  # back to "month" keeps unmatched observations unmatched (and warned about),
+  # rather than silently matching them to another month's time step.
+  one_month <- make_monthly_env_dat()
+  one_month <- one_month[one_month$MONTH == 1, ]
+  expect_equal(detect_temporal_resolution(one_month), "month")
+
+  # Several years, each a single identical month, is positive evidence of annual data.
+  annual <- rbind(
+    cbind(expand.grid(lon = -70, lat = 42), YEAR = 2020, MONTH = 1, DAY = 1, thetao = 1),
+    cbind(expand.grid(lon = -70, lat = 42), YEAR = 2021, MONTH = 1, DAY = 1, thetao = 2)
+  )
+  annual <- sf::st_as_sf(annual, coords = c("lon", "lat"), crs = 4326, remove = FALSE)
+  expect_equal(detect_temporal_resolution(annual), "year")
+})
+
+test_that("matchData matches monthly env data whose nominal day never matches observations", {
+  speciesDat <- make_species_dat()
+  # Env data is stamped on day 15; observations are on days 1 and 15. A day-exact
+  # join would drop both January-day-1 and February-day-1 observations entirely.
+  envDat <- make_monthly_env_dat(nominal_day = 15)
+
+  result <- matchData(speciesDat, envDat)
+
+  expect_equal(nrow(result), nrow(speciesDat))
+  expect_false(any(is.na(result$thetao)))
+  # Point 1: Jan, on grid point 1 -> January value at that location
+  expect_equal(result$thetao[result$id == 1], 11)
+  # Point 3: Feb, on grid point 5 -> February value
+  expect_equal(result$thetao[result$id == 3], 29)
+})
+
+test_that("matchData still matches per-day when env data is daily", {
+  speciesDat <- make_species_dat()
+  envDat <- make_env_dat()
+
+  # Explicitly requesting month resolution against daily data is ambiguous by
+  # design; auto-detection is what keeps daily data matching per day.
+  result <- matchData(speciesDat, envDat, temporal_resolution = "day")
+
+  expect_equal(result$thetao[result$id == 2], 115)
+})
+
+test_that("matchData works on species data with no day column at monthly resolution", {
+  speciesDat <- make_species_dat()
+  speciesDat$DAY <- NULL
+  envDat <- make_monthly_env_dat()
+
+  result <- matchData(speciesDat, envDat)
+
+  expect_equal(nrow(result), nrow(speciesDat))
+  expect_false(any(is.na(result$thetao)))
+})
+
+test_that("matchData resolves an exact day column ahead of a prefix match", {
+  speciesDat <- make_species_dat()
+  speciesDat$dayofyear <- c(1, 15, 32)
+  envDat <- make_env_dat()
+
+  # Both "DAY" and "dayofyear" start with "day"; the exact match must win rather
+  # than the lookup failing as ambiguous.
+  expect_no_error(matchData(speciesDat, envDat))
+})
+
+test_that("matchData keeps observations in periods with no env data, as NA", {
+  speciesDat <- make_species_dat()
+  # Env data covers January only; the February observation has no match.
+  envDat <- make_monthly_env_dat()
+  envDat <- envDat[envDat$MONTH == 1, ]
+
+  expect_warning(result <- matchData(speciesDat, envDat), "No environmental data")
+
+  expect_equal(nrow(result), nrow(speciesDat))
+  expect_true(is.na(result$thetao[result$id == 3]))
+  expect_false(is.na(result$thetao[result$id == 1]))
+})
+
+test_that("matchData does not depend on the order periods appear in speciesDat", {
+  speciesDat <- make_species_dat()
+  envDat <- make_env_dat()
+
+  # Reversing row order puts the chronologically last period first. The previous
+  # implementation initialized its accumulator only on the chronologically first
+  # period, so this ordering made it fail outright.
+  reversed <- speciesDat[rev(seq_len(nrow(speciesDat))), ]
+
+  result <- matchData(reversed, envDat)
+
+  expect_equal(nrow(result), nrow(speciesDat))
+  expect_equal(result$thetao[result$id == 2], 115)
+})

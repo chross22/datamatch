@@ -4,18 +4,41 @@
 \alias{matchData}
 \title{Match environmental data to species occurrence data}
 \usage{
-matchData(speciesDat, envDat)
+matchData(
+  speciesDat,
+  envDat,
+  temporal_resolution = c("auto", "day", "month", "year")
+)
 }
 \arguments{
 \item{speciesDat}{\if{html}{\out{<sf object>}} species observation data (e.g., presence, density, count);
-must have spatial and temporal components}
+must have spatial and temporal components. Needs
+year and month columns, plus a day column when
+matching at daily resolution.}
 
 \item{envDat}{\if{html}{\out{<sf object>}} environmental data accessed using the datamatch::accessEnvDat
 function to be matched to the species observation data}
+
+\item{temporal_resolution}{\if{html}{\out{<char>}} one of "auto" (default), "day", "month", or
+"year". "auto" infers the resolution from
+\code{envDat}'s own time steps.}
 }
 \value{
-envDat \if{html}{\out{<sf object>}} sf object containing requested environmental data from Copernicus Marine Service
+\if{html}{\out{<sf object>}} \code{speciesDat} with the matched environmental variables joined on,
+one row per input observation, plus LON/LAT coordinate columns.
+Observations in a period with no environmental data get NA
+for the environmental variables, and a warning is issued.
+An environmental variable whose name collides with a column
+already in \code{speciesDat} is suffixed \code{.env}.
 }
 \description{
-Match environmental data to species occurrence data
+Joins each species observation to the nearest environmental grid point within
+the same time period. The time period is the environmental data's own temporal
+resolution: daily products match on year/month/day, monthly products (e.g.
+Copernicus \code{...P1M-m} means) on year/month, and annual products on year alone.
+}
+\details{
+Matching at the environmental data's native resolution matters because a
+day-exact join against monthly data matches nothing - a monthly product carries
+one time step per month, while observations fall on arbitrary days.
 }

@@ -35,12 +35,15 @@ accepts variable abbreviations only}
 \item{overwrite}{\if{html}{\out{<logical>}} whether or not to overwrite the data if it exists locally}
 
 \item{n_workers}{\if{html}{\out{<integer>}} number of days to download/read in parallel, using a PSOCK
-cluster (\code{parallel::makeCluster()}). Defaults to 1 (serial, same behavior as before this
-argument existed). Deliberately NOT fork-based (\code{parallel::mclapply()}): GDAL, which
-terra/sf use internally, is not fork-safe, and forking after GDAL has initialized can
-corrupt state in the child processes. PSOCK workers are fresh R sessions instead, which
-avoids that. Downloads hit the Copernicus Marine API, so keep this modest (4-8) rather
-than maxing out cores - the bottleneck is the network/API, not CPU.}
+cluster (parallel::makeCluster()). Defaults to 1 (serial, same
+behavior as before this argument existed). Deliberately NOT
+fork-based (parallel::mclapply()): GDAL, which terra/sf use
+internally, is not fork-safe, and forking after GDAL has
+initialized can corrupt state in the child processes. PSOCK
+workers are fresh R sessions instead, which avoids that.
+Downloads hit the Copernicus Marine API, so keep this modest
+(4-8) rather than maxing out cores - the bottleneck is the
+network/API, not CPU.}
 }
 \value{
 envDat \if{html}{\out{<sf object>}} sf object containing requested environmental data from Copernicus Marine Service

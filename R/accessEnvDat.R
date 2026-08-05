@@ -21,6 +21,7 @@
 #'                            (4-8) rather than maxing out cores - the bottleneck is the
 #'                            network/API, not CPU.
 #' @return envDat <sf object> sf object containing requested environmental data from Copernicus Marine Service
+#' @export
 accessEnvDat <- function(product_id, dataset_id, vars, years, months,
                          bounding_box, depth = c(0,1),
                          overwrite = FALSE, n_workers = 1) {
