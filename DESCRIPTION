@@ -15,7 +15,8 @@ Imports:
     sf,
     lubridate,
     terra,
-    fs
+    fs,
+    parallel
 Remotes:
     BigelowLab/copernicus
 Suggests: 
