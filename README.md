@@ -78,7 +78,7 @@ variable_dictionary()
 #>  NO3       no3      Nitrate concentration                   mmol/m3  
 #>  PO4       po4      Phosphate concentration                 mmol/m3  
 #>  O2        o2       Dissolved oxygen                        mmol/m3  
-#>  PH        ph       pH                                      1        
+#>  PH        ph       pH                                      unitless 
 #>  CHL_MODEL chl      Chlorophyll-a concentration (model)     mg/m3    
 #>  NPP_MODEL nppv     Net primary production (model)          mg/m3/day
 #> 
@@ -126,7 +126,7 @@ as_markdown(variable_dictionary())
 | NO3       | no3      | Nitrate concentration                   | mmol/m3   |
 | PO4       | po4      | Phosphate concentration                 | mmol/m3   |
 | O2        | o2       | Dissolved oxygen                        | mmol/m3   |
-| PH        | ph       | pH                                      | 1         |
+| PH        | ph       | pH                                      | unitless  |
 | CHL_MODEL | chl      | Chlorophyll-a concentration (model)     | mg/m3     |
 | NPP_MODEL | nppv     | Net primary production (model)          | mg/m3/day |
 
