@@ -10,6 +10,22 @@ name: R-CMD-check.yaml
 
 permissions: read-all
 
+# Supersede rather than queue. Each run is five jobs across three operating
+# systems, so a handful of pushes in quick succession can put twenty jobs in the
+# queue - all but the last testing a commit nobody is waiting on any more. That
+# is wasteful when runners are plentiful and actively harmful when they are
+# scarce: during a GitHub Actions capacity incident this repository had four
+# superseded runs queued for over two hours while the commit people cared about
+# had no signal at all.
+#
+# The trade-off is that an intermediate commit can be cancelled before it
+# finishes, so "every commit was green" is no longer guaranteed - only that the
+# tip of each branch is. That is the useful guarantee anyway, and it is the one
+# that survives a busy queue.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
