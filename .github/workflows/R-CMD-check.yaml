@@ -54,14 +54,6 @@ jobs:
             libproj-dev \
             libudunits2-dev
 
-      # Installs the copernicus package from GitHub since it's not on CRAN
-      # and won't be picked up by the Imports-based dependency resolution below.
-      - name: Install copernicus from GitHub
-        run: |
-          install.packages("remotes")
-          remotes::install_github("BigelowLab/copernicus")
-        shell: Rscript {0}
-
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::rcmdcheck

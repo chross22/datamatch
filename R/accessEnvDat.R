@@ -96,7 +96,7 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars, years, mont
   fetch_one_day <- function(item, product_id, dataset_id, vars, bounding_box, depth, overwrite) {
     time = lubridate::ymd(paste(item$year, item$month, item$day, sep = "-"))
 
-    ofile = copernicus::copernicus_path("tmp", paste0(product_id, "_", dataset_id, "_", time, ".nc"))
+    ofile = copernicus_cache("tmp", paste0(product_id, "_", dataset_id, "_", time, ".nc"))
 
     # Load existing data
     if (fs::file_exists(ofile) & !overwrite) {
@@ -104,13 +104,12 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars, years, mont
       # Or download data
     } else {
 
-      ok = copernicus::download_copernicus_cli_subset(dataset_id = dataset_id,
-                                          vars = vars,
-                                          depth = depth,
-                                          bb = bounding_box,
-                                          time = time,
-                                          ofile = ofile,
-                                          extra = "--overwrite")
+      download_copernicus_subset(dataset_id = dataset_id,
+                                 vars = vars,
+                                 depth = depth,
+                                 bb = bounding_box,
+                                 time = time,
+                                 ofile = ofile)
 
       # Read in .nc file as terra object (raster)
       x = terra::rast(ofile)
@@ -124,8 +123,11 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars, years, mont
   if (n_workers > 1) {
     cl <- parallel::makeCluster(n_workers)
     on.exit(parallel::stopCluster(cl), add = TRUE)
+    # datamatch itself has to be loaded in the workers: fetch_one_day is a closure
+    # whose enclosing environment is this package's namespace, and it resolves
+    # copernicus_cache() and download_copernicus_subset() through it.
     parallel::clusterEvalQ(cl, {
-      library(terra); library(copernicus); library(fs); library(dplyr); library(lubridate)
+      library(terra); library(datamatch); library(fs); library(dplyr); library(lubridate)
     })
     results <- tryCatch(
       parallel::parLapply(cl, work_items, fetch_one_day,

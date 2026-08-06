@@ -8,8 +8,10 @@
 #
 # Writing a real raster to a temp file and pointing accessEnvDat at it avoids the
 # problem entirely, and exercises the actual read path rather than a stand-in.
-# Only `copernicus_path` (where the file lives), `fs::file_exists` (whether it
-# counts as cached), and the downloader itself need mocking.
+# Only `copernicus_cache` (where the file lives), `fs::file_exists` (whether it
+# counts as cached), and the downloader itself need mocking. All three are
+# datamatch's own, so no `.package` argument is needed - local_mocked_bindings
+# defaults to the package under test.
 
 # Builds a real raster file with one layer per variable. accessEnvDat assigns
 # column names positionally from `vars` after reading, so only the layer *count*
@@ -27,10 +29,7 @@ test_that("accessEnvDat returns an sf object with correct columns (monthly datas
   vars <- c("thetao", "so")
   raster_path <- write_fake_raster(vars)
 
-  local_mocked_bindings(
-    copernicus_path = function(...) raster_path,
-    .package = "copernicus"
-  )
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
   local_mocked_bindings(
     file_exists = function(...) TRUE,
     .package = "fs"
@@ -57,10 +56,7 @@ test_that("accessEnvDat loops over all days for a daily dataset", {
   vars <- c("thetao")
   raster_path <- write_fake_raster(vars)
 
-  local_mocked_bindings(
-    copernicus_path = function(...) raster_path,
-    .package = "copernicus"
-  )
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
   local_mocked_bindings(
     file_exists = function(...) TRUE,
     .package = "fs"
@@ -83,10 +79,7 @@ test_that("accessEnvDat calls the downloader when data are not cached locally", 
   raster_path <- write_fake_raster(vars)
   download_called <- FALSE
 
-  local_mocked_bindings(
-    copernicus_path = function(...) raster_path,
-    .package = "copernicus"
-  )
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
   # The file is reported as absent so the download branch runs, even though it
   # is really on disk for the subsequent read.
   local_mocked_bindings(
@@ -94,11 +87,10 @@ test_that("accessEnvDat calls the downloader when data are not cached locally", 
     .package = "fs"
   )
   local_mocked_bindings(
-    download_copernicus_cli_subset = function(...) {
+    download_copernicus_subset = function(...) {
       download_called <<- TRUE
-      TRUE
-    },
-    .package = "copernicus"
+      invisible(0)
+    }
   )
 
   accessEnvDat(
@@ -118,20 +110,16 @@ test_that("accessEnvDat re-downloads when overwrite = TRUE, even if cached", {
   raster_path <- write_fake_raster(vars)
   download_called <- FALSE
 
-  local_mocked_bindings(
-    copernicus_path = function(...) raster_path,
-    .package = "copernicus"
-  )
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
   local_mocked_bindings(
     file_exists = function(...) TRUE, # file "exists" locally...
     .package = "fs"
   )
   local_mocked_bindings(
-    download_copernicus_cli_subset = function(...) {
+    download_copernicus_subset = function(...) {
       download_called <<- TRUE
-      TRUE
-    },
-    .package = "copernicus"
+      invisible(0)
+    }
   )
 
   accessEnvDat(
@@ -152,20 +140,16 @@ test_that("accessEnvDat does not download when data are already cached", {
   raster_path <- write_fake_raster(vars)
   download_called <- FALSE
 
-  local_mocked_bindings(
-    copernicus_path = function(...) raster_path,
-    .package = "copernicus"
-  )
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
   local_mocked_bindings(
     file_exists = function(...) TRUE,
     .package = "fs"
   )
   local_mocked_bindings(
-    download_copernicus_cli_subset = function(...) {
+    download_copernicus_subset = function(...) {
       download_called <<- TRUE
-      TRUE
-    },
-    .package = "copernicus"
+      invisible(0)
+    }
   )
 
   accessEnvDat(
@@ -185,10 +169,7 @@ test_that("accessEnvDat covers every requested year and month", {
   vars <- c("thetao")
   raster_path <- write_fake_raster(vars)
 
-  local_mocked_bindings(
-    copernicus_path = function(...) raster_path,
-    .package = "copernicus"
-  )
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
   local_mocked_bindings(
     file_exists = function(...) TRUE,
     .package = "fs"
@@ -214,10 +195,7 @@ test_that("catalog names become the result's column names", {
   # went to the API.
   raster_path <- write_fake_raster(c("thetao", "so"))
 
-  local_mocked_bindings(
-    copernicus_path = function(...) raster_path,
-    .package = "copernicus"
-  )
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
   local_mocked_bindings(
     file_exists = function(...) TRUE,
     .package = "fs"
@@ -241,11 +219,10 @@ test_that("the product and dataset are inferred from catalog names", {
   requested <- NULL
 
   local_mocked_bindings(
-    copernicus_path = function(...) {
+    copernicus_cache = function(...) {
       requested <<- c(...)
       raster_path
-    },
-    .package = "copernicus"
+    }
   )
   local_mocked_bindings(
     file_exists = function(...) TRUE,
@@ -266,11 +243,10 @@ test_that("the product and dataset are inferred from catalog names", {
 test_that("mixing datasets is refused before any download is attempted", {
   downloaded <- FALSE
   local_mocked_bindings(
-    download_copernicus_cli_subset = function(...) {
+    download_copernicus_subset = function(...) {
       downloaded <<- TRUE
-      TRUE
-    },
-    .package = "copernicus"
+      invisible(0)
+    }
   )
 
   expect_error(
@@ -286,10 +262,7 @@ test_that("a layer count that does not match the request is an error", {
   # levels would silently mislabel columns. Stopping is the lesser evil.
   raster_path <- write_fake_raster(c("thetao", "so", "extra_level"))
 
-  local_mocked_bindings(
-    copernicus_path = function(...) raster_path,
-    .package = "copernicus"
-  )
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
   local_mocked_bindings(
     file_exists = function(...) TRUE,
     .package = "fs"
