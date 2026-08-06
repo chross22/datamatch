@@ -365,6 +365,21 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars, years, mont
       # The workers need this package: download_day() resolves the downloader
       # and the client wrapper through its namespace.
       parallel::clusterEvalQ(cl, library(datamatch))
+
+      # And they need to be told where the client is. A worker starts a fresh R
+      # with none of this session's options, so datamatch.copernicusmarine does
+      # not cross over and the worker falls back to looking for the client on
+      # its own PATH. That PATH is not the one the user sees: an app launched
+      # from RStudio, or any GUI, inherits a minimal environment, so a client
+      # installed under conda is invisible there. The result was a parallel
+      # fetch failing with "Could not find the Copernicus Marine client" on a
+      # machine where the serial fetch works and the option is set.
+      client <- getOption("datamatch.copernicusmarine")
+      if (!is.null(client)) {
+        parallel::clusterCall(cl, function(path) {
+          options(datamatch.copernicusmarine = path)
+        }, client)
+      }
       # Load-balanced rather than pre-chunked: days differ in size and in how
       # hard the API is working, so a fixed split leaves workers idle.
       parallel::parLapplyLB(cl, needed, download_day,
