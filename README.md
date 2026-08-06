@@ -59,8 +59,40 @@ variable_dictionary()
 #>  NPP  nppv     Net primary production      mg/m3/day
 #>  PH   ph       pH                          1        
 #> 
+#> Products
+#>   GLOBAL_MULTIYEAR_PHY_001_030
+#>     SST, SSS, BOTT, UO, VO, SSH, MLD, SIC
+#>     https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/description
+#>   GLOBAL_MULTIYEAR_BGC_001_029
+#>     CHL, NO3, PO4, O2, NPP, PH
+#>     https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/description
+#> 
 #> Pass a name to accessEnvDat(vars = ...), or the Copernicus code.
 #> Full descriptions: as.data.frame(variable_dictionary())$description
+
+`as_markdown()` renders either dictionary as a pipe table, for pasting into
+documentation:
+
+``` r
+as_markdown(variable_dictionary())
+```
+
+| name | variable | label                       | units     |
+| ---- | -------- | --------------------------- | --------- |
+| SST  | thetao   | Sea surface temperature     | degrees C |
+| SSS  | so       | Sea surface salinity        | PSU       |
+| BOTT | bottomT  | Bottom temperature          | degrees C |
+| UO   | uo       | Eastward current velocity   | m/s       |
+| VO   | vo       | Northward current velocity  | m/s       |
+| SSH  | zos      | Sea surface height          | m         |
+| MLD  | mlotst   | Mixed layer depth           | m         |
+| SIC  | siconc   | Sea ice concentration       | fraction  |
+| CHL  | chl      | Chlorophyll-a concentration | mg/m3     |
+| NO3  | no3      | Nitrate concentration       | mmol/m3   |
+| PO4  | po4      | Phosphate concentration     | mmol/m3   |
+| O2   | o2       | Dissolved oxygen            | mmol/m3   |
+| NPP  | nppv     | Net primary production      | mg/m3/day |
+| PH   | ph       | pH                          | 1         |
 
 Pass those names to `accessEnvDat()` and the result comes back with them as
 column names, rather than the Copernicus codes:
@@ -99,6 +131,31 @@ variable_dictionary("biogeochemical")        # filter by product
 variable_dataset(c("SST", "CHL"))            # which dataset each comes from
 as.data.frame(variable_dictionary())$description  # full descriptions
 ```
+
+## Spatial and temporal resolution
+
+Products do not share a grid — the global physics reanalysis is 0.083 degrees
+and biogeochemistry 0.25 — so how resolution is handled matters.
+
+**`accessEnvDat()` fetches one dataset per call**, on that dataset's native grid.
+It does not resample, and it refuses to fetch variables from different datasets
+together rather than quietly reconciling them.
+
+**`matchData()` is resolution-agnostic.** Observations are matched to the nearest
+environmental cell, so a 0.083-degree and a 0.25-degree product each attach
+correctly to the same stations — the observation simply lands in a bigger or
+smaller cell. Temporally it matches at the environmental data's own resolution,
+inferred from its time steps: a monthly product matches by month, a daily one by
+day. Matching a monthly mean on exact dates would match nothing, since the mean
+carries one time step per month while observations fall on arbitrary days.
+
+**Combining two products onto one grid is the caller's decision**, because
+neither answer is free. Keeping the finer grid means each coarse cell's value is
+repeated across the fine cells inside it: fine-scale structure survives in the
+fine variables, but the coarse one is blocky rather than detailed, and a spatial
+gradient computed from it measures the source grid rather than the ocean. Keeping
+the coarser grid replicates nothing but discards resolution the fine variables
+really had. `taupatch` exposes this as a `covariates.grid` setting.
 
 ## Matching to observations
 

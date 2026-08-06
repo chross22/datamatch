@@ -50,6 +50,13 @@ library(datamatch)
 variable_dictionary()
 ```
 
+`as_markdown()` renders either dictionary as a pipe table, for pasting into
+documentation:
+
+```{r dictionary-md, results = "asis"}
+as_markdown(variable_dictionary())
+```
+
 Pass those names to `accessEnvDat()` and the result comes back with them as
 column names, rather than the Copernicus codes:
 
@@ -87,6 +94,31 @@ variable_dictionary("biogeochemical")        # filter by product
 variable_dataset(c("SST", "CHL"))            # which dataset each comes from
 as.data.frame(variable_dictionary())$description  # full descriptions
 ```
+
+## Spatial and temporal resolution
+
+Products do not share a grid — the global physics reanalysis is 0.083 degrees
+and biogeochemistry 0.25 — so how resolution is handled matters.
+
+**`accessEnvDat()` fetches one dataset per call**, on that dataset's native grid.
+It does not resample, and it refuses to fetch variables from different datasets
+together rather than quietly reconciling them.
+
+**`matchData()` is resolution-agnostic.** Observations are matched to the nearest
+environmental cell, so a 0.083-degree and a 0.25-degree product each attach
+correctly to the same stations — the observation simply lands in a bigger or
+smaller cell. Temporally it matches at the environmental data's own resolution,
+inferred from its time steps: a monthly product matches by month, a daily one by
+day. Matching a monthly mean on exact dates would match nothing, since the mean
+carries one time step per month while observations fall on arbitrary days.
+
+**Combining two products onto one grid is the caller's decision**, because
+neither answer is free. Keeping the finer grid means each coarse cell's value is
+repeated across the fine cells inside it: fine-scale structure survives in the
+fine variables, but the coarse one is blocky rather than detailed, and a spatial
+gradient computed from it measures the source grid rather than the ocean. Keeping
+the coarser grid replicates nothing but discards resolution the fine variables
+really had. `taupatch` exposes this as a `covariates.grid` setting.
 
 ## Matching to observations
 

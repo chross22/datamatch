@@ -115,3 +115,37 @@ test_that("an uninferable variable says how to proceed", {
   expect_error(infer_dataset(c("SST", "mystery")), "mystery")
   expect_error(infer_dataset(c("SST", "mystery")), "variable_dictionary")
 })
+
+test_that("as_markdown emits a valid pipe table", {
+  lines <- capture.output(as_markdown(variable_dictionary()))
+
+  expect_true(startsWith(lines[1], "| name"))
+  # Row two must be the separator, or nothing renders as a table.
+  expect_true(grepl("^\\| -+ \\|", lines[2]))
+  # Header, separator, and one row per variable.
+  expect_equal(length(lines), nrow(variable_dictionary()) + 2)
+  expect_true(any(grepl("SST", lines)))
+
+  # Every row must have the same number of cells as the header.
+  cells <- vapply(lines, function(line) lengths(regmatches(line, gregexpr("\\|", line))),
+                  integer(1))
+  expect_equal(length(unique(cells)), 1)
+})
+
+test_that("as_markdown can include any column and rejects unknown ones", {
+  lines <- capture.output(as_markdown(variable_dictionary(),
+                                       columns = c("name", "dataset")))
+
+  expect_true(any(grepl("cmems_mod_glo_phy", lines)))
+  expect_false(any(grepl("degrees C", lines)))
+
+  expect_error(as_markdown(variable_dictionary(), columns = "nonexistent"),
+               "not in the dictionary")
+})
+
+test_that("as_markdown works on the index dictionary too", {
+  lines <- capture.output(as_markdown(index_dictionary()))
+
+  expect_true(any(grepl("NAO", lines)))
+  expect_true(any(grepl("NOAA", lines)))
+})

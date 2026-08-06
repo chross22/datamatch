@@ -166,6 +166,63 @@ print.datamatch_dictionary <- function(x, ...) {
   invisible(x)
 }
 
+#' Render a dictionary as a markdown table
+#'
+#' The console view is a fixed-width table, which turns to mush when pasted into
+#' a README or a notebook. This emits a pipe table instead, so a dictionary can
+#' be dropped straight into documentation.
+#'
+#' @param x a dictionary from [variable_dictionary()] or [index_dictionary()]
+#' @param columns which columns to include; defaults to the readable subset
+#' @return a character vector of markdown lines, invisibly; printed as a
+#'   side effect
+#' @examples
+#' as_markdown(variable_dictionary())
+#'
+#' # Include the dataset identifiers as well
+#' as_markdown(variable_dictionary(), columns = c("name", "variable", "dataset"))
+#' @export
+as_markdown <- function(x, columns = NULL) {
+  flat <- as.data.frame(x)
+  columns <- columns %||% intersect(
+    c("name", "variable", "label", "units", "source"), names(flat)
+  )
+  missing <- setdiff(columns, names(flat))
+  if (length(missing) > 0) {
+    stop("Column(s) not in the dictionary: ", paste(missing, collapse = ", "),
+         "\nAvailable: ", paste(names(flat), collapse = ", "), call. = FALSE)
+  }
+  flat <- flat[columns]
+
+  # Pipe characters would split a cell into two columns.
+  cells <- lapply(flat, function(column) gsub("|", "\\|", as.character(column),
+                                               fixed = TRUE))
+  widths <- vapply(seq_along(cells), function(i) {
+    max(nchar(c(columns[i], cells[[i]])))
+  }, integer(1))
+
+  # Padded so the raw markdown lines up in a text editor too, not only once
+  # rendered. formatC takes a scalar width, hence the elementwise mapply.
+  pad <- function(values, width) {
+    mapply(function(value, w) formatC(value, width = -w, flag = " "),
+           values, width, USE.NAMES = FALSE)
+  }
+  row <- function(values) paste0("| ", paste(values, collapse = " | "), " |")
+
+  lines <- c(
+    row(pad(columns, widths)),
+    row(vapply(widths, function(w) strrep("-", w), character(1))),
+    vapply(seq_len(nrow(flat)), function(i) {
+      row(vapply(seq_along(cells), function(j) pad(cells[[j]][i], widths[j]),
+                 character(1)))
+    }, character(1))
+  )
+
+  # writeLines rather than cat(sep = "\n"), which leaves a trailing blank line.
+  writeLines(lines)
+  invisible(lines)
+}
+
 #' Resolve variable names to Copernicus codes
 #'
 #' Accepts either a catalog name (`"SST"`) or a raw Copernicus code

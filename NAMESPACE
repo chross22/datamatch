@@ -3,6 +3,7 @@
 S3method(print,datamatch_dictionary)
 S3method(print,datamatch_index_dictionary)
 export(accessEnvDat)
+export(as_markdown)
 export(attach_bathymetry)
 export(attach_climate_index)
 export(bathymetry_variables)
