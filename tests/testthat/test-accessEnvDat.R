@@ -13,6 +13,67 @@
 # datamatch's own, so no `.package` argument is needed - local_mocked_bindings
 # defaults to the package under test.
 
+# A raster whose layers are named the way Copernicus names them, with the depth
+# suffix 3D variables carry, and each layer filled with a value identifying it.
+copernicus_style_raster <- function(layer_names, values = seq_along(layer_names)) {
+  r <- terra::rast(nrows = 2, ncols = 2, nlyrs = length(layer_names))
+  for (i in seq_along(layer_names)) terra::values(r[[i]]) <- rep(values[i], 4)
+  names(r) <- layer_names
+  r
+}
+
+test_that("layers are matched by name, not by position", {
+  # THE regression this guards. Copernicus returns layers in the NetCDF's own
+  # order, which is alphabetical by code: asking for thetao then so gets back so
+  # then thetao. Naming positionally labelled salinity as temperature and
+  # temperature as salinity, silently, in every multi-variable download.
+  returned <- copernicus_style_raster(
+    c("so_depth=0.494025", "thetao_depth=0.494025"), values = c(32.7, 6.2))
+
+  ordered <- order_layers(returned, c("thetao", "so"))
+
+  expect_equal(unname(terra::values(ordered[[1]])[1]), 6.2)   # thetao first
+  expect_equal(unname(terra::values(ordered[[2]])[1]), 32.7)  # so second
+})
+
+test_that("the depth suffix does not prevent matching", {
+  returned <- copernicus_style_raster(
+    c("thetao_depth=0.494025", "mlotst", "uo_depth=0.494025", "zos"),
+    values = c(6.2, 54.2, 0.016, -0.498))
+
+  # A mixture of 3D variables (suffixed) and 2D ones (not), requested in an
+  # order matching neither the file's nor the alphabet's.
+  ordered <- order_layers(returned, c("zos", "thetao", "uo", "mlotst"))
+
+  expect_equal(unname(vapply(1:4, function(i) terra::values(ordered[[i]])[1], numeric(1))),
+               c(-0.498, 6.2, 0.016, 54.2))
+})
+
+test_that("a variable the download omitted is named", {
+  returned <- copernicus_style_raster(c("thetao_depth=0.494025", "so_depth=0.494025"))
+
+  expect_error(order_layers(returned, c("thetao", "so", "uo", "vo")), "uo, vo")
+  # And says what did arrive, so the cause is diagnosable from the message.
+  expect_error(order_layers(returned, c("thetao", "uo")), "It contains: thetao, so")
+})
+
+test_that("a depth range spanning several levels is reported as such", {
+  returned <- copernicus_style_raster(
+    c("thetao_depth=0.494025", "thetao_depth=1.541375"))
+
+  expect_error(order_layers(returned, "thetao"), "several model levels")
+  expect_error(order_layers(returned, "thetao"), "0.494025")
+})
+
+test_that("a single requested variable passes through unchanged", {
+  returned <- copernicus_style_raster("thetao_depth=0.494025", values = 6.2)
+
+  ordered <- order_layers(returned, "thetao")
+
+  expect_equal(terra::nlyr(ordered), 1)
+  expect_equal(unname(terra::values(ordered)[1]), 6.2)
+})
+
 # Builds a real raster file with one layer per variable. accessEnvDat assigns
 # column names positionally from `vars` after reading, so only the layer *count*
 # has to match.
@@ -257,10 +318,12 @@ test_that("mixing datasets is refused before any download is attempted", {
   expect_false(downloaded)
 })
 
-test_that("a layer count that does not match the request is an error", {
-  # Names are assigned positionally, so a depth range spanning several model
-  # levels would silently mislabel columns. Stopping is the lesser evil.
-  raster_path <- write_fake_raster(c("thetao", "so", "extra_level"))
+test_that("a depth range spanning several levels is an error, end to end", {
+  # What this really looks like in a download: the same variable code on more
+  # than one layer, one per model level. Layers are matched by name now, so an
+  # unrelated extra layer is harmless - a repeated one is not, because there is
+  # no way to know which level the caller wanted.
+  raster_path <- write_fake_raster(c("thetao_depth=0.494025", "thetao_depth=1.541375"))
 
   local_mocked_bindings(copernicus_cache = function(...) raster_path)
   local_mocked_bindings(
@@ -272,10 +335,34 @@ test_that("a layer count that does not match the request is an error", {
     accessEnvDat(
       product_id = "GLOBAL_TEST",
       dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1M-m",
-      vars = c("SST", "SSS"),
+      vars = "SST",
       years = 2020, months = 1,
       bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45)
     ),
-    "depth range spans several model levels"
+    "several model levels"
+  )
+})
+
+test_that("a variable missing from the download names it, not the depth range", {
+  # The old failure mode was a column count that could only guess at the cause
+  # and blamed the depth range for everything. A variable the dataset does not
+  # serve is now reported as itself.
+  raster_path <- write_fake_raster(c("thetao", "so"))
+
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
+  local_mocked_bindings(
+    file_exists = function(...) TRUE,
+    .package = "fs"
+  )
+
+  expect_error(
+    accessEnvDat(
+      product_id = "GLOBAL_TEST",
+      dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1M-m",
+      vars = c("SST", "SSS", "UO", "VO"),
+      years = 2020, months = 1,
+      bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45)
+    ),
+    "did not return: uo, vo"
   )
 })
