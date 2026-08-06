@@ -152,6 +152,78 @@ and refusing to fetch them together means the package never quietly reconciles
 those grids on your behalf. `matchData()` handles both correctly because it
 matches to the nearest cell whatever its size.
 
+### Monthly or daily
+
+**Fetches are monthly means by default**, and a call that mentions neither
+`frequency` nor `days` behaves exactly as it always has. `frequency = "daily"`
+uses the daily datasets instead, expanding each requested month into its days:
+
+
+``` r
+sst <- accessEnvDat(vars = c("SST", "MLD"), frequency = "daily",
+                    years = 2015, months = 4:6, bounding_box = bb)
+```
+
+Daily is a real cost, not a flag: three months is 91 downloads rather than 3,
+and 91 grids rather than 3 in memory. A decade of daily data over a large box
+will not fit in a laptop's RAM as an `sf` object, and is better fetched a season
+at a time.
+
+`days` is the other way to keep that in hand. It takes day-of-month numbers and
+applies them to every requested month, so a long record can be sampled rather
+than fetched whole. Passing it implies `frequency = "daily"`, since selecting
+days of the month means nothing to a monthly mean:
+
+
+``` r
+# The 1st and 15th of every month, 2005-2015: 264 days, not 4018
+accessEnvDat(vars = "SST", days = c(1, 15),
+             years = 2005:2015, months = 1:12, bounding_box = bb)
+
+# Roughly weekly through a spring bloom
+accessEnvDat(vars = "CHL", days = seq(1, 29, by = 7),
+             years = 2015, months = 3:5, bounding_box = bb)
+```
+
+Months are not the same length, so a day a month does not have is dropped from
+it — `days = 30` returns nothing for February and a value for April. That is the
+calendar, not an error. Asking only for days that exist in none of the requested
+months is an error, since it describes an empty request.
+
+Sampling days is not the same as averaging them. Two days a month is a sample of
+the month, carrying whatever weather fell on those dates; a monthly mean is the
+month. Which you want depends on whether the observations you are matching are
+themselves instants or aggregates.
+
+Not everything is published daily. `PH`, `PP`, `DIATO` and `DINO` are monthly
+composites only, and asking for them daily is refused before anything is
+downloaded rather than failing at the API. Daily `CHL` comes from the *gap-free*
+interpolated ocean colour dataset rather than the monthly composite — its cloud
+gaps are already filled by Copernicus, so `fill_satellite_gaps()` has nothing to
+do on it. `accessEnvDat()` says so when it makes that substitution.
+
+`variable_dataset(vars, frequency = "daily")` shows which dataset each variable
+would come from, and `NA` where there is none.
+
+### Downloads run in parallel
+
+Days already in the cache are read straight from disk. Only the missing ones are
+downloaded, and those go out four at a time, since a Copernicus subset request
+spends nearly all of its time waiting on the API rather than on your machine.
+Fetching a month of daily SST and SSS takes about 40 seconds this way against
+about 160 serially.
+
+
+``` r
+accessEnvDat(vars = "SST", frequency = "daily", n_workers = 8, ...)  # more
+accessEnvDat(vars = "SST", frequency = "daily", n_workers = 1, ...)  # serial
+```
+
+The limit is the service, not your cores, so raising `n_workers` far past 8
+mostly earns rate limiting. A day that fails does not abandon the others: every
+day is attempted, the ones that succeeded stay cached, and the error names each
+day that failed — so re-running the same call retries only those.
+
 `variable_dataset(c("SST", "CHL"))` tells you which product each variable comes
 from, so you can plan the calls before making them. See [Putting it
 together](#putting-it-together) for the same pattern with seafloor and
@@ -327,10 +399,10 @@ Products do not share a grid, so how resolution is handled matters:
 
 | Source | Spatial | Temporal | Gaps |
 |---|---|---|---|
-| Physics reanalysis | 0.083° (~9 km) | monthly, from 1993 | gap-free |
-| Biogeochemistry reanalysis | 0.25° (~28 km) | monthly, from 1993 | gap-free |
+| Physics reanalysis | 0.083° (~9 km) | monthly or daily, from 1993 | gap-free |
+| Biogeochemistry reanalysis | 0.25° (~28 km) | monthly or daily, from 1993 | gap-free |
 | Satellite ocean colour | 4 km | monthly, from 1997 | **cloud gaps** |
-| Analysis-and-forecast | 0.083° / 0.25° | monthly, to ~10 days ahead | gap-free |
+| Analysis-and-forecast | 0.083° / 0.25° | monthly or daily, to ~10 days ahead | gap-free |
 
 Satellite is the finest source, and the only observed one. It is also the only
 one with holes. Those holes are not random. They cluster in the seasons and

@@ -41,17 +41,28 @@ suppressMessages(pkgload::load_all(quiet = TRUE))
 
 claims <- function() {
   rows <- list()
+  claim <- function(name, mode, frequency, entry, dataset_id) {
+    rows[[length(rows) + 1]] <<- data.frame(
+      name = name,
+      mode = mode,
+      frequency = frequency,
+      product_id = entry$product_id,
+      dataset_id = dataset_id,
+      variable = entry$variable,
+      stringsAsFactors = FALSE
+    )
+  }
   add <- function(catalog, mode) {
     for (name in names(catalog)) {
       entry <- catalog[[name]]
-      rows[[length(rows) + 1]] <<- data.frame(
-        name = name,
-        mode = mode,
-        product_id = entry$product_id,
-        dataset_id = entry$dataset_id,
-        variable = entry$variable,
-        stringsAsFactors = FALSE
-      )
+      claim(name, mode, "monthly", entry, entry$dataset_id)
+      # Daily identifiers are as load-bearing as monthly ones and drift the same
+      # way. NA is a deliberate "Copernicus publishes no daily version of this",
+      # not an omission, so there is nothing to check against the catalogue.
+      daily <- entry$daily_dataset_id
+      if (!is.null(daily) && !is.na(daily)) {
+        claim(name, mode, "daily", entry, daily)
+      }
     }
   }
   add(copernicus_variables(), "reanalysis")
@@ -135,14 +146,15 @@ for (i in seq_len(nrow(wanted))) {
   product <- live[[row$product_id]]
 
   if (is.null(product)) {
-    note(name = row$name, mode = row$mode, kind = "product unreachable",
-         detail = row$product_id)
+    note(name = row$name, mode = row$mode, frequency = row$frequency,
+         kind = "product unreachable", detail = row$product_id)
     next
   }
 
   ids <- vapply(product$datasets, function(d) d$dataset_id, character(1))
   if (!row$dataset_id %in% ids) {
-    note(name = row$name, mode = row$mode, kind = "dataset not in catalogue",
+    note(name = row$name, mode = row$mode, frequency = row$frequency,
+         kind = "dataset not in catalogue",
          detail = paste0(row$dataset_id, "  (product now offers: ",
                          paste(ids, collapse = ", "), ")"))
     next
@@ -151,7 +163,8 @@ for (i in seq_len(nrow(wanted))) {
   dataset <- product$datasets[[which(ids == row$dataset_id)[1]]]
   codes <- dataset_variables(dataset)
   if (length(codes) > 0 && !row$variable %in% codes) {
-    note(name = row$name, mode = row$mode, kind = "variable not in dataset",
+    note(name = row$name, mode = row$mode, frequency = row$frequency,
+         kind = "variable not in dataset",
          detail = paste0(row$variable, " not among: ", paste(codes, collapse = ", ")))
   }
 }
@@ -187,11 +200,11 @@ if (is.null(findings)) {
     "at fetch time with an unknown-dataset or unknown-variable error rather ",
     "than anything pointing here.",
     "",
-    "| Name | Mode | Problem | Detail |",
-    "|---|---|---|---|",
+    "| Name | Mode | Frequency | Problem | Detail |",
+    "|---|---|---|---|---|",
     apply(findings, 1, function(r) {
-      paste0("| `", r[["name"]], "` | ", r[["mode"]], " | ", r[["kind"]],
-             " | `", r[["detail"]], "` |")
+      paste0("| `", r[["name"]], "` | ", r[["mode"]], " | ", r[["frequency"]],
+             " | ", r[["kind"]], " | `", r[["detail"]], "` |")
     }),
     "",
     "Fix by updating the affected entry in `R/variables.R`. Choosing the ",

@@ -10,16 +10,37 @@
 #' mixed layer depth, `zos` for sea surface height — and getting one wrong
 #' produces a failed download rather than an obvious mistake.
 #'
-#' All entries are monthly means from the global reanalyses: physical variables
-#' from `GLOBAL_MULTIYEAR_PHY_001_030` (GLORYS12V1) and biogeochemical ones from
+#' Entries come from the global reanalyses: physical variables from
+#' `GLOBAL_MULTIYEAR_PHY_001_030` (GLORYS12V1) and biogeochemical ones from
 #' `GLOBAL_MULTIYEAR_BGC_001_029`.
+#'
+#' @section Monthly and daily:
+#' `dataset_id` is the monthly mean; `daily_dataset_id` is the daily one, which
+#' [accessEnvDat()] uses when given `frequency = "daily"`. It is `NA` where no
+#' daily equivalent exists, and those gaps are not incidental:
+#'
+#' \itemize{
+#'   \item **`PH`** — the daily biogeochemical reanalysis carries `chl`, `no3`,
+#'     `nppv`, `o2`, `po4` and `si`, but not `ph`. Only the monthly mean has it.
+#'   \item **`PP`** — Copernicus-GlobColour serves primary production as a
+#'     monthly composite only.
+#'   \item **`DIATO`, `DINO`** — the daily ocean colour dataset carries total
+#'     chlorophyll alone. The phytoplankton functional types are monthly.
+#' }
+#'
+#' `CHL` is the case worth reading twice. Daily ocean colour is not the monthly
+#' product at a finer step: it is `l4-gapfree`, the space-time interpolated
+#' field, because a single day of a single sensor is mostly cloud. The daily
+#' values are therefore already gap-filled by Copernicus, and running
+#' [fill_satellite_gaps()] over them fills nothing. [accessEnvDat()] says so
+#' when it makes the substitution.
 #'
 #' Copernicus revises dataset identifiers periodically. If a fetch fails with an
 #' unknown-dataset error, check the current identifier on the Copernicus Marine
 #' Data Store and pass `dataset_id` explicitly.
 #'
 #' @return a named list, one entry per variable, each with `variable`, `label`,
-#'   `units`, `product_id`, `dataset_id`, and `description`
+#'   `units`, `product_id`, `dataset_id`, `daily_dataset_id`, and `description`
 #' @examples
 #' names(copernicus_variables())
 #' copernicus_variables()$SST$variable
@@ -28,30 +49,38 @@
 copernicus_variables <- function() {
   phy_product <- "GLOBAL_MULTIYEAR_PHY_001_030"
   phy_dataset <- "cmems_mod_glo_phy_my_0.083deg_P1M-m"
+  phy_daily <- "cmems_mod_glo_phy_my_0.083deg_P1D-m"
   bgc_product <- "GLOBAL_MULTIYEAR_BGC_001_029"
   bgc_dataset <- "cmems_mod_glo_bgc_my_0.25deg_P1M-m"
+  bgc_daily <- "cmems_mod_glo_bgc_my_0.25deg_P1D-m"
   # Copernicus-GlobColour: satellite ocean colour rather than a model. Higher
   # resolution (4 km vs 0.25 degrees) and observed rather than simulated, but
   # surface-only and gappy under cloud.
   oc_product <- "OCEANCOLOUR_GLO_BGC_L4_MY_009_104"
   oc_plankton <- "cmems_obs-oc_glo_bgc-plankton_my_l4-multi-4km_P1M"
   oc_pp <- "cmems_obs-oc_glo_bgc-pp_my_l4-multi-4km_P1M"
+  # Daily ocean colour is the gap-free interpolated field, not the monthly
+  # composite at a finer step. See the Monthly and daily section.
+  oc_plankton_daily <- "cmems_obs-oc_glo_bgc-plankton_my_l4-gapfree-multi-4km_P1D"
 
   physical <- function(variable, label, units, description) {
     list(variable = variable, label = label, units = units,
          product_id = phy_product, dataset_id = phy_dataset,
-         description = description)
+         daily_dataset_id = phy_daily, description = description)
   }
-  biogeochemical <- function(variable, label, units, description) {
+  # `daily` is an argument rather than a constant because the daily reanalysis
+  # does not serve every variable the monthly mean does.
+  biogeochemical <- function(variable, label, units, description,
+                             daily = bgc_daily) {
     list(variable = variable, label = label, units = units,
          product_id = bgc_product, dataset_id = bgc_dataset,
-         description = description)
+         daily_dataset_id = daily, description = description)
   }
   satellite <- function(variable, label, units, description,
-                        dataset_id = oc_plankton) {
+                        dataset_id = oc_plankton, daily = NA_character_) {
     list(variable = variable, label = label, units = units,
          product_id = oc_product, dataset_id = dataset_id,
-         description = description)
+         daily_dataset_id = daily, description = description)
   }
 
   list(
@@ -82,7 +111,9 @@ copernicus_variables <- function() {
                     paste("Mass concentration of chlorophyll-a from",
                           "Copernicus-GlobColour. A food-availability proxy;",
                           "usually worth log-transforming. Surface only, and",
-                          "gappy under persistent cloud.")),
+                          "gappy under persistent cloud - though the daily",
+                          "field is the gap-free interpolated one."),
+                    daily = oc_plankton_daily),
     PP = satellite("PP", "Primary production (satellite)", "mg/m2/day",
                    paste("Primary productivity of biomass expressed as carbon,",
                          "from Copernicus-GlobColour. A rate rather than the",
@@ -106,10 +137,13 @@ copernicus_variables <- function() {
                          "Mole concentration of phosphate."),
     O2 = biogeochemical("o2", "Dissolved oxygen", "mmol/m3",
                         "Mole concentration of dissolved molecular oxygen."),
+    # The daily biogeochemical reanalysis omits ph; only the monthly mean has it.
     PH = biogeochemical("ph", "pH", "unitless",
                         paste("Sea water pH on the total scale. A logarithmic",
                               "ratio, so it has no units - and for the same",
-                              "reason should not be averaged directly.")),
+                              "reason should not be averaged directly.",
+                              "Monthly only."),
+                        daily = NA_character_),
     CHL_MODEL = biogeochemical("chl", "Chlorophyll-a concentration (model)",
                                "mg/m3",
                                paste("Chlorophyll-a from the biogeochemistry",
@@ -164,7 +198,7 @@ product_url <- function(product_id) {
 #' therefore absent here, and asking for them in forecast mode says so.
 #'
 #' @return a named list keyed by catalog name, each with `variable`,
-#'   `product_id`, and `dataset_id`
+#'   `product_id`, `dataset_id`, and `daily_dataset_id`
 #' @examples
 #' names(forecast_variables())
 #' forecast_variables()$BOTT$variable   # "tob", not "bottomT"
@@ -174,8 +208,12 @@ forecast_variables <- function() {
   phy <- "GLOBAL_ANALYSISFORECAST_PHY_001_024"
   bgc <- "GLOBAL_ANALYSISFORECAST_BGC_001_028"
 
+  # Unlike the reanalysis, every analysis-and-forecast dataset here is published
+  # at both steps under the same name, so the daily identifier is the monthly one
+  # with its frequency token swapped rather than a separate entry.
   entry <- function(variable, product_id, dataset_id) {
-    list(variable = variable, product_id = product_id, dataset_id = dataset_id)
+    list(variable = variable, product_id = product_id, dataset_id = dataset_id,
+         daily_dataset_id = sub("_P1M-m$", "_P1D-m", dataset_id))
   }
   physics <- function(variable, dataset) {
     entry(variable, phy, paste0("cmems_mod_glo_phy", dataset, "_anfc_0.083deg_P1M-m"))
@@ -390,11 +428,31 @@ resolve_variables <- function(vars, mode = c("reanalysis", "forecast")) {
 #'
 #' @param vars variable names
 #' @param mode `"reanalysis"` or `"forecast"`
+#' @param frequency `"monthly"` or `"daily"`
 #' @return `list(product_id =, dataset_id =)`
 #' @keywords internal
-infer_dataset <- function(vars, mode = c("reanalysis", "forecast")) {
+infer_dataset <- function(vars, mode = c("reanalysis", "forecast"),
+                          frequency = c("monthly", "daily")) {
   mode <- match.arg(mode)
-  datasets <- variable_dataset(vars, mode = mode)
+  frequency <- match.arg(frequency)
+
+  # A variable can be in the catalog and still have no daily dataset. That is a
+  # different problem from not being in the catalog at all, and saying so - with
+  # what to do instead - beats an unknown-dataset error from the client.
+  if (frequency == "daily") {
+    in_catalog <- vars[!is.na(variable_dataset(vars, mode = mode))]
+    no_daily <- in_catalog[is.na(variable_dataset(in_catalog, mode = mode,
+                                                  frequency = "daily"))]
+    if (length(no_daily) > 0) {
+      stop("Copernicus publishes no daily dataset for: ",
+           paste(no_daily, collapse = ", "),
+           "\nThese variables are monthly composites only. Fetch them with ",
+           "frequency = \"monthly\", in a separate call from any daily ones.",
+           call. = FALSE)
+    }
+  }
+
+  datasets <- variable_dataset(vars, mode = mode, frequency = frequency)
 
   unknown <- vars[is.na(datasets)]
   if (length(unknown) > 0) {
@@ -429,7 +487,18 @@ infer_dataset <- function(vars, mode = c("reanalysis", "forecast")) {
   }
 
   entry <- catalog_entry(vars[1], mode = mode)
-  list(product_id = entry$product_id, dataset_id = entry$dataset_id)
+  dataset_id <- if (frequency == "daily") entry$daily_dataset_id else entry$dataset_id
+
+  # Daily ocean colour is a different product from the monthly composite, not
+  # the same one at a finer step. Substituting it silently would leave a caller
+  # to discover from the interpolation that their "observations" are modelled.
+  if (frequency == "daily" && grepl("l4-gapfree", dataset_id, fixed = TRUE)) {
+    message("Daily ocean colour comes from the gap-free interpolated dataset (",
+            dataset_id, "),\nwhere cloud gaps are filled by Copernicus rather ",
+            "than left as NA. fill_satellite_gaps()\nhas nothing to do on it.")
+  }
+
+  list(product_id = entry$product_id, dataset_id = dataset_id)
 }
 
 #' Look up the dataset a set of variables comes from
@@ -440,17 +509,28 @@ infer_dataset <- function(vars, mode = c("reanalysis", "forecast")) {
 #'
 #' @param vars variable names from the catalog
 #' @param mode `"reanalysis"` (the default) or `"forecast"`
+#' @param frequency `"monthly"` (the default) or `"daily"`
 #' @return a named character vector of dataset identifiers, `NA` for names not in
-#'   the catalog
+#'   the catalog and, when `frequency = "daily"`, for catalog variables that have
+#'   no daily dataset
 #' @examples
 #' variable_dataset(c("SST", "SSS", "CHL"))
+#'
+#' # PP and the phytoplankton types are monthly composites only
+#' variable_dataset(c("SST", "CHL", "PP"), frequency = "daily")
 #' @export
-variable_dataset <- function(vars, mode = c("reanalysis", "forecast")) {
+variable_dataset <- function(vars, mode = c("reanalysis", "forecast"),
+                             frequency = c("monthly", "daily")) {
   mode <- match.arg(mode)
+  frequency <- match.arg(frequency)
   stats::setNames(
     vapply(vars, function(v) {
       entry <- catalog_entry(v, mode = mode)
-      if (is.null(entry)) NA_character_ else entry$dataset_id
+      if (is.null(entry)) return(NA_character_)
+      # %||% covers an entry predating daily_dataset_id rather than one
+      # declaring no daily dataset, which is NA and passes through as itself.
+      if (frequency == "daily") entry$daily_dataset_id %||% NA_character_
+      else entry$dataset_id
     }, character(1)),
     vars
   )

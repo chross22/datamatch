@@ -46,6 +46,14 @@
   appearing on several layers is reported as the depth-range problem it is, with
   the levels it returned.
 
+* **Daily datasets whose identifier ends in `P1D` fetched one day per month.**
+  `accessEnvDat()` decided whether a dataset was daily by reading a single
+  character three from the end of `dataset_id`. That is `D` in
+  `..._P1D-m`, which the model products use, but `P` in `..._P1D`, which the
+  satellite ocean colour products use — so an explicitly passed ocean colour
+  daily dataset was treated as monthly and only day 1 of each month was
+  downloaded. The frequency token is now matched as such.
+
 * **Failed downloads surfaced as an unreadable file.** A run of failures warned
   and returned a status code the caller ignored, so the error appeared later from
   `terra::rast()` on a file that was never written. Failures now raise where they
@@ -72,6 +80,42 @@
   now says so with install instructions.
 
 ## New features
+
+* **Daily data.** `accessEnvDat(frequency = "daily")` fetches the daily datasets
+  rather than the monthly means, expanding each requested month into its days.
+
+  Daily is not simply the monthly identifier at a finer step, and the catalog
+  records what Copernicus actually publishes. `PH`, `PP`, `DIATO` and `DINO` are
+  monthly composites only, and requesting them daily is refused before anything
+  is downloaded. Daily `CHL` comes from the gap-free interpolated ocean colour
+  dataset, whose cloud gaps Copernicus has already filled — so
+  `fill_satellite_gaps()` has nothing to do on it, and `accessEnvDat()` says so
+  when it makes the substitution.
+
+  `variable_dataset()` takes `frequency` too, and returns `NA` where no daily
+  dataset exists.
+
+  `days` selects which days of each month to fetch — `days = c(1, 15)` over
+  eleven years is 264 downloads rather than 4018 — so a long record can be
+  sampled instead of fetched whole. Passing it implies `frequency = "daily"`,
+  since selecting days of the month means nothing to a monthly mean; passing it
+  alongside an explicit `frequency = "monthly"` is a contradiction and an error.
+  A day a month does not have is dropped from that month, which is the calendar
+  rather than an error; asking only for days no requested month has is an error,
+  since it describes an empty request.
+
+  **Monthly remains the default.** A call naming neither `frequency` nor `days`
+  fetches monthly means exactly as before.
+
+* **Downloads run in parallel.** Only the days not already cached are fetched,
+  and they go out `n_workers` at a time (default 4). A month of daily SST and
+  SSS takes about 40 seconds rather than about 160.
+
+  A failed day no longer abandons the rest: every day is attempted, successful
+  ones stay in the cache, and the error names each day that failed, so
+  re-running the same call retries only those. Reading and converting the files
+  stays in the calling session — those are local reads, and returning each day's
+  data frame from a worker would cost more than the read saves.
 
 * **Resampling.** `upscale_grid()`, `downscale_grid()`, `upscale_time()`, and
   `downscale_time()` move data between grids and time steps, each with a choice
