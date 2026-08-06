@@ -324,13 +324,16 @@ setting.
 
 ## Resampling
 
-Four functions, one pair per axis. Each takes a `method`, because there is no
-single right way to change resolution:
+Four functions, one pair per axis, plus one for gaps. Each takes a `method`,
+because there is no single right way to change resolution:
 
-| | Coarser | Finer |
-|---|---|---|
-| **Space** | `upscale_grid()` | `downscale_grid()` |
-| **Time** | `upscale_time()` | `downscale_time()` |
+| Function | What it does |
+|---|---|
+| `upscale_grid()` | Aggregates onto a coarser grid — `mean`, `median`, `min`, `max`, `sum`, `mode` |
+| `downscale_grid()` | Interpolates onto a finer grid — `nearest`, `bilinear`, `cubic`, `idw` |
+| `upscale_time()` | Aggregates onto a coarser time step — `mean`, `median`, `min`, `max`, `sum`, `sd` |
+| `downscale_time()` | Interpolates onto a finer time step — `step`, `linear`, `spline` |
+| `fill_satellite_gaps()` | Substitutes another covariate wherever the first is missing |
 
 
 ``` r
@@ -354,6 +357,14 @@ second form is what puts two products on one grid.
 A resolution is anchored to the origin, not to your data's corner. So two
 products upscaled to 0.25° land on the *same* cells, instead of half a cell
 apart.
+
+**The right treatment differs by covariate**, which is why this is per-covariate
+rather than one setting for everything. Ocean-colour chlorophyll is a 4 km optical
+retrieval riddled with cloud gaps. Physics is a 0.083° model with no gaps at all.
+
+Averaging chlorophyll up to the physics grid summarises values that were really
+measured. Interpolating physics down to 4 km invents structure. Those are not the
+same operation, and no single choice can be right for both.
 
 ### Aggregating loses detail, which is the safe direction
 
