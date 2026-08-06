@@ -19,6 +19,70 @@ psl_lines <- c(
   "  Calculated at NOAA PSL1"
 )
 
+# The retroflection index, in the shape Nature publishes it: two caption lines, a
+# header, then daily rows dated as decimal years on a fixed 365-day year.
+decimal_year_lines <- function(start = 1993, months = 1:12, days_in_last = 31) {
+  rows <- unlist(lapply(months, function(m) {
+    first <- as.Date(paste(start, m, 1, sep = "-"))
+    n <- if (m == max(months)) days_in_last else
+      as.integer(lubridate::days_in_month(first))
+    doy <- as.integer(format(first, "%j")) + seq_len(n) - 1
+    sprintf("%.11f,%.4f", start + (doy - 1) / 365, m / 100)
+  }))
+  c("Figure 3,", ",", "Date,Retroflection index", rows)
+}
+
+test_that("a decimal-year CSV parses to monthly means", {
+  series <- parse_index_table(decimal_year_lines(), format = "decimal_year_csv",
+                              name = "LCR")
+
+  expect_setequal(names(series), c("YEAR", "MONTH", "LCR"))
+  expect_equal(nrow(series), 12)
+  # Each month's daily values are all month/100, so the monthly mean is too.
+  expect_equal(series$LCR, (1:12) / 100)
+})
+
+test_that("a month backed by too few days is dropped, not reported", {
+  # December carries a single day here. Averaging it would produce a confident
+  # December value resting on one observation, which is the failure mode
+  # min_coverage guards against elsewhere in the package.
+  series <- parse_index_table(decimal_year_lines(days_in_last = 1),
+                              format = "decimal_year_csv", name = "LCR")
+
+  expect_equal(nrow(series), 11)
+  expect_false(12 %in% series$MONTH)
+
+  # Half a month is enough to keep.
+  half <- parse_index_table(decimal_year_lines(days_in_last = 16),
+                            format = "decimal_year_csv", name = "LCR")
+  expect_true(12 %in% half$MONTH)
+})
+
+test_that("decimal years are read on the 365-day convention the file uses", {
+  # The published file steps by exactly 1/365 between days. Reading it as 365.25
+  # would walk the derived dates off by several days across the record, moving
+  # values into neighbouring months.
+  series <- parse_index_table(decimal_year_lines(), format = "decimal_year_csv",
+                              name = "LCR")
+
+  expect_setequal(series$MONTH, 1:12)
+  expect_true(all(series$YEAR == 1993))
+})
+
+test_that("the retroflection index carries its citation", {
+  # It is the published output of one study rather than an operational product,
+  # so the reference has to travel with it.
+  entry <- climate_indices()$LCR
+
+  expect_match(entry$reference, "Jutras")
+  expect_match(entry$reference, "10\\.1038/s41467-023-38321-y")
+
+  dictionary <- as.data.frame(index_dictionary())
+  expect_match(dictionary$reference[dictionary$name == "LCR"], "Nature Communications")
+  # The operational indices have no single paper, and must not have one invented.
+  expect_true(all(is.na(dictionary$reference[dictionary$name %in% c("NAO", "AO")])))
+})
+
 test_that("a CPC table parses to one row per month", {
   series <- parse_index_table(cpc_lines, format = "cpc_table", name = "NAO")
 
