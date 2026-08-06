@@ -84,8 +84,8 @@ account](https://data.marine.copernicus.eu/register), and only has to be run
 once — the client stores the credentials itself, and this package never sees
 them.
 
-If the client is installed but R cannot find it — common when it lives in a
-conda environment that RStudio does not inherit the `PATH` of — point at it
+Sometimes the client is installed but R cannot find it. This is common when it
+lives in a conda environment whose `PATH` RStudio does not inherit. Point at it
 directly in `~/.Rprofile`:
 
 ``` r
@@ -121,11 +121,12 @@ matched <- matchData(speciesDat = observations, envDat = env)
 
 ## Variable names
 
-Copernicus variable codes are terse and easy to misremember — `thetao` for
-temperature, `mlotst` for mixed layer depth, `zos` for sea surface height — and
-getting one wrong produces a failed download rather than an obvious mistake. So
-variables can be requested by name instead, and the dictionary lists what is
-available, along with the product and dataset each comes from:
+Copernicus variable codes are terse and easy to misremember. `thetao` is
+temperature, `mlotst` is mixed layer depth, `zos` is sea surface height. Get one
+wrong and you get a failed download rather than an obvious mistake.
+
+So you can request variables by name instead. The dictionary lists what is
+available, and which product and dataset each comes from:
 
 ```{r dictionary}
 library(datamatch)
@@ -155,10 +156,12 @@ names(env)
 ```
 
 **`product_id` and `dataset_id` can be omitted** when every variable is in the
-dictionary, since the catalog already knows where they live. Raw Copernicus
-codes work the same way, so `vars = c("thetao", "so")` infers its dataset too. Variables from
-different datasets cannot be fetched in one request, and mixing them is refused
-before any download is attempted rather than failing obscurely at the API:
+dictionary. The catalog already knows where they live. Raw Copernicus codes work
+the same way, so `vars = c("thetao", "so")` infers its dataset too.
+
+Variables from different datasets cannot be fetched in one request. Mixing them
+is refused before anything is downloaded, rather than failing obscurely at the
+API:
 
 ```{r mixed, eval = FALSE}
 accessEnvDat(vars = c("SST", "CHL"), ...)
@@ -169,9 +172,9 @@ accessEnvDat(vars = c("SST", "CHL"), ...)
 #>   Call accessEnvDat() once per dataset.
 ```
 
-Raw Copernicus codes still work exactly as before, so existing calls need no
-change, and anything outside the dictionary is passed through to the API with a
-warning — Copernicus serves far more than this catalog covers.
+Existing calls need no change. Anything outside the dictionary is passed through
+to the API with a warning, since Copernicus serves far more than this catalog
+covers.
 
 ### Satellite or model?
 
@@ -223,8 +226,8 @@ Products do not share a grid, so how resolution is handled matters:
 | Satellite ocean colour | 4 km | monthly, from 1997 | **cloud gaps** |
 | Analysis-and-forecast | 0.083° / 0.25° | monthly, to ~10 days ahead | gap-free |
 
-Satellite is the finest and the only observed source, but it is also the only
-one with holes — and those holes are not random, clustering in the seasons and
+Satellite is the finest source, and the only observed one. It is also the only
+one with holes. Those holes are not random. They cluster in the seasons and
 latitudes where cloud is persistent. `fill_satellite_gaps()` substitutes the
 model equivalent where the satellite saw nothing, and records the source of
 every value.
@@ -233,21 +236,27 @@ every value.
 It does not resample, and it refuses to fetch variables from different datasets
 together rather than quietly reconciling them.
 
-**`matchData()` is resolution-agnostic.** Observations are matched to the nearest
-environmental cell, so a 0.083-degree and a 0.25-degree product each attach
-correctly to the same stations — the observation simply lands in a bigger or
-smaller cell. Temporally it matches at the environmental data's own resolution,
-inferred from its time steps: a monthly product matches by month, a daily one by
-day. Matching a monthly mean on exact dates would match nothing, since the mean
-carries one time step per month while observations fall on arbitrary days.
+**`matchData()` is resolution-agnostic.** Observations match to the nearest
+environmental cell. So a 0.083-degree and a 0.25-degree product both attach
+correctly to the same stations. The observation simply lands in a bigger or
+smaller cell.
+
+In time it matches at the environmental data's own resolution, inferred from its
+time steps. A monthly product matches by month, a daily one by day. Matching a
+monthly mean on exact dates would match nothing, because the mean carries one
+time step per month while observations fall on arbitrary days.
 
 **Combining two products onto one grid is the caller's decision**, because
-neither answer is free. Keeping the finer grid means each coarse cell's value is
-repeated across the fine cells inside it: fine-scale structure survives in the
-fine variables, but the coarse one is blocky rather than detailed, and a spatial
-gradient computed from it measures the source grid rather than the ocean. Keeping
-the coarser grid replicates nothing but discards resolution the fine variables
-really had. `taupatch` exposes this as a `covariates.grid` setting.
+neither answer is free.
+
+Keep the finer grid and each coarse cell's value gets repeated across the fine
+cells inside it. Fine-scale structure survives in the fine variables, but the
+coarse one comes out blocky. A spatial gradient computed from it measures the
+source grid, not the ocean.
+
+Keep the coarser grid and nothing is repeated, but you throw away resolution the
+fine variables really had. `taupatch` exposes this as a `covariates.grid`
+setting.
 
 `upscale_grid()` and `downscale_grid()` are how you act on that decision.
 
@@ -276,19 +285,24 @@ monthly <- upscale_time(daily_sst, to = "month")
 daily   <- downscale_time(monthly, to = "day")
 ```
 
-The target is either a resolution or **another object whose grid to adopt** —
-the second form is what puts two products on one grid. A resolution is anchored
-to the origin rather than to your data's corner, so two products upscaled to
-0.25° land on the *same* cells instead of half a cell apart.
+The target is either a resolution or **another object whose grid to adopt**. The
+second form is what puts two products on one grid.
+
+A resolution is anchored to the origin, not to your data's corner. So two
+products upscaled to 0.25° land on the *same* cells, instead of half a cell
+apart.
 
 ### Aggregating loses detail, which is the safe direction
 
 `mean` is the default. The others exist because "the value of this coarse cell"
-is not one question: `median` resists the retrieval outliers at satellite cloud
-edges, `min` of depth is the shallowest point a cell contains rather than its
-average, `sum` is for per-cell totals and meaningless for a concentration, and
-`sd` over a period is variability as a covariate in its own right. Pass one
-method for everything, or a named vector per variable:
+is not one question:
+
+- `median` resists the retrieval outliers at satellite cloud edges.
+- `min` of depth is the shallowest point a cell contains, not its average.
+- `sum` is for per-cell totals. It is meaningless for a concentration.
+- `sd` over a period is variability, which is a covariate in its own right.
+
+Pass one method for everything, or a named vector per variable:
 
 ```{r methods, eval = FALSE}
 upscale_grid(env, to = 0.25, method = c(CHL = "median", DEPTH = "min"))
@@ -296,17 +310,18 @@ upscale_grid(env, to = 0.25, method = c(CHL = "median", DEPTH = "min"))
 
 **Partly-covered periods and cells come back `NA` by default.** A mean over the
 four days of January you happened to fetch is not a January mean, and nothing in
-the number itself says so. `min_coverage` defaults to 0.5, measured against the
-steps a period *has* — 31 for January — not the steps that were downloaded. Set
-`min_coverage = 0` to aggregate whatever is present, and `keep_counts = TRUE` to
-see what was behind each value.
+the number itself says so.
+
+`min_coverage` defaults to 0.5. It measures against the steps a period *has* (31
+for January), not the steps you downloaded. Set `min_coverage = 0` to aggregate
+whatever is present. Set `keep_counts = TRUE` to see what was behind each value.
 
 ### Interpolating adds cells, not information
 
 This is the direction to be careful in. A 0.25° field rendered at 4 km has 4 km
-*cells*, but it still resolves nothing below 0.25°, and none of these methods
-consult any other data source — so there is nowhere for real fine-scale
-structure to come from.
+*cells*, but it still resolves nothing below 0.25°. None of these methods consult
+any other data source, so there is nowhere for real fine-scale structure to come
+from.
 
 That is why the defaults are the blunt ones. `nearest` and `step` replicate the
 source value, leaving the result visibly blocky at the source resolution, so the
@@ -321,9 +336,9 @@ There is a further trap specific to the time axis:
 > of 15.0 comes back as 14.83. Any budget or total computed from such a series
 > inherits that error. `step` preserves it exactly.
 
-`idw` is the exception worth reaching for: alone among the spatial methods it
-fills across holes rather than propagating them, which makes it useful on gappy
-satellite data where `fill_satellite_gaps()` is not an option.
+`idw` is the exception worth reaching for. Alone among the spatial methods, it
+fills across holes rather than propagating them. That makes it useful on gappy
+satellite data, where `fill_satellite_gaps()` is not an option.
 
 Resampled output keeps the `YEAR`/`MONTH`/`DAY` stamping convention, so
 `matchData()` reads its resolution back correctly and can be used on the result
@@ -368,17 +383,19 @@ table(filled$CHL_source)
 #>      8214      1902         0
 ```
 
-The two sources are different measurements of the same quantity, not
-interchangeable ones, so the seam is left visible rather than smoothed: nothing
+The two sources measure the same quantity in different ways. They are not
+interchangeable. So the seam is left visible rather than smoothed over. Nothing
 is rescaled by default, and a `<var>_source` column records where each value came
-from. `rescale = TRUE` matches the model's mean and variance to the satellite's
-over the cells where both exist, which reduces the step at the cost of altering
-the model values.
+from.
+
+`rescale = TRUE` matches the model's mean and variance to the satellite's over
+the cells where both exist. That reduces the step, at the cost of altering the
+model values.
 
 ## Looking at the data
 
 Four plots, in the order they are usually wanted. All use base graphics, so they
-need no extra packages, and each returns the data it drew so the numbers behind a
+need no extra packages. Each returns the data it drew, so the numbers behind a
 picture are always available.
 
 ```{r plot-env, eval = FALSE}
@@ -390,21 +407,24 @@ plot_env(env, "CHL", time = c(MONTH = 6))    # June chlorophyll
 ```
 
 `plot_env()` maps one variable for one time step. It is the first thing worth
-doing after a download and the fastest way to catch a bounding box that came out
-somewhere unintended, a variable that is entirely `NA`, or a depth range that
-returned the wrong level. Data are drawn as a raster, so gaps read as holes
-rather than as absent dots. The time step is named in the title, so a map is
-never ambiguous about which month it shows.
+doing after a download. It is also the fastest way to catch a bounding box that
+landed somewhere unintended, a variable that is entirely `NA`, or a depth range
+that returned the wrong level.
+
+Data are drawn as a raster, so gaps read as holes rather than absent dots. The
+time step is named in the title, so a map is never ambiguous about which month it
+shows.
 
 ```{r plot-coverage, eval = FALSE}
 plot_coverage(env)
 ```
 
 `plot_coverage()` is the one to run before trusting a satellite series. It plots
-the fraction of cells carrying a value in each time step, and on ocean colour the
-shape is stark: near-complete in summer, a quarter of the grid in winter. That
-picture is what decides whether a monthly mean is worth having, whether
-`fill_satellite_gaps()` is worth the seam it introduces, and where to set
+the fraction of cells carrying a value in each time step. On ocean colour the
+shape is stark: near-complete in summer, a quarter of the grid in winter.
+
+That picture decides three things. Whether a monthly mean is worth having.
+Whether `fill_satellite_gaps()` is worth the seam it introduces. And where to set
 `min_coverage` when aggregating.
 
 ```{r plot-series, eval = FALSE}
@@ -412,11 +432,13 @@ plot_series(env)                     # one panel per variable
 plot_series(env, "SST", fun = max)   # the warmest cell each month
 ```
 
-`plot_series()` reduces each time step to one number over the study area, which
-is how a seasonal cycle, a trend, or a step change at a product boundary becomes
-visible. The interquartile range across cells is shaded behind the line, because
-a mean alone hides the difference between a uniformly warm month and one that is
-warm inshore and cold offshore.
+`plot_series()` reduces each time step to one number over the study area. That is
+how a seasonal cycle, a trend, or a step change at a product boundary becomes
+visible.
+
+The interquartile range across cells is shaded behind the line. A mean alone
+hides the difference between a uniformly warm month and one that is warm inshore
+and cold offshore.
 
 ```{r plot-matched, eval = FALSE}
 matched <- matchData(speciesDat = observations, envDat = env)
@@ -425,14 +447,14 @@ plot_matched(matched[matched$MONTH == 7, ], "SST")
 ```
 
 `plot_matched()` shows what the join actually produced. Observations that matched
-nothing are drawn as open circles rather than dropped — a cluster of them is
-usually the real finding, marking observations outside the environmental data's
-extent or in a period it does not cover.
+nothing are drawn as open circles rather than dropped. A cluster of them is
+usually the real finding: observations outside the environmental data's extent,
+or in a period it does not cover.
 
 Subset to one period first, as above. The colour scale spans everything passed
-in, so plotting a whole year of a seasonal variable mixes the seasons together
-and the map reads as noise: a warm February inshore point and a cool August
-offshore one can take the same colour.
+in. Plot a whole year of a seasonal variable and the seasons mix together, so the
+map reads as noise. A warm February inshore point and a cool August offshore one
+can take the same colour.
 
 ## Static and basin-scale covariates
 
@@ -442,9 +464,9 @@ data and from each other.
 
 ### Seafloor terrain
 
-Static — it does not vary by month or year — so it is fetched once for a study
-area and attached to every time step. Sourced from NOAA ETOPO via `marmap`,
-which is a suggested package rather than a hard dependency:
+This does not vary by month or year. So it is fetched once for a study area and
+attached to every time step. It comes from NOAA ETOPO via `marmap`, a suggested
+package rather than a hard dependency:
 
 ```{r bathy, eval = FALSE}
 bathy <- fetch_bathymetry(
@@ -456,12 +478,14 @@ observations <- attach_bathymetry(observations, bathy, c("DEPTH", "SLOPE", "TPI"
 
 `bathymetry_variables()` lists them: `DEPTH`, `SLOPE`, `ASPECT`, and `TPI`.
 
-`TPI` — topographic position index — is a cell's depth relative to the mean of
-the eight around it, and it answers a question depth cannot. A 100 m bank top
-and a 100 m basin floor are the same depth and very different places; TPI is
-positive on the first and negative on the second, and near zero on both flat
-bottom and uniform slopes. It is scale-dependent by construction, describing
-position within the immediate neighbourhood, so its meaning follows the
+`TPI`, the topographic position index, is a cell's depth relative to the mean of
+the eight around it. It answers a question depth cannot. A 100 m bank top and a
+100 m basin floor are the same depth and very different places. TPI is positive
+on the first, negative on the second, and near zero on both flat bottom and
+uniform slopes.
+
+It is scale-dependent by construction. It describes position within the
+immediate neighbourhood, so its meaning follows the
 resolution of the grid it was computed on.
 
 `attach_bathymetry()` takes either a plain data frame with coordinate columns or
@@ -469,8 +493,8 @@ an `sf` object, so it works on observations and on `accessEnvDat()` output alike
 
 ### Climate indices
 
-Monthly, and with **no spatial dimension** — one value describes the whole basin,
-so every observation in a month receives the same number:
+These are monthly, and have **no spatial dimension**. One value describes the
+whole basin, so every observation in a month receives the same number:
 
 ```{r indices, eval = FALSE}
 observations <- attach_climate_index(observations, c("NAO", "AMO"))
@@ -478,11 +502,12 @@ observations <- attach_climate_index(observations, c("NAO", "AMO"))
 index_dictionary()          # NAO, AO, AMO, PDO, LCR
 ```
 
-That makes them a different kind of covariate from local temperature. They carry
-information about *when* — what year and season it was — and none about *where*
-within a region conditions are better. Useful for interannual questions ("was
-this a warm-regime year?"), useless for spatial ones: a model given only indices
-cannot produce a map.
+That makes them a different kind of covariate from local temperature. They tell
+you about *when* — what year and season it was. They tell you nothing about
+*where* within a region conditions are better.
+
+So they are useful for interannual questions ("was this a warm-regime year?") and
+useless for spatial ones. A model given only indices cannot produce a map.
 
 Five are available, and they are not interchangeable.
 
@@ -496,17 +521,17 @@ Five are available, and they are not interchangeable.
 
 **`NAO`** is the usual first choice in the Northwest Atlantic. It sets the
 strength and track of the westerlies, and with them heat flux and mixing over the
-shelves. Its winter values carry most of the signal; summer values are noisier and
-mean less.
+shelves. Its winter values carry most of the signal. Summer values are noisier
+and mean less.
 
-**`AO`** is the hemispheric version of the same thing — polar vortex strength
-rather than an Atlantic-specific pressure dipole. In winter it correlates strongly
-with `NAO`, so including both usually buys little and costs collinearity. Pick one
-unless you have a reason.
+**`AO`** is the hemispheric version of the same thing: polar vortex strength
+rather than an Atlantic-specific pressure dipole. In winter it correlates
+strongly with `NAO`. Including both usually buys little and costs collinearity,
+so pick one unless you have a reason.
 
-**`AMO`** is a slow background state, not a year-to-year signal: it varies over
-decades, so within a study period of ten or twenty years it may act more like a
-trend than a covariate. One caution — it is *derived from* North Atlantic SST, so
+**`AMO`** is a slow background state, not a year-to-year signal. It varies over
+decades. Within a study period of ten or twenty years it may act more like a
+trend than a covariate. One caution: it is *derived from* North Atlantic SST, so
 using it to predict local SST is partly circular.
 
 **`PDO`** is North Pacific and included for completeness. It has limited relevance
@@ -516,12 +541,14 @@ sceptically.
 #### The Labrador Current retroflection index
 
 `LCR` is the odd one out among the five, and often the most directly useful. The
-other four are atmospheric or SST patterns; this one describes a *current* — how
+other four are atmospheric or SST patterns. This one describes a *current*: how
 much of the Labrador Current turns eastward at the Grand Banks instead of
-continuing southwest along the shelf. Positive values mean stronger retroflection,
-so less cold, fresh, oxygen-rich Labrador water reaching the Scotian Shelf and
-Gulf of Maine. For shelf water properties that is a shorter causal chain than the
-NAO, which acts on them only indirectly through winds.
+continuing southwest along the shelf.
+
+Positive values mean stronger retroflection. That means less cold, fresh,
+oxygen-rich Labrador water reaching the Scotian Shelf and Gulf of Maine. For
+shelf water properties that is a shorter causal chain than the NAO, which acts on
+them only indirectly through winds.
 
 ```{r lcr, eval = FALSE}
 lcr <- fetch_climate_index("LCR")        # monthly, 1993-2014
@@ -542,32 +569,36 @@ Three limits worth knowing.
 
 It **covers 1993–2014 only**, so it cannot be attached to recent observations.
 
-The series is fetched from the paper's published source data rather than
-recomputed. The authors derived it by seeding 966 virtual particles per week
-across a line at (53°N, 56.7°W)–(54.3°N, 52.0°W), tracking each for three years
-through GLORYS12V1 velocities with [OceanParcels](https://oceanparcels.org/), and
-differencing the counts crossing hydrographic sections on the Labrador and
-Scotian Shelves. Extending the record past 2014 means redoing that computation,
-not calling a different function.
+The series is fetched from the paper's published source data, not recomputed. The
+authors derived it by seeding 966 virtual particles per week across a line at
+(53°N, 56.7°W)–(54.3°N, 52.0°W). Each was tracked for three years through
+GLORYS12V1 velocities with [OceanParcels](https://oceanparcels.org/). The index
+is the difference between the counts crossing hydrographic sections on the
+Labrador and Scotian Shelves.
+
+Extending the record past 2014 means redoing that computation, not calling a
+different function.
 
 **The values are the raw index, not the normalized one plotted in the paper.**
 The published source data runs roughly −0.09 to 0.18, consistent with a fraction
 of the seeded particles. Figure 3a of the paper shows a detrended, smoothed
-series normalized to [−1, 1], which spans about −0.6 to +0.5. Both describe the
-same quantity, but the numbers are not comparable — don't read a value here
-against that figure. If you need the paper's variant, apply its chain yourself:
-detrend, 12-month rolling mean, rescale to [−1, 1], subtract the 1993–2015 mean.
+series normalized to [−1, 1], spanning about −0.6 to +0.5.
 
-One interaction to know: `attach_climate_index()` joins on year and month, and
-`upscale_time(to = "year")` stamps its output `MONTH = 1`. Attaching an index to
-annual data would therefore give every year January's value. Aggregate the index
-to a year first instead.
+Both describe the same quantity, but the numbers are not comparable. Don't read a
+value here against that figure. To get the paper's variant, apply its chain
+yourself: detrend, 12-month rolling mean, rescale to [−1, 1], subtract the
+1993–2015 mean.
+
+One interaction to know. `attach_climate_index()` joins on year and month, and
+`upscale_time(to = "year")` stamps its output `MONTH = 1`. So attaching an index
+to annual data would give every year January's value. Aggregate the index to a
+year first instead.
 
 ## Putting it together
 
 A worked example: physical, biological, seafloor, and basin-scale covariates onto
-one table of species observations. The whole thing is a pipeline of joins, each
-one adding columns and never changing the number of rows.
+one table of species observations. The whole thing is a pipeline of joins. Each
+step adds columns and never changes the number of rows.
 
 ```{r combined, eval = FALSE}
 library(datamatch)
@@ -606,26 +637,26 @@ YEAR MONTH count   SST   SSS   MLD   CHL   NO3  DEPTH  SLOPE    TPI   NAO   LCR
 Three things about this that are worth understanding rather than copying.
 
 **The two `accessEnvDat()` calls are not an inconvenience to work around.** `SST`
-and `CHL` live in different datasets on different grids — 0.083° for the physics,
-0.25° for the biogeochemistry — and the package refuses to fetch them together
-rather than quietly reconciling two grids on your behalf. `matchData()` then
-handles both correctly, because it matches to the nearest cell whatever its size.
+and `CHL` live in different datasets on different grids: 0.083° for the physics,
+0.25° for the biogeochemistry. The package refuses to fetch them together rather
+than quietly reconciling two grids on your behalf. `matchData()` then handles
+both correctly, because it matches to the nearest cell whatever its size.
 
 **`matchData()` chains.** Its output is an `sf` object with the same time columns
-it consumed, so feeding it back in for the next dataset works and the row count is
+it consumed. So you can feed it back in for the next dataset, and the row count is
 preserved. Order does not matter.
 
-**Not every join can fail the same way.** `matchData()` warns and fills `NA` when
-an observation falls in a period the environmental data does not cover;
-`attach_climate_index()` gives `NA` outside the index's record — which for `LCR`
-means anything after 2014. Check for those before modelling:
+**The joins fail in different ways.** `matchData()` warns and fills `NA` when an
+observation falls in a period the environmental data does not cover.
+`attach_climate_index()` gives `NA` outside the index's record, which for `LCR`
+means anything after 2014. Check for both before modelling:
 
 ```{r combined-check, eval = FALSE}
 colSums(is.na(sf::st_drop_geometry(matched)))
 ```
 
-If you want everything on a common grid rather than joined to points — to model
-the field itself rather than the observations — regrid first and match after:
+You may want everything on a common grid instead, to model the field itself
+rather than the observations. Regrid first, then match:
 
 ```{r combined-regrid, eval = FALSE}
 phys_coarse <- upscale_grid(phys, to = bio)    # 0.083° onto the 0.25° BGC grid
