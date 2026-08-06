@@ -578,3 +578,144 @@ test_that("a variable with no daily dataset is refused before downloading", {
     "DIATO, DINO"
   )
 })
+
+# ---- choosing days of the month ---------------------------------------------
+
+test_that("days selects which days of each month are fetched", {
+  raster_path <- write_fake_raster("thetao")
+
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
+  local_mocked_bindings(file_exists = function(...) TRUE, .package = "fs")
+
+  result <- accessEnvDat(
+    vars = "SST",
+    years = 2020, months = c(1, 3),
+    bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
+    frequency = "daily", days = c(1, 15, 28)
+  )
+
+  expect_equal(sort(unique(result$DAY)), c(1, 15, 28))
+  expect_equal(sort(unique(result$MONTH)), c(1, 3))
+  # 3 days x 2 months x 4 cells, and nothing else.
+  expect_equal(nrow(result), 3 * 2 * 4)
+})
+
+test_that("days is order-independent and ignores repeats", {
+  raster_path <- write_fake_raster("thetao")
+
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
+  local_mocked_bindings(file_exists = function(...) TRUE, .package = "fs")
+
+  result <- accessEnvDat(
+    vars = "SST", years = 2020, months = 1,
+    bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
+    frequency = "daily", days = c(15, 1, 15)
+  )
+
+  # Two distinct days, in date order, however the argument was written.
+  expect_equal(result$DAY, rep(c(1, 15), each = 4))
+})
+
+test_that("a day that a month does not have is dropped from that month only", {
+  raster_path <- write_fake_raster("thetao")
+
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
+  local_mocked_bindings(file_exists = function(...) TRUE, .package = "fs")
+
+  result <- accessEnvDat(
+    vars = "SST",
+    years = 2021, months = c(2, 4, 5),   # 28, 30 and 31 days
+    bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
+    frequency = "daily", days = c(1, 31)
+  )
+
+  present <- unique(sf::st_drop_geometry(result)[c("MONTH", "DAY")])
+  present <- present[order(present$MONTH, present$DAY), ]
+
+  # The 31st exists in May alone; February and April keep only the 1st.
+  expect_equal(present$MONTH, c(2, 4, 5, 5))
+  expect_equal(present$DAY, c(1, 1, 1, 31))
+})
+
+test_that("a request that selects no day at all is an error", {
+  local_mocked_bindings(
+    download_copernicus_subset = function(...) stop("should not be called")
+  )
+
+  expect_error(
+    accessEnvDat(
+      vars = "SST", years = 2021, months = 2,
+      bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
+      frequency = "daily", days = c(30, 31)   # February 2021 has 28
+    ),
+    "None of the requested days exist"
+  )
+})
+
+test_that("days outside 1:31 are refused before anything is resolved", {
+  bb <- list(xmin = -70, xmax = -60, ymin = 40, ymax = 45)
+
+  expect_error(
+    accessEnvDat(vars = "SST", years = 2020, months = 1, bounding_box = bb,
+                 frequency = "daily", days = 0),
+    "whole numbers between 1 and 31"
+  )
+  expect_error(
+    accessEnvDat(vars = "SST", years = 2020, months = 1, bounding_box = bb,
+                 frequency = "daily", days = 32),
+    "whole numbers between 1 and 31"
+  )
+  expect_error(
+    accessEnvDat(vars = "SST", years = 2020, months = 1, bounding_box = bb,
+                 frequency = "daily", days = 1.5),
+    "whole numbers between 1 and 31"
+  )
+  expect_error(
+    accessEnvDat(vars = "SST", years = 2020, months = 1, bounding_box = bb,
+                 frequency = "daily", days = "first"),
+    "whole numbers between 1 and 31"
+  )
+})
+
+test_that("days on a monthly dataset warns rather than silently doing nothing", {
+  # A monthly field has no days to choose between. Returning the month's mean
+  # for what was asked for as three days of it should be said out loud.
+  raster_path <- write_fake_raster("thetao")
+
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
+  local_mocked_bindings(file_exists = function(...) TRUE, .package = "fs")
+
+  expect_warning(
+    result <- accessEnvDat(
+      vars = "SST", years = 2020, months = 1,
+      bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
+      days = c(1, 15)
+    ),
+    "applies to daily data only"
+  )
+
+  expect_equal(unique(result$DAY), 1)
+})
+
+test_that("only the selected days are downloaded", {
+  raster_path <- write_fake_raster("thetao")
+  requested <- character(0)
+
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
+  local_mocked_bindings(file_exists = function(...) FALSE, .package = "fs")
+  local_mocked_bindings(
+    download_copernicus_subset = function(time, ...) {
+      requested <<- c(requested, format(time))
+      invisible(0)
+    }
+  )
+
+  accessEnvDat(
+    vars = "SST", years = 2020, months = 1:2,
+    bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
+    frequency = "daily", days = c(1, 15), n_workers = 1
+  )
+
+  expect_equal(requested,
+               c("2020-01-01", "2020-01-15", "2020-02-01", "2020-02-15"))
+})

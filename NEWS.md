@@ -95,6 +95,12 @@
   `variable_dataset()` takes `frequency` too, and returns `NA` where no daily
   dataset exists.
 
+  `days` selects which days of each month to fetch — `days = c(1, 15)` over
+  eleven years is 264 downloads rather than 4018 — so a long record can be
+  sampled instead of fetched whole. A day a month does not have is dropped from
+  that month, which is the calendar rather than an error; asking only for days
+  no requested month has is an error, since it describes an empty request.
+
 * **Downloads run in parallel.** Only the days not already cached are fetched,
   and they go out `n_workers` at a time (default 4). A month of daily SST and
   SSS takes about 40 seconds rather than about 160.

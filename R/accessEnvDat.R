@@ -146,6 +146,32 @@ read_day <- function(item, vars) {
 #' box will not fit in a laptop's RAM as an `sf` object, and is better fetched a
 #' season at a time.
 #'
+#' `days` is the other way to keep that in hand: it takes day-of-month numbers
+#' and applies them to every requested month, so a decade can be sampled rather
+#' than fetched whole.
+#'
+#' ```
+#' # The 1st and 15th of every month, 2005 to 2015: 264 days, not 4018
+#' accessEnvDat(vars = "SST", frequency = "daily", days = c(1, 15),
+#'              years = 2005:2015, months = 1:12, bounding_box = bb)
+#'
+#' # Roughly weekly through a spring bloom
+#' accessEnvDat(vars = "CHL", frequency = "daily", days = seq(1, 29, by = 7),
+#'              years = 2015, months = 3:5, bounding_box = bb)
+#' ```
+#'
+#' Months are not the same length, so a day that does not exist in a given month
+#' is dropped from it: `days = 30` returns nothing for February and a value for
+#' April. That is the calendar rather than an error. Asking only for days that
+#' exist in none of the requested months — `days = 30, months = 2` — is an error,
+#' since it describes an empty request.
+#'
+#' Sampling days is not the same as averaging them. Two days a month is a sample
+#' of the month, with whatever weather fell on those dates; a monthly mean is the
+#' month. Which you want depends on whether the observations being matched are
+#' themselves instants or aggregates.
+#'
+
 #' Not every variable has a daily equivalent. `PH`, `PP`, `DIATO` and `DINO` are
 #' published as monthly composites only, and asking for them daily is refused
 #' before anything is downloaded. Daily `CHL` comes from the gap-free
@@ -197,6 +223,9 @@ read_day <- function(item, vars) {
 #' @param frequency <char> `"monthly"` (the default) for monthly means, or
 #'   `"daily"` for daily ones. See the Monthly and daily data section. Ignored
 #'   when `dataset_id` is given, since the dataset itself fixes the step.
+#' @param days <numeric> which days of the month to fetch, as day numbers
+#'   (`c(1, 15)`, `seq(1, 29, by = 7)`). Applies to every requested month.
+#'   `NULL`, the default, fetches every day. Daily data only.
 #' @param n_workers <integer> how many days to download at once. See the
 #'   Downloading in parallel section. Use `n_workers = 1` to download one day at
 #'   a time.
@@ -205,13 +234,27 @@ read_day <- function(item, vars) {
 accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars, years, months,
                          bounding_box, depth = c(0,1),
                          overwrite = FALSE, n_workers = 4,
-                         frequency = c("monthly", "daily"),
+                         frequency = c("monthly", "daily"), days = NULL,
                          mode = c("reanalysis", "forecast")) {
   mode <- match.arg(mode)
   # Recorded before match.arg(), which assigns to `frequency` and so makes
   # missing(frequency) FALSE from that point on.
   frequency_given <- !missing(frequency)
   frequency <- match.arg(frequency)
+
+  # Checked here rather than where the calendar is built, so a typo costs an
+  # error at the call instead of a request for a date that does not exist.
+  if (!is.null(days)) {
+    if (!is.numeric(days) || length(days) == 0 || anyNA(days) ||
+        any(days != trunc(days)) || any(days < 1 | days > 31)) {
+      stop("`days` must be whole numbers between 1 and 31, giving days of the ",
+           "month to fetch.\nGot: ", paste(utils::head(days, 10), collapse = ", "),
+           call. = FALSE)
+    }
+    # Sorted and deduplicated so the result comes back in date order however the
+    # argument was written, and a repeated day is not fetched twice.
+    days <- sort(unique(as.integer(days)))
+  }
 
   # `vars` may be catalog names ("SST") or raw Copernicus codes ("thetao").
   # Codes go to the API; names come back as the column names, so a caller who
@@ -240,16 +283,43 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars, years, mont
             "let frequency choose it.", call. = FALSE)
   }
 
+  # A monthly dataset has one field per month, so there are no days to choose
+  # between. Saying so beats returning a whole month's mean for what was asked
+  # for as three days of it.
+  if (!is.null(days) && !is_daily) {
+    warning("`days` applies to daily data only, and dataset_id '", dataset_id,
+            "' is monthly. Ignoring it - the result has one field per month. ",
+            "Use frequency = \"daily\" to select days.", call. = FALSE)
+    days <- NULL
+  }
+
   # Build the full list of (year, month, day) combinations to fetch up front,
   # so they can be dispatched in parallel instead of three nested serial loops.
   work_items <- list()
   for (year in years) {
     for (month in months) {
-      days <- if (is_daily) 1:lubridate::days_in_month(lubridate::ym(paste(year, month, sep = "-"))) else 1
-      for (day in days) {
+      in_month <- if (is_daily) {
+        seq_len(lubridate::days_in_month(lubridate::ym(paste(year, month, sep = "-"))))
+      } else {
+        1L
+      }
+      # Months are not the same length, so a requested day may not exist in all
+      # of them. Day 30 of February is dropped rather than requested; that is
+      # the calendar, not a mistake worth warning about on every call.
+      selected <- if (is.null(days)) in_month else intersect(days, in_month)
+      for (day in selected) {
         work_items[[length(work_items) + 1]] <- list(year = year, month = month, day = day)
       }
     }
+  }
+
+  # Dropping every day, though, means the request as written asks for nothing -
+  # days = 30 with months = 2, say - and an empty result would be reported far
+  # downstream as a missing column rather than as this.
+  if (length(work_items) == 0) {
+    stop("None of the requested days exist in any of the requested months.\n",
+         "  days:   ", paste(days, collapse = ", "), "\n",
+         "  months: ", paste(months, collapse = ", "), call. = FALSE)
   }
 
   # Each day's date and cache path, resolved once, so the download and read

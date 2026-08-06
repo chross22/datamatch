@@ -168,6 +168,31 @@ and 91 grids rather than 3 in memory. A decade of daily data over a large box
 will not fit in a laptop's RAM as an `sf` object, and is better fetched a season
 at a time.
 
+`days` is the other way to keep that in hand. It takes day-of-month numbers and
+applies them to every requested month, so a long record can be sampled rather
+than fetched whole:
+
+
+``` r
+# The 1st and 15th of every month, 2005-2015: 264 days, not 4018
+accessEnvDat(vars = "SST", frequency = "daily", days = c(1, 15),
+             years = 2005:2015, months = 1:12, bounding_box = bb)
+
+# Roughly weekly through a spring bloom
+accessEnvDat(vars = "CHL", frequency = "daily", days = seq(1, 29, by = 7),
+             years = 2015, months = 3:5, bounding_box = bb)
+```
+
+Months are not the same length, so a day a month does not have is dropped from
+it — `days = 30` returns nothing for February and a value for April. That is the
+calendar, not an error. Asking only for days that exist in none of the requested
+months is an error, since it describes an empty request.
+
+Sampling days is not the same as averaging them. Two days a month is a sample of
+the month, carrying whatever weather fell on those dates; a monthly mean is the
+month. Which you want depends on whether the observations you are matching are
+themselves instants or aggregates.
+
 Not everything is published daily. `PH`, `PP`, `DIATO` and `DINO` are monthly
 composites only, and asking for them daily is refused before anything is
 downloaded rather than failing at the API. Daily `CHL` comes from the *gap-free*
