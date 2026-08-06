@@ -8,7 +8,7 @@ copernicus_variables()
 }
 \value{
 a named list, one entry per variable, each with \code{variable}, \code{label},
-\code{units}, \code{product_id}, \code{dataset_id}, and \code{description}
+\code{units}, \code{product_id}, \code{dataset_id}, \code{daily_dataset_id}, and \code{description}
 }
 \description{
 Maps short names people actually use (\code{SST}, \code{CHL}, ...) onto the Copernicus
@@ -18,14 +18,37 @@ mixed layer depth, \code{zos} for sea surface height — and getting one wrong
 produces a failed download rather than an obvious mistake.
 }
 \details{
-All entries are monthly means from the global reanalyses: physical variables
-from \code{GLOBAL_MULTIYEAR_PHY_001_030} (GLORYS12V1) and biogeochemical ones from
+Entries come from the global reanalyses: physical variables from
+\code{GLOBAL_MULTIYEAR_PHY_001_030} (GLORYS12V1) and biogeochemical ones from
 \code{GLOBAL_MULTIYEAR_BGC_001_029}.
+}
+\section{Monthly and daily}{
+
+\code{dataset_id} is the monthly mean; \code{daily_dataset_id} is the daily one, which
+\code{\link[=accessEnvDat]{accessEnvDat()}} uses when given \code{frequency = "daily"}. It is \code{NA} where no
+daily equivalent exists, and those gaps are not incidental:
+
+\itemize{
+\item \strong{\code{PH}} — the daily biogeochemical reanalysis carries \code{chl}, \code{no3},
+\code{nppv}, \code{o2}, \code{po4} and \code{si}, but not \code{ph}. Only the monthly mean has it.
+\item \strong{\code{PP}} — Copernicus-GlobColour serves primary production as a
+monthly composite only.
+\item \strong{\code{DIATO}, \code{DINO}} — the daily ocean colour dataset carries total
+chlorophyll alone. The phytoplankton functional types are monthly.
+}
+
+\code{CHL} is the case worth reading twice. Daily ocean colour is not the monthly
+product at a finer step: it is \code{l4-gapfree}, the space-time interpolated
+field, because a single day of a single sensor is mostly cloud. The daily
+values are therefore already gap-filled by Copernicus, and running
+\code{\link[=fill_satellite_gaps]{fill_satellite_gaps()}} over them fills nothing. \code{\link[=accessEnvDat]{accessEnvDat()}} says so
+when it makes the substitution.
 
 Copernicus revises dataset identifiers periodically. If a fetch fails with an
 unknown-dataset error, check the current identifier on the Copernicus Marine
 Data Store and pass \code{dataset_id} explicitly.
 }
+
 \examples{
 names(copernicus_variables())
 copernicus_variables()$SST$variable

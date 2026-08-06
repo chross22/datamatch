@@ -8,7 +8,7 @@ forecast_variables()
 }
 \value{
 a named list keyed by catalog name, each with \code{variable},
-\code{product_id}, and \code{dataset_id}
+\code{product_id}, \code{dataset_id}, and \code{daily_dataset_id}
 }
 \description{
 Where the reanalysis has a hindcast, the analysis-and-forecast products have a

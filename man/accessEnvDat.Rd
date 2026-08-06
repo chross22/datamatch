@@ -13,7 +13,8 @@ accessEnvDat(
   bounding_box,
   depth = c(0, 1),
   overwrite = FALSE,
-  n_workers = 1,
+  n_workers = 4,
+  frequency = c("monthly", "daily"),
   mode = c("reanalysis", "forecast")
 )
 }
@@ -37,16 +38,13 @@ raw Copernicus variable codes, or a mixture}
 
 \item{overwrite}{\if{html}{\out{<logical>}} whether or not to overwrite the data if it exists locally}
 
-\item{n_workers}{\if{html}{\out{<integer>}} number of days to download/read in parallel, using a PSOCK
-cluster (parallel::makeCluster()). Defaults to 1 (serial, same
-behavior as before this argument existed). Deliberately NOT
-fork-based (parallel::mclapply()): GDAL, which terra/sf use
-internally, is not fork-safe, and forking after GDAL has
-initialized can corrupt state in the child processes. PSOCK
-workers are fresh R sessions instead, which avoids that.
-Downloads hit the Copernicus Marine API, so keep this modest
-(4-8) rather than maxing out cores - the bottleneck is the
-network/API, not CPU.}
+\item{n_workers}{\if{html}{\out{<integer>}} how many days to download at once. See the
+Downloading in parallel section. Use \code{n_workers = 1} to download one day at
+a time.}
+
+\item{frequency}{\if{html}{\out{<char>}} \code{"monthly"} (the default) for monthly means, or
+\code{"daily"} for daily ones. See the Monthly and daily data section. Ignored
+when \code{dataset_id} is given, since the dataset itself fixes the step.}
 
 \item{mode}{\if{html}{\out{<char>}} \code{"reanalysis"} (the default) for the multi-year hindcast,
 or \code{"forecast"} for the analysis-and-forecast products, which run to about
@@ -87,5 +85,57 @@ them is refused before anything is downloaded rather than failing obscurely at
 the API. Anything outside the catalog is passed through as a code, with a
 warning — Copernicus serves far more than the catalog covers, but a typo looks
 identical to a real code.
+}
+
+\section{Monthly and daily data}{
+
+\code{frequency = "monthly"} (the default) fetches monthly means: one field per
+month, and one row per grid cell per month. \code{frequency = "daily"} fetches the
+daily datasets instead, expanding each requested month into its days.
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{accessEnvDat(vars = c("SST", "MLD"), frequency = "daily",
+             years = 2015, months = 4:6,
+             bounding_box = list(xmin = -70, xmax = -65, ymin = 42, ymax = 45))
+}\if{html}{\out{</div>}}
+
+Note what that costs: three months of daily data is 91 downloads rather than
+3, and 91 grids rather than 3 in memory. A decade of daily data over a large
+box will not fit in a laptop's RAM as an \code{sf} object, and is better fetched a
+season at a time.
+
+Not every variable has a daily equivalent. \code{PH}, \code{PP}, \code{DIATO} and \code{DINO} are
+published as monthly composites only, and asking for them daily is refused
+before anything is downloaded. Daily \code{CHL} comes from the gap-free
+interpolated ocean colour dataset rather than the monthly composite, which
+\code{\link[=accessEnvDat]{accessEnvDat()}} reports when it happens — see \code{\link[=copernicus_variables]{copernicus_variables()}}.
+
+Passing \code{dataset_id} explicitly overrides all of this: that dataset's own
+frequency decides, since a Copernicus dataset is published at one step.
+}
+
+\section{Downloading in parallel}{
+
+Days already in the cache are read directly. Only the missing ones are
+downloaded, and those go out \code{n_workers} at a time through a PSOCK cluster,
+since a Copernicus subset request spends nearly all its time waiting on the
+API rather than on this machine.
+
+The default of 4 is deliberately modest. The limit is the service and the
+network, not local cores, and a large \code{n_workers} mostly earns rate limiting.
+Raise it toward 8 for many small requests; use \code{n_workers = 1} to download
+serially.
+
+The cluster is PSOCK rather than fork-based (\code{\link[parallel:mclapply]{parallel::mclapply()}}): GDAL,
+which \code{terra} and \code{sf} use internally, is not fork-safe, and forking after it
+has initialised can corrupt state in the children. PSOCK workers are fresh R
+sessions, which avoids that.
+
+Reading and converting the downloaded files stays in this session. Those are
+local file reads, and returning each day's data frame from a worker would
+cost more in serialisation than the read saves.
+
+A day that fails does not abort the others. Every day is attempted, the
+successful ones stay in the cache, and the error names each day that failed —
+so re-running the same call retries only those.
 }
 

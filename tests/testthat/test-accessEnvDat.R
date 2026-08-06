@@ -366,3 +366,215 @@ test_that("a variable missing from the download names it, not the depth range", 
     "did not return: uo, vo"
   )
 })
+
+# ---- downloading only what is missing, in parallel ---------------------------
+
+test_that("only the days that are not cached are downloaded", {
+  raster_path <- write_fake_raster("thetao")
+  requested <- character(0)
+
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
+  # Odd days are cached, even days are not. The path is the same file for all of
+  # them, so the decision is driven by the call count rather than the name.
+  call <- 0
+  local_mocked_bindings(
+    file_exists = function(...) {
+      call <<- call + 1
+      call %% 2 == 1
+    },
+    .package = "fs"
+  )
+  local_mocked_bindings(
+    download_copernicus_subset = function(time, ...) {
+      requested <<- c(requested, format(time))
+      invisible(0)
+    }
+  )
+
+  accessEnvDat(
+    product_id = "GLOBAL_TEST",
+    dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1D-m",
+    vars = "thetao",
+    years = 2020, months = 4,   # 30 days
+    bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
+    n_workers = 1
+  )
+
+  # The 15 uncached days, and not the 15 already on disk.
+  expect_equal(length(requested), 15)
+  expect_equal(requested, format(as.Date(paste0("2020-04-", seq(2, 30, by = 2)))))
+})
+
+test_that("one day's failure does not abandon the rest", {
+  # Under a cluster an error thrown in a worker aborts the whole batch. Days are
+  # expensive enough that losing the ones already in flight to a single bad
+  # request is worth avoiding, so failures are collected rather than raised.
+  raster_path <- write_fake_raster("thetao")
+  attempted <- character(0)
+
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
+  local_mocked_bindings(file_exists = function(...) FALSE, .package = "fs")
+  local_mocked_bindings(
+    download_copernicus_subset = function(time, ...) {
+      attempted <<- c(attempted, format(time))
+      if (format(time) == "2020-01-02") stop("503 from the API")
+      invisible(0)
+    }
+  )
+
+  expect_error(
+    accessEnvDat(
+      product_id = "GLOBAL_TEST",
+      dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1D-m",
+      vars = "thetao",
+      years = 2020, months = 1,
+      bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
+      n_workers = 1
+    ),
+    "1 of 31 day\\(s\\) could not be downloaded"
+  )
+
+  # Every day was attempted, not just those up to the failure.
+  expect_equal(length(attempted), 31)
+  # And the error says which one, so the cause is findable.
+  expect_error(
+    accessEnvDat(
+      product_id = "GLOBAL_TEST",
+      dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1D-m",
+      vars = "thetao", years = 2020, months = 1,
+      bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
+      n_workers = 1
+    ),
+    "2020-01-02: 503 from the API"
+  )
+})
+
+test_that("nothing is downloaded, and no cluster started, when all days are cached", {
+  raster_path <- write_fake_raster("thetao")
+  clustered <- FALSE
+
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
+  local_mocked_bindings(file_exists = function(...) TRUE, .package = "fs")
+  local_mocked_bindings(
+    download_copernicus_subset = function(...) stop("should not be called")
+  )
+  local_mocked_bindings(
+    makeCluster = function(...) {
+      clustered <<- TRUE
+      stop("should not be called")
+    },
+    .package = "parallel"
+  )
+
+  result <- accessEnvDat(
+    product_id = "GLOBAL_TEST",
+    dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1D-m",
+    vars = "thetao",
+    years = 2020, months = 1,
+    bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
+    n_workers = 8   # would otherwise be a cluster of 8
+  )
+
+  # A fully cached fetch should not pay for workers it has no work for.
+  expect_false(clustered)
+  expect_equal(sort(unique(result$DAY)), 1:31)
+})
+
+# ---- daily covariates --------------------------------------------------------
+
+test_that("frequency = 'daily' selects the daily dataset and expands the month", {
+  raster_path <- write_fake_raster("thetao")
+  used <- NULL
+
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
+  local_mocked_bindings(file_exists = function(...) FALSE, .package = "fs")
+  local_mocked_bindings(
+    download_copernicus_subset = function(dataset_id, ...) {
+      used <<- dataset_id
+      invisible(0)
+    }
+  )
+
+  result <- accessEnvDat(
+    vars = "SST",
+    years = 2020, months = 2,       # leap year -> 29 days
+    bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
+    frequency = "daily", n_workers = 1
+  )
+
+  expect_equal(used, "cmems_mod_glo_phy_my_0.083deg_P1D-m")
+  expect_equal(sort(unique(result$DAY)), 1:29)
+})
+
+test_that("the monthly default is unchanged", {
+  raster_path <- write_fake_raster("thetao")
+  used <- NULL
+
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
+  local_mocked_bindings(file_exists = function(...) FALSE, .package = "fs")
+  local_mocked_bindings(
+    download_copernicus_subset = function(dataset_id, ...) {
+      used <<- dataset_id
+      invisible(0)
+    }
+  )
+
+  result <- accessEnvDat(
+    vars = "SST",
+    years = 2020, months = 2,
+    bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
+    n_workers = 1
+  )
+
+  expect_equal(used, "cmems_mod_glo_phy_my_0.083deg_P1M-m")
+  expect_equal(unique(result$DAY), 1)
+})
+
+test_that("an explicit dataset_id wins over frequency, with a warning", {
+  # The dataset is published at one step. Following `frequency` instead would
+  # request the same monthly field once per day of the month.
+  raster_path <- write_fake_raster("thetao")
+
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
+  local_mocked_bindings(file_exists = function(...) TRUE, .package = "fs")
+
+  expect_warning(
+    result <- accessEnvDat(
+      product_id = "GLOBAL_TEST",
+      dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1M-m",   # monthly
+      vars = "thetao",
+      years = 2020, months = 1,
+      bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
+      frequency = "daily"                                    # ...but asked daily
+    ),
+    "is monthly, but frequency = \"daily\""
+  )
+
+  expect_equal(unique(result$DAY), 1)
+})
+
+test_that("a variable with no daily dataset is refused before downloading", {
+  local_mocked_bindings(
+    download_copernicus_subset = function(...) stop("should not be called")
+  )
+
+  # PP is a monthly composite; the daily ocean colour dataset has no such field.
+  expect_error(
+    accessEnvDat(
+      vars = "PP", years = 2020, months = 1,
+      bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
+      frequency = "daily"
+    ),
+    "no daily dataset for: PP"
+  )
+
+  # And the phytoplankton types, which the daily dataset does not carry either.
+  expect_error(
+    accessEnvDat(
+      vars = c("DIATO", "DINO"), years = 2020, months = 1,
+      bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
+      frequency = "daily"
+    ),
+    "DIATO, DINO"
+  )
+})

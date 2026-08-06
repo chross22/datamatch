@@ -4,16 +4,23 @@
 \alias{variable_dataset}
 \title{Look up the dataset a set of variables comes from}
 \usage{
-variable_dataset(vars, mode = c("reanalysis", "forecast"))
+variable_dataset(
+  vars,
+  mode = c("reanalysis", "forecast"),
+  frequency = c("monthly", "daily")
+)
 }
 \arguments{
 \item{vars}{variable names from the catalog}
 
 \item{mode}{\code{"reanalysis"} (the default) or \code{"forecast"}}
+
+\item{frequency}{\code{"monthly"} (the default) or \code{"daily"}}
 }
 \value{
 a named character vector of dataset identifiers, \code{NA} for names not in
-the catalog
+the catalog and, when \code{frequency = "daily"}, for catalog variables that have
+no daily dataset
 }
 \description{
 Variables in one Copernicus dataset can be fetched together; variables from
@@ -22,4 +29,7 @@ a caller can group them.
 }
 \examples{
 variable_dataset(c("SST", "SSS", "CHL"))
+
+# PP and the phytoplankton types are monthly composites only
+variable_dataset(c("SST", "CHL", "PP"), frequency = "daily")
 }

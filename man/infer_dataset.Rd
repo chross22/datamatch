@@ -4,12 +4,18 @@
 \alias{infer_dataset}
 \title{Infer the product and dataset from a set of variable names}
 \usage{
-infer_dataset(vars, mode = c("reanalysis", "forecast"))
+infer_dataset(
+  vars,
+  mode = c("reanalysis", "forecast"),
+  frequency = c("monthly", "daily")
+)
 }
 \arguments{
 \item{vars}{variable names}
 
 \item{mode}{\code{"reanalysis"} or \code{"forecast"}}
+
+\item{frequency}{\code{"monthly"} or \code{"daily"}}
 }
 \value{
 \code{list(product_id =, dataset_id =)}

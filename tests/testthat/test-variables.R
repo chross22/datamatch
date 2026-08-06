@@ -282,3 +282,93 @@ test_that("forecast entries keep the label and units of the same quantity", {
   expect_equal(entry$label, copernicus_variables()$SST$label)
   expect_true(grepl("anfc", entry$dataset_id))
 })
+
+# ---- daily datasets ----------------------------------------------------------
+
+test_that("every catalog entry declares a daily dataset or NA", {
+  for (catalog in list(copernicus_variables(), forecast_variables())) {
+    for (name in names(catalog)) {
+      expect_true("daily_dataset_id" %in% names(catalog[[name]]),
+                  info = name)
+      expect_true(is.character(catalog[[name]]$daily_dataset_id), info = name)
+    }
+  }
+})
+
+test_that("daily identifiers are the ones Copernicus actually publishes", {
+  catalog <- copernicus_variables()
+
+  # Checked against the live catalogue with `copernicusmarine describe`. The
+  # model datasets are the monthly id with its frequency token swapped; the
+  # ocean colour one is not, which is the reason this is a table and not a sub().
+  expect_equal(catalog$SST$daily_dataset_id,
+               "cmems_mod_glo_phy_my_0.083deg_P1D-m")
+  expect_equal(catalog$NO3$daily_dataset_id,
+               "cmems_mod_glo_bgc_my_0.25deg_P1D-m")
+  expect_equal(catalog$CHL$daily_dataset_id,
+               "cmems_obs-oc_glo_bgc-plankton_my_l4-gapfree-multi-4km_P1D")
+
+  # The daily biogeochemical reanalysis serves chl, no3, nppv, o2, po4 and si -
+  # not ph. The rest of that product is available daily.
+  expect_true(is.na(catalog$PH$daily_dataset_id))
+  expect_false(is.na(catalog$CHL_MODEL$daily_dataset_id))
+
+  # Ocean colour: primary production and the functional types are monthly.
+  expect_true(is.na(catalog$PP$daily_dataset_id))
+  expect_true(is.na(catalog$DIATO$daily_dataset_id))
+  expect_true(is.na(catalog$DINO$daily_dataset_id))
+})
+
+test_that("every forecast dataset has a daily counterpart", {
+  # Unlike the reanalysis, the analysis-and-forecast products publish each
+  # dataset at both steps, so the swap is uniform.
+  for (entry in forecast_variables()) {
+    expect_false(is.na(entry$daily_dataset_id))
+    expect_match(entry$daily_dataset_id, "_P1D-m$")
+  }
+})
+
+test_that("variable_dataset reports the frequency it was asked for", {
+  expect_equal(unname(variable_dataset("SST")),
+               "cmems_mod_glo_phy_my_0.083deg_P1M-m")
+  expect_equal(unname(variable_dataset("SST", frequency = "daily")),
+               "cmems_mod_glo_phy_my_0.083deg_P1D-m")
+
+  # NA for a catalog variable with no daily dataset, as for one not in the
+  # catalog at all - infer_dataset() tells the two apart.
+  expect_true(is.na(variable_dataset("PP", frequency = "daily")))
+  expect_true(is.na(variable_dataset("not_a_variable", frequency = "daily")))
+
+  expect_equal(unname(variable_dataset("SST", mode = "forecast",
+                                       frequency = "daily")),
+               "cmems_mod_glo_phy-thetao_anfc_0.083deg_P1D-m")
+})
+
+test_that("infer_dataset separates 'no daily' from 'not in the catalog'", {
+  expect_error(infer_dataset("PH", frequency = "daily"),
+               "no daily dataset for: PH")
+  # Not the message a caller would get for a typo.
+  expect_error(infer_dataset("PH", frequency = "daily"), "monthly composites only")
+
+  expect_error(infer_dataset("nonsense", frequency = "daily"),
+               "Cannot infer the dataset")
+})
+
+test_that("daily CHL says it is the gap-free product", {
+  # Silently swapping an observed field for an interpolated one would leave a
+  # caller to work out from the absence of NAs that these are not observations.
+  expect_message(infer_dataset("CHL", frequency = "daily"), "gap-free")
+  expect_message(infer_dataset("CHL", frequency = "daily"), "fill_satellite_gaps")
+
+  # Monthly CHL is the composite, and says nothing.
+  expect_no_message(infer_dataset("CHL"))
+})
+
+test_that("daily variables from different datasets are still refused together", {
+  # CHL is satellite and CHL_MODEL is the reanalysis; both have daily datasets,
+  # and they are still two different requests.
+  expect_error(
+    suppressMessages(infer_dataset(c("CHL", "CHL_MODEL"), frequency = "daily")),
+    "different Copernicus datasets"
+  )
+})

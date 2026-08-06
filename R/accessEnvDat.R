@@ -47,6 +47,56 @@ order_layers <- function(x, vars) {
   x[[match(vars, codes)]]
 }
 
+#' Download one day's subset, returning any failure rather than raising it
+#'
+#' Defined at the top level rather than as a closure inside [accessEnvDat()] so
+#' that its enclosing environment is this package's namespace. A closure would
+#' carry `accessEnvDat()`'s whole evaluation frame — including the cluster
+#' object itself — to every worker when it is serialised.
+#'
+#' Errors are caught and returned as text. Under [parallel::parLapplyLB()] an
+#' error thrown in a worker aborts the entire batch, so a single bad day would
+#' discard the days still in flight. Collecting failures instead lets every day
+#' be attempted, and lets the caller be told about all of them at once rather
+#' than about whichever one happened to fail first.
+#'
+#' @param item <list> one work item: `ofile`, `time`, and the calendar fields
+#' @inheritParams build_copernicus_args
+#' @param bounding_box passed to `bb`
+#' @return `NULL` on success, or a one-line description of the failure
+#' @keywords internal
+download_day <- function(item, dataset_id, vars, bounding_box, depth) {
+  tryCatch({
+    download_copernicus_subset(dataset_id = dataset_id,
+                               vars = vars,
+                               depth = depth,
+                               bb = bounding_box,
+                               time = item$time,
+                               ofile = item$ofile)
+    NULL
+  }, error = function(e) paste0("  ", format(item$time), ": ", conditionMessage(e)))
+}
+
+#' Read one day's cached file into a data frame
+#'
+#' Reads stay in the calling session. They are local file reads, and running
+#' them in workers would mean serialising every day's data frame back over a
+#' socket — for a large bounding box that costs more than the read itself.
+#'
+#' @param item <list> one work item, as built by [accessEnvDat()]
+#' @param vars <char> variable codes, in the order they were requested
+#' @return a data frame of one grid, with `YEAR`, `MONTH` and `DAY`
+#' @keywords internal
+read_day <- function(item, vars) {
+  x <- terra::rast(item$ofile)
+
+  # Put the layers in the order they were requested before anything is named.
+  x <- order_layers(x, vars)
+
+  as.data.frame(x, xy = TRUE) |>
+    dplyr::mutate(YEAR = item$year, MONTH = item$month, DAY = item$day)
+}
+
 #' Access environmental data from Copernicus Marine Service
 #'
 #' Downloads a Copernicus dataset over a bounding box and time range, and returns
@@ -80,6 +130,55 @@ order_layers <- function(x, vars) {
 #' warning — Copernicus serves far more than the catalog covers, but a typo looks
 #' identical to a real code.
 #'
+#' @section Monthly and daily data:
+#' `frequency = "monthly"` (the default) fetches monthly means: one field per
+#' month, and one row per grid cell per month. `frequency = "daily"` fetches the
+#' daily datasets instead, expanding each requested month into its days.
+#'
+#' ```
+#' accessEnvDat(vars = c("SST", "MLD"), frequency = "daily",
+#'              years = 2015, months = 4:6,
+#'              bounding_box = list(xmin = -70, xmax = -65, ymin = 42, ymax = 45))
+#' ```
+#'
+#' Note what that costs: three months of daily data is 91 downloads rather than
+#' 3, and 91 grids rather than 3 in memory. A decade of daily data over a large
+#' box will not fit in a laptop's RAM as an `sf` object, and is better fetched a
+#' season at a time.
+#'
+#' Not every variable has a daily equivalent. `PH`, `PP`, `DIATO` and `DINO` are
+#' published as monthly composites only, and asking for them daily is refused
+#' before anything is downloaded. Daily `CHL` comes from the gap-free
+#' interpolated ocean colour dataset rather than the monthly composite, which
+#' [accessEnvDat()] reports when it happens — see [copernicus_variables()].
+#'
+#' Passing `dataset_id` explicitly overrides all of this: that dataset's own
+#' frequency decides, since a Copernicus dataset is published at one step.
+#'
+#' @section Downloading in parallel:
+#' Days already in the cache are read directly. Only the missing ones are
+#' downloaded, and those go out `n_workers` at a time through a PSOCK cluster,
+#' since a Copernicus subset request spends nearly all its time waiting on the
+#' API rather than on this machine.
+#'
+#' The default of 4 is deliberately modest. The limit is the service and the
+#' network, not local cores, and a large `n_workers` mostly earns rate limiting.
+#' Raise it toward 8 for many small requests; use `n_workers = 1` to download
+#' serially.
+#'
+#' The cluster is PSOCK rather than fork-based ([parallel::mclapply()]): GDAL,
+#' which `terra` and `sf` use internally, is not fork-safe, and forking after it
+#' has initialised can corrupt state in the children. PSOCK workers are fresh R
+#' sessions, which avoids that.
+#'
+#' Reading and converting the downloaded files stays in this session. Those are
+#' local file reads, and returning each day's data frame from a worker would
+#' cost more in serialisation than the read saves.
+#'
+#' A day that fails does not abort the others. Every day is attempted, the
+#' successful ones stay in the cache, and the error names each day that failed —
+#' so re-running the same call retries only those.
+#'
 #' @param product_id <char> product identification string from the Copernicus
 #'   Marine Data Store. Optional when `vars` are catalog names.
 #' @param dataset_id <char> dataset identification string from the Copernicus
@@ -95,23 +194,24 @@ order_layers <- function(x, vars) {
 #'   or `"forecast"` for the analysis-and-forecast products, which run to about
 #'   ten days ahead. See [forecast_variables()] for which variables have a
 #'   forecast equivalent and how the identifiers differ.
-#' @param n_workers <integer> number of days to download/read in parallel, using a PSOCK
-#'                            cluster (parallel::makeCluster()). Defaults to 1 (serial, same
-#'                            behavior as before this argument existed). Deliberately NOT
-#'                            fork-based (parallel::mclapply()): GDAL, which terra/sf use
-#'                            internally, is not fork-safe, and forking after GDAL has
-#'                            initialized can corrupt state in the child processes. PSOCK
-#'                            workers are fresh R sessions instead, which avoids that.
-#'                            Downloads hit the Copernicus Marine API, so keep this modest
-#'                            (4-8) rather than maxing out cores - the bottleneck is the
-#'                            network/API, not CPU.
+#' @param frequency <char> `"monthly"` (the default) for monthly means, or
+#'   `"daily"` for daily ones. See the Monthly and daily data section. Ignored
+#'   when `dataset_id` is given, since the dataset itself fixes the step.
+#' @param n_workers <integer> how many days to download at once. See the
+#'   Downloading in parallel section. Use `n_workers = 1` to download one day at
+#'   a time.
 #' @return envDat <sf object> sf object containing requested environmental data from Copernicus Marine Service
 #' @export
 accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars, years, months,
                          bounding_box, depth = c(0,1),
-                         overwrite = FALSE, n_workers = 1,
+                         overwrite = FALSE, n_workers = 4,
+                         frequency = c("monthly", "daily"),
                          mode = c("reanalysis", "forecast")) {
   mode <- match.arg(mode)
+  # Recorded before match.arg(), which assigns to `frequency` and so makes
+  # missing(frequency) FALSE from that point on.
+  frequency_given <- !missing(frequency)
+  frequency <- match.arg(frequency)
 
   # `vars` may be catalog names ("SST") or raw Copernicus codes ("thetao").
   # Codes go to the API; names come back as the column names, so a caller who
@@ -123,14 +223,25 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars, years, mont
   # With every variable in the catalog, the product and dataset are implied and
   # need not be repeated at the call site.
   if (is.null(product_id) || is.null(dataset_id)) {
-    inferred <- infer_dataset(vars, mode = mode)
+    inferred <- infer_dataset(vars, mode = mode, frequency = frequency)
     product_id <- product_id %||% inferred$product_id
     dataset_id <- dataset_id %||% inferred$dataset_id
   }
 
+  # The dataset decides the time step, not the argument: an explicit dataset_id
+  # is a specific Copernicus dataset published at one frequency, and honouring
+  # `frequency` over it would either request the same monthly field 31 times or
+  # take one day as a whole month. Where the two disagree, say so.
+  is_daily <- grepl("_P1D(-|$)", dataset_id)
+  if (frequency_given && is_daily != (frequency == "daily")) {
+    warning("dataset_id '", dataset_id, "' is ",
+            if (is_daily) "daily" else "monthly", ", but frequency = \"",
+            frequency, "\" was given. Following the dataset. Omit dataset_id to ",
+            "let frequency choose it.", call. = FALSE)
+  }
+
   # Build the full list of (year, month, day) combinations to fetch up front,
   # so they can be dispatched in parallel instead of three nested serial loops.
-  is_daily <- substr(dataset_id, nchar(dataset_id) - 2, nchar(dataset_id) - 2) == "D"
   work_items <- list()
   for (year in years) {
     for (month in months) {
@@ -141,58 +252,54 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars, years, mont
     }
   }
 
-  fetch_one_day <- function(item, product_id, dataset_id, vars, bounding_box, depth, overwrite) {
-    time = lubridate::ymd(paste(item$year, item$month, item$day, sep = "-"))
+  # Each day's date and cache path, resolved once, so the download and read
+  # phases below agree on where the file is without recomputing it.
+  work_items <- lapply(work_items, function(item) {
+    item$time <- lubridate::ymd(paste(item$year, item$month, item$day, sep = "-"))
+    item$ofile <- copernicus_cache(
+      "tmp", paste0(product_id, "_", dataset_id, "_", item$time, ".nc"))
+    item
+  })
 
-    ofile = copernicus_cache("tmp", paste0(product_id, "_", dataset_id, "_", time, ".nc"))
+  # Only the days not already on disk cost anything. Everything else is a local
+  # read, which is why the cache exists.
+  needed <- if (overwrite) {
+    work_items
+  } else {
+    Filter(function(item) !fs::file_exists(item$ofile), work_items)
+  }
 
-    # Load existing data
-    if (fs::file_exists(ofile) & !overwrite) {
-      x = terra::rast(ofile)
-      # Or download data
+  if (length(needed) > 0) {
+    # A cluster is only worth its startup cost when there is more than one day
+    # to fetch. One missing day - the common case on a re-run that filled in a
+    # gap - downloads in this session.
+    failures <- if (n_workers > 1 && length(needed) > 1) {
+      cl <- parallel::makeCluster(min(n_workers, length(needed)))
+      on.exit(parallel::stopCluster(cl), add = TRUE)
+      # The workers need this package: download_day() resolves the downloader
+      # and the client wrapper through its namespace.
+      parallel::clusterEvalQ(cl, library(datamatch))
+      # Load-balanced rather than pre-chunked: days differ in size and in how
+      # hard the API is working, so a fixed split leaves workers idle.
+      parallel::parLapplyLB(cl, needed, download_day,
+                            dataset_id = dataset_id, vars = var_codes,
+                            bounding_box = bounding_box, depth = depth)
     } else {
-
-      download_copernicus_subset(dataset_id = dataset_id,
-                                 vars = vars,
-                                 depth = depth,
-                                 bb = bounding_box,
-                                 time = time,
-                                 ofile = ofile)
-
-      # Read in .nc file as terra object (raster)
-      x = terra::rast(ofile)
+      lapply(needed, download_day,
+             dataset_id = dataset_id, vars = var_codes,
+             bounding_box = bounding_box, depth = depth)
     }
 
-    # Put the layers in the order they were requested before anything is named.
-    x <- order_layers(x, vars)
-
-    # Convert to data frame
-    as.data.frame(x, xy = TRUE) |>
-      dplyr::mutate(YEAR = item$year, MONTH = item$month, DAY = item$day)
+    failures <- unlist(failures)
+    if (length(failures) > 0) {
+      stop(length(failures), " of ", length(needed), " day(s) could not be ",
+           "downloaded:\n", paste(failures, collapse = "\n"),
+           "\nThe days that did succeed are cached, so re-running this call ",
+           "retries only the failures.", call. = FALSE)
+    }
   }
 
-  if (n_workers > 1) {
-    cl <- parallel::makeCluster(n_workers)
-    on.exit(parallel::stopCluster(cl), add = TRUE)
-    # datamatch itself has to be loaded in the workers: fetch_one_day is a closure
-    # whose enclosing environment is this package's namespace, and it resolves
-    # copernicus_cache() and download_copernicus_subset() through it.
-    parallel::clusterEvalQ(cl, {
-      library(terra); library(datamatch); library(fs); library(dplyr); library(lubridate)
-    })
-    results <- tryCatch(
-      parallel::parLapply(cl, work_items, fetch_one_day,
-                           product_id = product_id, dataset_id = dataset_id, vars = var_codes,
-                           bounding_box = bounding_box, depth = depth, overwrite = overwrite),
-      error = function(e) stop("accessEnvDat: parallel fetch failed - ", conditionMessage(e), call. = FALSE)
-    )
-  } else {
-    results <- lapply(work_items, fetch_one_day,
-                       product_id = product_id, dataset_id = dataset_id, vars = var_codes,
-                       bounding_box = bounding_box, depth = depth, overwrite = overwrite)
-  }
-
-  covars <- dplyr::bind_rows(results)
+  covars <- dplyr::bind_rows(lapply(work_items, read_day, vars = var_codes))
 
   # Names are assigned positionally, so the raster must have exactly one layer
   # per requested variable. A depth range spanning several model levels returns
