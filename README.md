@@ -12,7 +12,46 @@ output: github_document
 [![R-CMD-check](https://github.com/chross22/datamatch/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/chross22/datamatch/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-The goal of datamatch is to pull environmental data from Copernicus Marine Service and match spatially and temporally to species occurence data.
+The goal of datamatch is to pull environmental data from Copernicus Marine Service and match spatially and temporally to species occurrence data.
+
+<details>
+<summary><b>Contents</b></summary>
+
+**Getting started**
+
+- [Installation](#installation)
+- [Set up](#set-up) — the Copernicus client, sign-in, and where downloads are cached
+- [Quick start](#quick-start)
+
+**Choosing what to fetch**
+
+- [Variable names](#variable-names) — request `SST` rather than `thetao`
+  - [Satellite or model?](#satellite-or-model) — two sources for chlorophyll, and why they are not interchangeable
+- [Spatial and temporal resolution](#spatial-and-temporal-resolution) — what each product resolves, and where the gaps are
+- [Forecasts](#forecasts) — the same variables, ten days ahead
+
+**Working with what comes back**
+
+- [Resampling](#resampling) — moving between grids and time steps
+  - [Aggregating loses detail, which is the safe direction](#aggregating-loses-detail-which-is-the-safe-direction)
+  - [Interpolating adds cells, not information](#interpolating-adds-cells-not-information)
+- [Filling satellite gaps](#filling-satellite-gaps) — substituting the model where cloud blocked the view
+- [Looking at the data](#looking-at-the-data) — maps, coverage, series, and matched points
+
+**Other covariates**
+
+- [Static and basin-scale covariates](#static-and-basin-scale-covariates)
+  - [Seafloor terrain](#seafloor-terrain) — depth, slope, aspect, and TPI
+  - [Climate indices](#climate-indices) — NAO, AO, AMO, PDO
+    - [The Labrador Current retroflection index](#the-labrador-current-retroflection-index)
+
+**Putting it to use**
+
+- [Putting it together](#putting-it-together) — a full worked example, four sources onto one table
+- [Matching to observations](#matching-to-observations)
+- [Related packages](#related-packages)
+
+</details>
 
 ## Installation
 
