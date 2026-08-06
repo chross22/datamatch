@@ -17,13 +17,39 @@ test_that("bathymetry_layers converts elevation to positive depth plus terrain",
 
   layers <- bathymetry_layers(mock_bathy())
 
-  expect_setequal(names(layers), c("DEPTH", "SLOPE", "ASPECT"))
+  expect_setequal(names(layers), c("DEPTH", "SLOPE", "ASPECT", "TPI"))
   expect_equal(terra::crs(layers, describe = TRUE)$code, "4326")
 
   depth <- terra::values(layers[["DEPTH"]], na.rm = TRUE)
   # marmap gives depth as negative elevation; the model wants a positive
   # magnitude, matching the original's log(abs(bat)).
   expect_true(all(depth > 0))
+})
+
+test_that("TPI is positive on a bank and negative in a basin", {
+  skip_if_not_installed("marmap")
+
+  # The sign is the whole point of the variable and is easy to invert, since it
+  # is computed on depth (positive down) rather than on elevation. A bank has to
+  # come out positive; taking terra's TPI unnegated would make it negative.
+  lon <- seq(-70, -66, by = 0.5)
+  lat <- seq(41, 44, by = 0.5)
+  elevation <- outer(lon, lat, function(x, y) rep(-200, length(x)))
+  bank <- which(lon == -68)
+  basin <- which(lon == -67)
+  elevation[bank, ] <- -50    # shallow ridge: a local high
+  elevation[basin, ] <- -400  # deep trough: a local low
+  dimnames(elevation) <- list(lon, lat)
+  class(elevation) <- "bathy"
+
+  tpi <- bathymetry_layers(elevation)[["TPI"]]
+  values <- terra::as.data.frame(tpi, xy = TRUE, na.rm = TRUE)
+
+  on_bank <- values$TPI[abs(values$x - (-68)) < 0.01]
+  in_basin <- values$TPI[abs(values$x - (-67)) < 0.01]
+
+  expect_true(all(on_bank > 0))
+  expect_true(all(in_basin < 0))
 })
 
 test_that("land is masked rather than becoming negative depth", {
@@ -67,7 +93,7 @@ test_that("attach_bathymetry reports layers that are not available", {
 test_that("bathymetry variables are fully described", {
   variables <- bathymetry_variables()
 
-  expect_setequal(names(variables), c("DEPTH", "SLOPE", "ASPECT"))
+  expect_setequal(names(variables), c("DEPTH", "SLOPE", "ASPECT", "TPI"))
   for (name in names(variables)) {
     for (field in c("label", "units", "description")) {
       expect_true(nzchar(variables[[name]][[field]] %||% ""),
