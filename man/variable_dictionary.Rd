@@ -5,7 +5,9 @@
 \alias{print.datamatch_dictionary}
 \title{Printable dictionary of variable names}
 \usage{
-variable_dictionary(product = c("all", "physical", "biogeochemical"))
+variable_dictionary(
+  product = c("all", "physical", "biogeochemical", "satellite")
+)
 
 \method{print}{datamatch_dictionary}(x, ...)
 }

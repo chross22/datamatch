@@ -17,12 +17,14 @@ accessEnvDat(
 )
 }
 \arguments{
-\item{product_id}{\if{html}{\out{<char>}} product identification string from Copernicus Marine Data Store}
+\item{product_id}{\if{html}{\out{<char>}} product identification string from the Copernicus
+Marine Data Store. Optional when \code{vars} are catalog names.}
 
-\item{dataset_id}{\if{html}{\out{<char>}} dataset identification string from Copernicus Marine Data Store}
+\item{dataset_id}{\if{html}{\out{<char>}} dataset identification string from the Copernicus
+Marine Data Store. Optional when \code{vars} are catalog names.}
 
-\item{vars}{\if{html}{\out{<char>}} list of variables to access, can be found under data access tab on Copernicus Marine Data Store,
-accepts variable abbreviations only}
+\item{vars}{\if{html}{\out{<char>}} variables to access: names from \code{\link[=variable_dictionary]{variable_dictionary()}},
+raw Copernicus variable codes, or a mixture}
 
 \item{years}{\if{html}{\out{<numeric>}} years of data to access}
 
@@ -49,5 +51,35 @@ network/API, not CPU.}
 envDat \if{html}{\out{<sf object>}} sf object containing requested environmental data from Copernicus Marine Service
 }
 \description{
-Access environmental data from Copernicus Marine Service
+Downloads a Copernicus dataset over a bounding box and time range, and returns
+it as an \code{sf} point object with one row per grid cell and time step.
 }
+\section{Requesting variables by name}{
+
+\code{vars} accepts the short names in \code{\link[=variable_dictionary]{variable_dictionary()}} — \code{"SST"}, \code{"CHL"},
+\code{"MLD"} — as well as raw Copernicus codes. Copernicus codes are terse and easy
+to misremember (\code{thetao} for temperature, \code{mlotst} for mixed layer depth,
+\code{zos} for sea surface height), and getting one wrong produces a failed
+download rather than an obvious mistake.
+
+Names carry through to the result, so a request for \code{"SST"} returns a column
+called \code{SST} rather than \code{thetao}.
+
+Because the catalog knows which product and dataset holds each variable,
+\strong{\code{product_id} and \code{dataset_id} can be omitted} when every requested variable
+is in it:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{accessEnvDat(
+  vars = c("SST", "SSS", "MLD"),
+  years = 2003:2017, months = 1:12,
+  bounding_box = list(xmin = -76, xmax = -65, ymin = 35, ymax = 45)
+)
+}\if{html}{\out{</div>}}
+
+Variables from different datasets cannot be fetched in one request, and mixing
+them is refused before anything is downloaded rather than failing obscurely at
+the API. Anything outside the catalog is passed through as a code, with a
+warning — Copernicus serves far more than the catalog covers, but a typo looks
+identical to a real code.
+}
+

@@ -1,10 +1,43 @@
 
 #' Access environmental data from Copernicus Marine Service
 #'
-#' @param product_id <char> product identification string from Copernicus Marine Data Store
-#' @param dataset_id <char> dataset identification string from Copernicus Marine Data Store
-#' @param vars <char> list of variables to access, can be found under data access tab on Copernicus Marine Data Store,
-#'                    accepts variable abbreviations only
+#' Downloads a Copernicus dataset over a bounding box and time range, and returns
+#' it as an `sf` point object with one row per grid cell and time step.
+#'
+#' @section Requesting variables by name:
+#' `vars` accepts the short names in [variable_dictionary()] — `"SST"`, `"CHL"`,
+#' `"MLD"` — as well as raw Copernicus codes. Copernicus codes are terse and easy
+#' to misremember (`thetao` for temperature, `mlotst` for mixed layer depth,
+#' `zos` for sea surface height), and getting one wrong produces a failed
+#' download rather than an obvious mistake.
+#'
+#' Names carry through to the result, so a request for `"SST"` returns a column
+#' called `SST` rather than `thetao`.
+#'
+#' Because the catalog knows which product and dataset holds each variable,
+#' **`product_id` and `dataset_id` can be omitted** when every requested variable
+#' is in it:
+#'
+#' ```
+#' accessEnvDat(
+#'   vars = c("SST", "SSS", "MLD"),
+#'   years = 2003:2017, months = 1:12,
+#'   bounding_box = list(xmin = -76, xmax = -65, ymin = 35, ymax = 45)
+#' )
+#' ```
+#'
+#' Variables from different datasets cannot be fetched in one request, and mixing
+#' them is refused before anything is downloaded rather than failing obscurely at
+#' the API. Anything outside the catalog is passed through as a code, with a
+#' warning — Copernicus serves far more than the catalog covers, but a typo looks
+#' identical to a real code.
+#'
+#' @param product_id <char> product identification string from the Copernicus
+#'   Marine Data Store. Optional when `vars` are catalog names.
+#' @param dataset_id <char> dataset identification string from the Copernicus
+#'   Marine Data Store. Optional when `vars` are catalog names.
+#' @param vars <char> variables to access: names from [variable_dictionary()],
+#'   raw Copernicus variable codes, or a mixture
 #' @param years <numeric> years of data to access
 #' @param months <numeric> months of data to access
 #' @param bounding_box <list> named list of spatial coordinates of bounding box

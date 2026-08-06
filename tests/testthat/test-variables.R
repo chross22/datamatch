@@ -32,17 +32,54 @@ test_that("variable_dictionary tabulates the catalog", {
                   %in% names(dictionary)))
 })
 
-test_that("the dictionary can be filtered by product", {
+test_that("the dictionary can be filtered by product family", {
   physical <- variable_dictionary("physical")
   biogeochemical <- variable_dictionary("biogeochemical")
+  satellite <- variable_dictionary("satellite")
 
   expect_true("SST" %in% physical$name)
-  expect_false("CHL" %in% physical$name)
-  expect_true("CHL" %in% biogeochemical$name)
-  expect_false("SST" %in% biogeochemical$name)
+  expect_true("CHL_MODEL" %in% biogeochemical$name)
+  expect_true("CHL" %in% satellite$name)
+  expect_false("SST" %in% satellite$name)
 
-  expect_equal(nrow(physical) + nrow(biogeochemical),
+  # The three families must partition the catalog.
+  expect_equal(nrow(physical) + nrow(biogeochemical) + nrow(satellite),
                nrow(variable_dictionary("all")))
+})
+
+test_that("chlorophyll and primary production default to satellite", {
+  # Observed rather than simulated, and 4 km rather than 0.25 degrees, so the
+  # plain names point at ocean colour and the model versions are suffixed.
+  expect_true(grepl("obs-oc", variable_dataset("CHL")[["CHL"]]))
+  expect_true(grepl("obs-oc", variable_dataset("PP")[["PP"]]))
+  expect_true(grepl("_bgc_", variable_dataset("CHL_MODEL")[["CHL_MODEL"]]))
+  expect_true(grepl("_bgc_", variable_dataset("NPP_MODEL")[["NPP_MODEL"]]))
+})
+
+test_that("diatoms and dinophytes come from the plankton dataset", {
+  catalog <- copernicus_variables()
+
+  expect_equal(catalog$DIATO$variable, "DIATO")
+  expect_equal(catalog$DINO$variable, "DINO")
+  # Same dataset as satellite CHL, so the three can be fetched together.
+  expect_equal(catalog$DIATO$dataset_id, catalog$CHL$dataset_id)
+  expect_equal(infer_dataset(c("CHL", "DIATO", "DINO"))$dataset_id,
+               catalog$CHL$dataset_id)
+})
+
+test_that("satellite PP is a different dataset from the plankton variables", {
+  # Same product, different dataset - so they cannot be fetched in one request,
+  # and saying so up front is better than a rejected download.
+  expect_error(infer_dataset(c("CHL", "PP")), "different Copernicus datasets")
+})
+
+test_that("satellite and model productivity are not interchangeable", {
+  catalog <- copernicus_variables()
+
+  # Depth-integrated vs volumetric: mg/m2/day against mg/m3/day. Treating them
+  # as the same quantity would be a units error, not a resolution difference.
+  expect_equal(catalog$PP$units, "mg/m2/day")
+  expect_equal(catalog$NPP_MODEL$units, "mg/m3/day")
 })
 
 test_that("printing the dictionary is readable and returns invisibly", {
@@ -59,11 +96,12 @@ test_that("printing the dictionary is readable and returns invisibly", {
 })
 
 test_that("catalog names resolve to Copernicus codes", {
-  resolved <- resolve_variables(c("SST", "CHL"))
+  resolved <- resolve_variables(c("SST", "CHL_MODEL"))
 
   expect_equal(resolved$codes, c("thetao", "chl"))
-  # The names are what the result columns should be called.
-  expect_equal(resolved$names, c("SST", "CHL"))
+  # The names are what the result columns should be called, so a request for
+  # CHL_MODEL returns a CHL_MODEL column rather than the code `chl`.
+  expect_equal(resolved$names, c("SST", "CHL_MODEL"))
 })
 
 test_that("raw Copernicus codes still work unchanged", {
@@ -90,10 +128,12 @@ test_that("an unrecognized variable is passed through with a warning", {
 })
 
 test_that("variable_dataset reports where each variable comes from", {
-  datasets <- variable_dataset(c("SST", "CHL", "nonsense"))
+  datasets <- variable_dataset(c("SST", "NO3", "CHL", "nonsense"))
 
   expect_true(grepl("_phy_", datasets[["SST"]]))
-  expect_true(grepl("_bgc_", datasets[["CHL"]]))
+  expect_true(grepl("_bgc_", datasets[["NO3"]]))
+  # CHL is satellite ocean colour now, not the biogeochemistry reanalysis.
+  expect_true(grepl("obs-oc", datasets[["CHL"]]))
   expect_true(is.na(datasets[["nonsense"]]))
 })
 
@@ -148,4 +188,43 @@ test_that("as_markdown works on the index dictionary too", {
 
   expect_true(any(grepl("NAO", lines)))
   expect_true(any(grepl("NOAA", lines)))
+})
+
+test_that("the dataset is inferred from raw Copernicus codes too", {
+  # A call that passes codes rather than names should still get product and
+  # dataset inference; otherwise omitting the identifiers only works for one
+  # of the two ways of naming a variable.
+  inferred <- infer_dataset(c("thetao", "so"))
+
+  expect_equal(inferred$product_id, "GLOBAL_MULTIYEAR_PHY_001_030")
+  expect_true(grepl("_phy_", inferred$dataset_id))
+})
+
+test_that("names and codes can be mixed when inferring the dataset", {
+  inferred <- infer_dataset(c("SST", "so"))
+
+  expect_true(grepl("_phy_", inferred$dataset_id))
+})
+
+test_that("mixing datasets is caught whichever way the variables are named", {
+  expect_error(infer_dataset(c("thetao", "chl")), "different Copernicus datasets")
+})
+
+test_that("variable_dataset resolves codes as well as names", {
+  datasets <- variable_dataset(c("SST", "thetao", "chl"))
+
+  expect_equal(unname(datasets[["SST"]]), unname(datasets[["thetao"]]))
+  expect_true(grepl("_bgc_", datasets[["chl"]]))
+})
+
+test_that("the printed dictionary shows product, dataset, and docs URL", {
+  output <- capture.output(print(variable_dictionary()))
+
+  # The dataset identifier is what is actually requested, and what has to be
+  # corrected by hand when Copernicus revises one.
+  expect_true(any(grepl("GLOBAL_MULTIYEAR_PHY_001_030", output)))
+  expect_true(any(grepl("cmems_mod_glo_phy_my", output)))
+  expect_true(any(grepl("data.marine.copernicus.eu/product", output)))
+  # And it should say that the identifiers can be left out.
+  expect_true(any(grepl("can be", output)))
 })

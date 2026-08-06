@@ -36,13 +36,32 @@ Before installation, you must install the Copernicus Marine toolbox from Coperni
 
 To install this toolbox, visit the Copernicus website. In brief, ...
 
+## Quick start
+
+Request variables by name and let the catalog find the product for you:
+
+```{r quickstart, eval = FALSE}
+library(datamatch)
+
+env <- accessEnvDat(
+  vars = c("SST", "SSS", "MLD"),          # no product_id, no dataset_id
+  years = 2003:2017,
+  months = 1:12,
+  bounding_box = list(xmin = -76, xmax = -65, ymin = 35, ymax = 45)
+)
+
+matched <- matchData(speciesDat = observations, envDat = env)
+```
+
+`variable_dictionary()` lists what is available.
+
 ## Variable names
 
 Copernicus variable codes are terse and easy to misremember — `thetao` for
 temperature, `mlotst` for mixed layer depth, `zos` for sea surface height — and
 getting one wrong produces a failed download rather than an obvious mistake. So
 variables can be requested by name instead, and the dictionary lists what is
-available:
+available, along with the product and dataset each comes from:
 
 ```{r dictionary}
 library(datamatch)
@@ -71,8 +90,9 @@ names(env)
 #> "SST" "SSS" "MLD" "YEAR" "MONTH" "DAY" "geometry"
 ```
 
-`product_id` and `dataset_id` can be omitted when every variable is in the
-dictionary, since the catalog already knows where they live. Variables from
+**`product_id` and `dataset_id` can be omitted** when every variable is in the
+dictionary, since the catalog already knows where they live. Raw Copernicus
+codes work the same way, so `vars = c("thetao", "so")` infers its dataset too. Variables from
 different datasets cannot be fetched in one request, and mixing them is refused
 before any download is attempted rather than failing obscurely at the API:
 
@@ -88,6 +108,39 @@ accessEnvDat(vars = c("SST", "CHL"), ...)
 Raw Copernicus codes still work exactly as before, so existing calls need no
 change, and anything outside the dictionary is passed through to the API with a
 warning — Copernicus serves far more than this catalog covers.
+
+### Satellite or model?
+
+Copernicus serves chlorophyll and primary production from two very different
+sources, and both are available:
+
+| Name | Source | Resolution | Trade-off |
+|---|---|---|---|
+| `CHL`, `PP` | Copernicus-GlobColour, satellite | 4 km | Observed, finer — but surface-only and gappy under persistent cloud |
+| `CHL_MODEL`, `NPP_MODEL` | Biogeochemistry reanalysis | 0.25° | Gap-free and depth-resolved — but simulated, and coarser |
+
+The plain names default to satellite, since the values are observed rather than
+simulated. Switch to the model versions where cloud gaps would matter more than
+resolution.
+
+One caution: **satellite `PP` and model `NPP_MODEL` are not the same quantity.**
+`PP` is depth-integrated (mg/m2/day), `NPP_MODEL` volumetric (mg/m3/day).
+Substituting one for the other is a units error, not a resolution difference.
+
+Phytoplankton functional types come from the same satellite plankton dataset as
+`CHL`, so they can be fetched together:
+
+```{r pft, eval = FALSE}
+env <- accessEnvDat(
+  vars = c("CHL", "DIATO", "DINO"),   # one request, one dataset
+  years = 2003:2017, months = 1:12,
+  bounding_box = list(xmin = -76, xmax = -65, ymin = 35, ymax = 45)
+)
+```
+
+`DIATO` and `DINO` are diatom and dinophyte chlorophyll — the spring-bloom
+species large copepods prefer, and the later stratified-water group
+respectively.
 
 ```{r lookup, eval = FALSE}
 variable_dictionary("biogeochemical")        # filter by product

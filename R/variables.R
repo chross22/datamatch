@@ -30,6 +30,12 @@ copernicus_variables <- function() {
   phy_dataset <- "cmems_mod_glo_phy_my_0.083deg_P1M-m"
   bgc_product <- "GLOBAL_MULTIYEAR_BGC_001_029"
   bgc_dataset <- "cmems_mod_glo_bgc_my_0.25deg_P1M-m"
+  # Copernicus-GlobColour: satellite ocean colour rather than a model. Higher
+  # resolution (4 km vs 0.25 degrees) and observed rather than simulated, but
+  # surface-only and gappy under cloud.
+  oc_product <- "OCEANCOLOUR_GLO_BGC_L4_MY_009_104"
+  oc_plankton <- "cmems_obs-oc_glo_bgc-plankton_my_l4-multi-4km_P1M"
+  oc_pp <- "cmems_obs-oc_glo_bgc-pp_my_l4-multi-4km_P1M"
 
   physical <- function(variable, label, units, description) {
     list(variable = variable, label = label, units = units,
@@ -39,6 +45,12 @@ copernicus_variables <- function() {
   biogeochemical <- function(variable, label, units, description) {
     list(variable = variable, label = label, units = units,
          product_id = bgc_product, dataset_id = bgc_dataset,
+         description = description)
+  }
+  satellite <- function(variable, label, units, description,
+                        dataset_id = oc_plankton) {
+    list(variable = variable, label = label, units = units,
+         product_id = oc_product, dataset_id = dataset_id,
          description = description)
   }
 
@@ -62,21 +74,51 @@ copernicus_variables <- function() {
                          "criterion. Controls how deeply plankton are mixed.")),
     SIC = physical("siconc", "Sea ice concentration", "fraction",
                    "Fraction of the cell covered by sea ice."),
-    CHL = biogeochemical("chl", "Chlorophyll-a concentration", "mg/m3",
-                         paste("Mass concentration of chlorophyll-a. A food",
-                               "availability proxy; usually worth",
-                               "log-transforming.")),
+    # Satellite ocean colour is the default for chlorophyll and primary
+    # production: observed rather than simulated, and 4 km rather than 0.25
+    # degrees. The model equivalents remain available as CHL_MODEL and
+    # NPP_MODEL, which are gap-free and depth-resolved where these are neither.
+    CHL = satellite("CHL", "Chlorophyll-a concentration (satellite)", "mg/m3",
+                    paste("Mass concentration of chlorophyll-a from",
+                          "Copernicus-GlobColour. A food-availability proxy;",
+                          "usually worth log-transforming. Surface only, and",
+                          "gappy under persistent cloud.")),
+    PP = satellite("PP", "Primary production (satellite)", "mg/m2/day",
+                   paste("Primary productivity of biomass expressed as carbon,",
+                         "from Copernicus-GlobColour. A rate rather than the",
+                         "standing stock chlorophyll reports. Note the areal",
+                         "units: this is depth-integrated, unlike the",
+                         "volumetric model NPP."),
+                   dataset_id = oc_pp),
+    DIATO = satellite("DIATO", "Diatom chlorophyll", "mg/m3",
+                      paste("Mass concentration of diatoms expressed as",
+                            "chlorophyll. Large, fast-growing cells that",
+                            "dominate the spring bloom and are the preferred",
+                            "prey of large copepods.")),
+    DINO = satellite("DINO", "Dinophyte chlorophyll", "mg/m3",
+                     paste("Mass concentration of dinophytes",
+                           "(dinoflagellates) expressed as chlorophyll.",
+                           "Typically later in the season than diatoms and",
+                           "favoured by stratified, low-nutrient water.")),
     NO3 = biogeochemical("no3", "Nitrate concentration", "mmol/m3",
                          "Mole concentration of nitrate, a limiting nutrient."),
     PO4 = biogeochemical("po4", "Phosphate concentration", "mmol/m3",
                          "Mole concentration of phosphate."),
     O2 = biogeochemical("o2", "Dissolved oxygen", "mmol/m3",
                         "Mole concentration of dissolved molecular oxygen."),
-    NPP = biogeochemical("nppv", "Net primary production", "mg/m3/day",
-                         paste("Net primary production of biomass expressed as",
-                               "carbon. A direct productivity measure rather",
-                               "than the standing stock chlorophyll reports.")),
-    PH = biogeochemical("ph", "pH", "1", "Sea water pH reported on total scale.")
+    PH = biogeochemical("ph", "pH", "1", "Sea water pH reported on total scale."),
+    CHL_MODEL = biogeochemical("chl", "Chlorophyll-a concentration (model)",
+                               "mg/m3",
+                               paste("Chlorophyll-a from the biogeochemistry",
+                                     "reanalysis. Coarser than the satellite",
+                                     "CHL but gap-free, so preferable where",
+                                     "cloud cover would leave holes.")),
+    NPP_MODEL = biogeochemical("nppv", "Net primary production (model)",
+                               "mg/m3/day",
+                               paste("Net primary production from the",
+                                     "biogeochemistry reanalysis. Volumetric,",
+                                     "unlike the depth-integrated satellite PP,",
+                                     "so the two are not interchangeable."))
   )
 }
 
@@ -114,7 +156,8 @@ product_url <- function(product_id) {
 #' # The product page for a variable, to check its coverage and revisions
 #' as.data.frame(variable_dictionary())[c("name", "url")]
 #' @export
-variable_dictionary <- function(product = c("all", "physical", "biogeochemical")) {
+variable_dictionary <- function(product = c("all", "physical", "biogeochemical",
+                                            "satellite")) {
   product <- match.arg(product)
   catalog <- copernicus_variables()
 
@@ -129,8 +172,10 @@ variable_dictionary <- function(product = c("all", "physical", "biogeochemical")
   }))
 
   if (product != "all") {
-    is_physical <- grepl("_phy_", dictionary$dataset, fixed = TRUE)
-    dictionary <- dictionary[if (product == "physical") is_physical else !is_physical, ]
+    family <- ifelse(grepl("obs-oc", dictionary$dataset, fixed = TRUE), "satellite",
+                     ifelse(grepl("_phy_", dictionary$dataset, fixed = TRUE),
+                            "physical", "biogeochemical"))
+    dictionary <- dictionary[family == product, ]
     rownames(dictionary) <- NULL
   }
 
@@ -145,23 +190,27 @@ variable_dictionary <- function(product = c("all", "physical", "biogeochemical")
 print.datamatch_dictionary <- function(x, ...) {
   flat <- as.data.frame(x)
   cat("Copernicus variables available by name\n")
-  cat(strrep("-", 62), "\n", sep = "")
+  cat(strrep("-", 66), "\n", sep = "")
 
   # Descriptions, dataset identifiers and URLs are all far too wide to tabulate
-  # and would wrap unreadably. The products are listed underneath instead, so
-  # the provenance is still visible without destroying the table.
+  # and would wrap unreadably. Provenance is listed per product underneath
+  # instead, so it stays visible without destroying the table.
   visible <- flat[c("name", "variable", "label", "units")]
   print(visible, row.names = FALSE, right = FALSE)
 
-  cat("\nProducts\n")
   for (product in unique(flat$product)) {
-    names_in <- flat$name[flat$product == product]
-    cat("  ", product, "\n", sep = "")
-    cat("    ", paste(names_in, collapse = ", "), "\n", sep = "")
-    cat("    ", product_url(product), "\n", sep = "")
+    rows <- flat$product == product
+    cat("\n", product, "\n", sep = "")
+    cat("  variables: ", paste(flat$name[rows], collapse = ", "), "\n", sep = "")
+    # The dataset identifier is what accessEnvDat() actually requests, and what
+    # has to be corrected by hand when Copernicus revises one.
+    cat("  dataset:   ", unique(flat$dataset[rows]), "\n", sep = "")
+    cat("  docs:      ", product_url(product), "\n", sep = "")
   }
 
   cat("\nPass a name to accessEnvDat(vars = ...), or the Copernicus code.\n")
+  cat("With every variable from one product, product_id and dataset_id can be\n")
+  cat("omitted - they are inferred from the names.\n")
   cat("Full descriptions: as.data.frame(variable_dictionary())$description\n")
   invisible(x)
 }
@@ -280,7 +329,6 @@ infer_dataset <- function(vars) {
 
   distinct <- unique(unname(datasets))
   if (length(distinct) > 1) {
-    catalog <- copernicus_variables()
     grouped <- vapply(distinct, function(d) {
       paste(vars[datasets == d], collapse = ", ")
     }, character(1))
@@ -290,8 +338,7 @@ infer_dataset <- function(vars) {
          "\nCall accessEnvDat() once per dataset.", call. = FALSE)
   }
 
-  catalog <- copernicus_variables()
-  entry <- catalog[[vars[1]]]
+  entry <- catalog_entry(vars[1])
   list(product_id = entry$product_id, dataset_id = entry$dataset_id)
 }
 
@@ -308,11 +355,28 @@ infer_dataset <- function(vars) {
 #' variable_dataset(c("SST", "SSS", "CHL"))
 #' @export
 variable_dataset <- function(vars) {
-  catalog <- copernicus_variables()
   stats::setNames(
     vapply(vars, function(v) {
-      if (v %in% names(catalog)) catalog[[v]]$dataset_id else NA_character_
+      entry <- catalog_entry(v)
+      if (is.null(entry)) NA_character_ else entry$dataset_id
     }, character(1)),
     vars
   )
+}
+
+#' Catalog entry for a name or a Copernicus code
+#'
+#' Either identifier resolves, so a call that passes raw codes gets the same
+#' dataset inference as one using catalog names.
+#'
+#' @param var a catalog name (`"SST"`) or a Copernicus code (`"thetao"`)
+#' @return the catalog entry, or `NULL` if the variable is not in the catalog
+#' @keywords internal
+catalog_entry <- function(var) {
+  catalog <- copernicus_variables()
+  if (var %in% names(catalog)) return(catalog[[var]])
+
+  codes <- vapply(catalog, function(entry) entry$variable, character(1))
+  match <- which(codes == var)
+  if (length(match) == 1) catalog[[match]] else NULL
 }
