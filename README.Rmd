@@ -30,6 +30,8 @@ The goal of datamatch is to pull environmental data from Copernicus Marine Servi
 - [Set up](#set-up) — the Copernicus client, sign-in, and where downloads are cached
 - [Quick start](#quick-start)
   - [One call per product](#one-call-per-product) — why `SST` and `CHL` are two fetches
+  - [Monthly or daily](#monthly-or-daily) — monthly by default, and how to fetch particular days
+  - [Downloads run in parallel](#downloads-run-in-parallel) — `n_workers`, and what is already cached
 
 **Choosing what to fetch**
 
@@ -209,16 +211,31 @@ would come from, and `NA` where there is none.
 
 ### Downloads run in parallel
 
-Days already in the cache are read straight from disk. Only the missing ones are
-downloaded, and those go out four at a time, since a Copernicus subset request
-spends nearly all of its time waiting on the API rather than on your machine.
-Fetching a month of daily SST and SSS takes about 40 seconds this way against
-about 160 serially.
+**`n_workers` controls this, and it defaults to 4** — parallel downloading is on
+without being asked for. A Copernicus subset request spends nearly all of its
+time waiting on the API rather than on your machine, so four requests in flight
+take barely longer than one. Fetching a month of daily SST and SSS takes about
+40 seconds this way against about 160 serially.
 
 ```{r quickstart-workers, eval = FALSE}
-accessEnvDat(vars = "SST", frequency = "daily", n_workers = 8, ...)  # more
-accessEnvDat(vars = "SST", frequency = "daily", n_workers = 1, ...)  # serial
+# The default. 15 years x 12 months is 180 downloads, four at a time
+accessEnvDat(vars = "SST", years = 2003:2017, months = 1:12, bounding_box = bb)
+
+accessEnvDat(vars = "SST", years = 2003:2017, months = 1:12, bounding_box = bb,
+             n_workers = 8)   # more at once
+accessEnvDat(vars = "SST", years = 2003:2017, months = 1:12, bounding_box = bb,
+             n_workers = 1)   # one at a time
 ```
+
+**This is not a daily-only feature.** Any fetch spanning more than one time step
+is more than one download, so a long monthly record benefits as much as a daily
+one — the 180 downloads above are monthly.
+
+Two things it deliberately does not do. It does not re-download what you already
+have: files in the cache are read straight from disk, and a fully cached call
+starts no workers at all. And it does not parallelise across calls — each
+`accessEnvDat()` call is one dataset, so fetching SST and CHL is two calls, run
+one after the other with each parallel inside itself.
 
 The limit is the service, not your cores, so raising `n_workers` far past 8
 mostly earns rate limiting. A day that fails does not abandon the others: every
