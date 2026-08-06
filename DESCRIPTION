@@ -18,6 +18,8 @@ Description: Downloads environmental data from the Copernicus Marine Service
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
+Depends:
+    R (>= 4.1.0)
 Imports:
     utils,
     graphics,
