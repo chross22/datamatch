@@ -402,6 +402,69 @@ from. `rescale = TRUE` matches the model's mean and variance to the satellite's
 over the cells where both exist, which reduces the step at the cost of altering
 the model values.
 
+## Looking at the data
+
+Four plots, in the order they are usually wanted. All use base graphics, so they
+need no extra packages, and each returns the data it drew so the numbers behind a
+picture are always available.
+
+
+``` r
+env <- accessEnvDat(vars = c("SST", "CHL"), years = 2010, months = 1:12,
+                    bounding_box = bb)
+
+plot_env(env)                                # first variable, first time step
+plot_env(env, "CHL", time = c(MONTH = 6))    # June chlorophyll
+```
+
+`plot_env()` maps one variable for one time step. It is the first thing worth
+doing after a download and the fastest way to catch a bounding box that came out
+somewhere unintended, a variable that is entirely `NA`, or a depth range that
+returned the wrong level. Data are drawn as a raster, so gaps read as holes
+rather than as absent dots. The time step is named in the title, so a map is
+never ambiguous about which month it shows.
+
+
+``` r
+plot_coverage(env)
+```
+
+`plot_coverage()` is the one to run before trusting a satellite series. It plots
+the fraction of cells carrying a value in each time step, and on ocean colour the
+shape is stark: near-complete in summer, a quarter of the grid in winter. That
+picture is what decides whether a monthly mean is worth having, whether
+`fill_satellite_gaps()` is worth the seam it introduces, and where to set
+`min_coverage` when aggregating.
+
+
+``` r
+plot_series(env)                     # one panel per variable
+plot_series(env, "SST", fun = max)   # the warmest cell each month
+```
+
+`plot_series()` reduces each time step to one number over the study area, which
+is how a seasonal cycle, a trend, or a step change at a product boundary becomes
+visible. The interquartile range across cells is shaded behind the line, because
+a mean alone hides the difference between a uniformly warm month and one that is
+warm inshore and cold offshore.
+
+
+``` r
+matched <- matchData(speciesDat = observations, envDat = env)
+
+plot_matched(matched[matched$MONTH == 7, ], "SST")
+```
+
+`plot_matched()` shows what the join actually produced. Observations that matched
+nothing are drawn as open circles rather than dropped — a cluster of them is
+usually the real finding, marking observations outside the environmental data's
+extent or in a period it does not cover.
+
+Subset to one period first, as above. The colour scale spans everything passed
+in, so plotting a whole year of a seasonal variable mixes the seasons together
+and the map reads as noise: a warm February inshore point and a cool August
+offshore one can take the same colour.
+
 ## Static and basin-scale covariates
 
 Not everything useful is a gridded Copernicus variable on a monthly time step.
