@@ -50,6 +50,7 @@ The goal of datamatch is to pull environmental data from Copernicus Marine Servi
 
 - [Putting it together](#putting-it-together) — a full worked example, four sources onto one table
 - [Matching to observations](#matching-to-observations)
+- [Troubleshooting](#troubleshooting) — what the error messages mean
 - [Related packages](#related-packages)
 
 </details>
@@ -807,6 +808,61 @@ matched <- matchData(speciesDat = observations, envDat = env)
 
 Observations falling in a period with no environmental data are returned with
 `NA` values and a warning naming the periods, rather than being dropped silently.
+
+## Troubleshooting
+
+Errors you might hit, and what they mean.
+
+**`Could not find the Copernicus Marine client`**
+
+R cannot see `copernicusmarine` on its `PATH`. Common when it lives in a conda
+environment that RStudio does not inherit. Point at it directly:
+
+
+``` r
+options(datamatch.copernicusmarine = "~/miniconda3/bin/copernicusmarine")
+```
+
+**`These variables come from different Copernicus datasets`**
+
+Expected, not a fault. `SST` is physics and `CHL` is biogeochemistry, on
+different grids. Fetch them separately and chain `matchData()`, as in [One call
+per product](#one-call-per-product). `variable_dataset()` shows which dataset each
+variable comes from.
+
+In forecast mode this happens more often, because the forecast products split
+variables across more datasets than the reanalysis does. `SST` and `UO` share a
+dataset as reanalysis but not as forecast.
+
+**`The download did not return: uo, vo`**
+
+Those variables were requested but are not in the returned file. Either the
+dataset does not serve them, or they are unavailable at the requested depth or
+date. The message lists what did arrive.
+
+**`The depth range returned several model levels`**
+
+`depth` spanned more than one model level, so a variable came back on several
+layers and there is no way to know which was wanted. Request a single level with
+`depth = c(0, 1)`.
+
+**`Copernicus download failed after 3 attempt(s)`**
+
+The request was retried and kept failing. The message carries the client's own
+output. Rapid repeated downloads can also be rate-limited, in which case waiting
+and re-running works.
+
+**`Expected N variable column(s) but the download returned M`**
+
+From a version before the layer-matching fix. Update the package: this message
+blamed the depth range for causes it could not distinguish, and the two real ones
+now report themselves. See `NEWS.md`.
+
+**Values in the wrong range for their column name**
+
+Salinity around 32 in an `SST` column means you are on a version predating the
+layer-ordering fix, where multi-variable downloads could be mislabelled silently.
+Update and re-fetch. `NEWS.md` describes what was affected and how to check.
 
 ## Related packages
 
