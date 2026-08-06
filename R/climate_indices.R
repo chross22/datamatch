@@ -53,6 +53,27 @@ climate_indices <- function() {
       description = paste("Leading mode of North Pacific SST variability.",
                           "Included for completeness; of limited relevance to",
                           "Atlantic shelf systems.")
+    ),
+    LCR = list(
+      label = "Labrador Current retroflection",
+      source = "Jutras et al. 2023, Nature Communications",
+      url = paste0("https://static-content.springer.com/esm/",
+                   "art%3A10.1038%2Fs41467-023-38321-y/MediaObjects/",
+                   "41467_2023_38321_MOESM5_ESM.csv"),
+      format = "decimal_year_csv",
+      reference = paste("Jutras M, Dufour CO, Mucci A, Talbot LC (2023)",
+                        "Large-scale control of the retroflection of the",
+                        "Labrador Current. Nature Communications 14:2623.",
+                        "doi:10.1038/s41467-023-38321-y"),
+      description = paste("How much of the Labrador Current turns eastward at",
+                          "the Grand Banks instead of continuing southwest along",
+                          "the shelf. Positive values mean stronger retroflection,",
+                          "so less cold, fresh, oxygen-rich Labrador water reaches",
+                          "the Scotian Shelf and Gulf of Maine. Unlike the",
+                          "atmospheric indices here it describes a current rather",
+                          "than a pressure or temperature pattern, which makes it",
+                          "the more direct predictor of shelf water properties.",
+                          "Covers 1993-2014 only.")
     )
   )
 }
@@ -68,7 +89,12 @@ index_dictionary <- function() {
   dictionary <- do.call(rbind, lapply(names(catalog), function(name) {
     entry <- catalog[[name]]
     data.frame(name = name, label = entry$label, source = entry$source,
-               url = entry$url, description = entry$description,
+               url = entry$url,
+               # Indices published with a paper carry its citation. The
+               # operational ones from NOAA have no single paper to point at,
+               # so this is empty for them rather than invented.
+               reference = entry$reference %||% NA_character_,
+               description = entry$description,
                stringsAsFactors = FALSE)
   }))
   class(dictionary) <- c("datamatch_index_dictionary", "data.frame")
@@ -85,7 +111,16 @@ print.datamatch_index_dictionary <- function(x, ...) {
   cat(strrep("-", 62), "\n", sep = "")
   print(flat[c("name", "label", "source")], row.names = FALSE, right = FALSE)
   cat("\nThese have no spatial dimension: one value per month, basin-wide.\n")
-  cat("Sources: as.data.frame(index_dictionary())$url\n")
+
+  cited <- flat[!is.na(flat$reference), ]
+  if (nrow(cited) > 0) {
+    cat("\nCite when used:\n")
+    for (i in seq_len(nrow(cited))) {
+      cat("  ", cited$name[i], ": ", cited$reference[i], "\n", sep = "")
+    }
+  }
+
+  cat("\nSources: as.data.frame(index_dictionary())$url\n")
   invisible(x)
 }
 
@@ -96,6 +131,18 @@ print.datamatch_index_dictionary <- function(x, ...) {
 #'
 #' The published files use fixed-width year-by-month tables with provider-specific
 #' missing-value codes, which are parsed here into one row per month.
+#'
+#' @section Citing an index:
+#' `LCR` is the published output of a specific study rather than an operational
+#' product, and should be cited when used:
+#'
+#' > Jutras M, Dufour CO, Mucci A, Talbot LC (2023) Large-scale control of the
+#' > retroflection of the Labrador Current. *Nature Communications* **14**:2623.
+#' > \doi{10.1038/s41467-023-38321-y}
+#'
+#' The series is the source data published with that paper's Figure 3, fetched
+#' from the journal rather than recomputed, so the values are the authors' own.
+#' `as.data.frame(index_dictionary())$reference` carries this at runtime.
 #'
 #' @param index an index name from [climate_indices()]
 #' @param years years to keep; `NULL` keeps the whole record
@@ -145,6 +192,13 @@ fetch_climate_index <- function(index, years = NULL, url = NULL) {
 #' @return a data frame with `YEAR`, `MONTH`, and the named value column
 #' @keywords internal
 parse_index_table <- function(lines, format, name) {
+  # Not every published index is a year-by-month table. The retroflection index
+  # is a daily series in decimal years, so it is parsed separately rather than
+  # bent into the shape of the CPC and PSL files.
+  if (format == "decimal_year_csv") {
+    return(parse_decimal_year_csv(lines, name))
+  }
+
   lines <- trimws(lines)
   lines <- lines[nzchar(lines)]
 
@@ -194,6 +248,79 @@ parse_index_table <- function(lines, format, name) {
   names(series)[names(series) == "value"] <- name
   rownames(series) <- NULL
   series
+}
+
+#' Parse a daily index published as decimal years
+#'
+#' The format the Jutras et al. retroflection index is published in: a couple of
+#' figure-caption lines, a `Date,<label>` header, then one row per day with the
+#' date as a decimal year.
+#'
+#' @section Two conversions worth stating:
+#' **Decimal years use a fixed 365-day year here.** The step between consecutive
+#' rows is 1/365 to eleven significant figures, so leap days are not represented
+#' and a date is recovered as day `round(fraction * 365)` of its year. Assuming
+#' 365.25 instead would walk the derived dates off by up to several days over the
+#' record.
+#'
+#' **Daily values are averaged to monthly.** Every other index in this package is
+#' monthly, and [attach_climate_index()] joins on year and month, so a daily
+#' series has nothing to join to. The underlying index is already smoothed with a
+#' 12-month rolling mean, so monthly averaging discards very little.
+#'
+#' Months backed by fewer than half their days are dropped rather than reported.
+#' The record's first and last months are partial by construction, and the fixed
+#' 365-day year rolls the final record into a January of its own — which would
+#' otherwise surface as a confident-looking monthly value resting on a single day.
+#'
+#' @param lines the downloaded file's lines
+#' @param name what to call the value column
+#' @return a data frame with `YEAR`, `MONTH`, and the named value column
+#' @keywords internal
+parse_decimal_year_csv <- function(lines, name) {
+  lines <- trimws(lines)
+  # A data row is two comma-separated numbers. The figure-caption and header
+  # lines fail that, which is steadier than skipping a fixed number of lines.
+  is_data <- grepl("^-?[0-9.]+,-?[0-9.eE+-]+$", lines)
+  rows <- lines[is_data]
+
+  if (length(rows) == 0) {
+    stop("No data rows found in the index file; its format may have changed.",
+         call. = FALSE)
+  }
+
+  fields <- do.call(rbind, strsplit(rows, ","))
+  decimal_year <- as.numeric(fields[, 1])
+  value <- as.numeric(fields[, 2])
+  keep <- !is.na(decimal_year) & !is.na(value)
+  decimal_year <- decimal_year[keep]
+  value <- value[keep]
+
+  year <- floor(decimal_year)
+  date <- as.Date(paste0(year, "-01-01")) + round((decimal_year - year) * 365)
+
+  daily <- data.frame(YEAR = as.integer(format(date, "%Y")),
+                      MONTH = as.integer(format(date, "%m")),
+                      value = value)
+
+  monthly <- stats::aggregate(value ~ YEAR + MONTH, data = daily,
+                              FUN = function(z) c(mean(z), length(z)))
+  monthly <- data.frame(YEAR = monthly$YEAR, MONTH = monthly$MONTH,
+                        value = monthly$value[, 1], days = monthly$value[, 2])
+
+  # A month backed by a handful of days is not that month's value. The record's
+  # first and last months are partial by construction, and the fixed 365-day
+  # year rolls the final record into a January of its own - which would
+  # otherwise appear as a confident-looking value resting on one day. Half a
+  # month is the same bar min_coverage sets by default elsewhere here.
+  full <- as.numeric(lubridate::days_in_month(
+    lubridate::ymd(paste(monthly$YEAR, monthly$MONTH, 1, sep = "-"))))
+  monthly <- monthly[monthly$days >= full / 2, ]
+
+  monthly <- monthly[order(monthly$YEAR, monthly$MONTH), c("YEAR", "MONTH", "value")]
+  names(monthly)[names(monthly) == "value"] <- name
+  rownames(monthly) <- NULL
+  monthly
 }
 
 #' Missing-value code declared in a PSL index file

@@ -508,7 +508,7 @@ so every observation in a month receives the same number:
 ``` r
 observations <- attach_climate_index(observations, c("NAO", "AMO"))
 
-index_dictionary()          # NAO, AO, AMO, PDO
+index_dictionary()          # NAO, AO, AMO, PDO, LCR
 ```
 
 That makes them a different kind of covariate from local temperature. They carry
@@ -516,6 +516,39 @@ information about *when* — what year and season it was — and none about *whe
 within a region conditions are better. Useful for interannual questions ("was
 this a warm-regime year?"), useless for spatial ones: a model given only indices
 cannot produce a map.
+
+#### The Labrador Current retroflection index
+
+`LCR` is the odd one out and often the most directly useful of the five. The
+other four are atmospheric patterns; this one describes a *current* — how much
+of the Labrador Current turns eastward at the Grand Banks instead of continuing
+southwest along the shelf. Positive values mean stronger retroflection, so less
+cold, fresh, oxygen-rich Labrador water reaching the Scotian Shelf and Gulf of
+Maine. For shelf water properties that is a shorter causal chain than the NAO.
+
+
+``` r
+lcr <- fetch_climate_index("LCR")        # monthly, 1993-2014
+observations <- attach_climate_index(observations, "LCR")
+```
+
+It is the published output of one study rather than an operational product, so
+**cite it when you use it**:
+
+> Jutras M, Dufour CO, Mucci A, Talbot LC (2023) Large-scale control of the
+> retroflection of the Labrador Current. *Nature Communications* **14**:2623.
+> <https://doi.org/10.1038/s41467-023-38321-y>
+
+`index_dictionary()` prints that citation, and
+`as.data.frame(index_dictionary())$reference` carries it at runtime.
+
+Two limits worth knowing. It **covers 1993–2014 only**, so it cannot be attached
+to recent observations. And the series is fetched from the paper's published
+source data rather than recomputed — the authors derived it by tracking virtual
+particles through GLORYS12V1 with
+[OceanParcels](https://oceanparcels.org/), which is a Lagrangian modelling
+exercise rather than something this package reproduces. Extending the record
+past 2014 means redoing that computation, not calling a different function.
 
 One interaction to know: `attach_climate_index()` joins on year and month, and
 `upscale_time(to = "year")` stamps its output `MONTH = 1`. Attaching an index to

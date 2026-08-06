@@ -24,6 +24,16 @@ series.
 The published files use fixed-width year-by-month tables with provider-specific
 missing-value codes, which are parsed here into one row per month.
 }
+\section{Citing an index}{
+
+\code{LCR} is the published output of a specific study rather than an operational
+product, and should be cited when used:Jutras M, Dufour CO, Mucci A, Talbot LC (2023) Large-scale control of theretroflection of the Labrador Current. Nature Communications 14:2623.\doi{10.1038/s41467-023-38321-y}
+
+The series is the source data published with that paper's Figure 3, fetched
+from the journal rather than recomputed, so the values are the authors' own.
+\code{as.data.frame(index_dictionary())$reference} carries this at runtime.
+}
+
 \examples{
 \dontrun{
 nao <- fetch_climate_index("NAO", years = 2000:2020)
