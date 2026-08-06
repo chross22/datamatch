@@ -213,9 +213,21 @@ would come from, and `NA` where there is none.
 
 **`n_workers` controls this, and it defaults to 4** — parallel downloading is on
 without being asked for. A Copernicus subset request spends nearly all of its
-time waiting on the API rather than on your machine, so four requests in flight
-take barely longer than one. Fetching a month of daily SST and SSS takes about
-40 seconds this way against about 160 serially.
+time waiting on the API rather than on your machine, so several requests in
+flight take barely longer than one.
+
+Two months of daily SST and SSS over a one-degree box — 59 downloads — measured
+cold-cache and back to back in one session:
+
+| `n_workers` | Elapsed |
+|---|---|
+| 1 | 294 s |
+| 6 | 51 s — **5.7× faster** |
+
+The gain scales with workers rather than with cores, because the wait is the
+network: the same fetch at the default of 4 lands around 3.8×. How much you see
+depends on the API's mood as much as anything, so treat these as the shape of it
+rather than a promise.
 
 ```{r quickstart-workers, eval = FALSE}
 # The default. 15 years x 12 months is 180 downloads, four at a time
