@@ -1,10 +1,20 @@
 Package: datamatch
-Title: Matches Environmental Data With Species Occurrence Data
+Title: Fetch and Match Copernicus Marine Data to Species Observations
 Version: 0.0.0.9000
 Authors@R: 
     person("Camille", "Ross", email = "camille.ross@maine.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-1428-2294"))
-Description: The datamatch package can be used to spatially and temporally match species observation data (presence absence, density, count, etc.) with environmental data from Copernicus Marine Service. The goal is to eventually add other data stream options. Available data products and variables can be found under the Access Data tab on the Copernicus Marine Service website (https://marine.copernicus.eu/access-data/).
+Description: Downloads environmental data from the Copernicus Marine Service
+    and matches it to species observation data (presence-absence, density,
+    count) in space and time, at the environmental data's own resolution.
+    Variables are requested by familiar names such as 'SST' rather than
+    product-specific codes, and reanalysis or analysis-and-forecast products
+    can be used interchangeably. Also provides spatial and temporal resampling
+    for combining products of different resolution, gap filling for satellite
+    ocean colour, seafloor terrain from NOAA ETOPO, basin-scale climate
+    indices, and plots for inspecting what was downloaded. Available products
+    and variables are listed under the Access Data tab on the Copernicus Marine
+    Service website (<https://marine.copernicus.eu/access-data/>).
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
