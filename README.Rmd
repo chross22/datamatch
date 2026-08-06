@@ -29,6 +29,7 @@ The goal of datamatch is to pull environmental data from Copernicus Marine Servi
 - [Installation](#installation)
 - [Set up](#set-up) — the Copernicus client, sign-in, and where downloads are cached
 - [Quick start](#quick-start)
+  - [One call per product](#one-call-per-product) — why `SST` and `CHL` are two fetches
 
 **Choosing what to fetch**
 
@@ -118,6 +119,46 @@ matched <- matchData(speciesDat = observations, envDat = env)
 ```
 
 `variable_dictionary()` lists what is available.
+
+### One call per product
+
+**Variables from different Copernicus products need separate calls.** `SST` is
+physics, `CHL` is biogeochemistry, and they live in different datasets on
+different grids. Asking for both at once is an error, not a download:
+
+```{r quickstart-mixed, eval = FALSE}
+accessEnvDat(vars = c("SST", "CHL"), ...)
+#> Error: These variables come from different Copernicus datasets and cannot be
+#>   fetched together.
+```
+
+Fetch each separately, then join them to your observations one after another:
+
+```{r quickstart-two, eval = FALSE}
+bb <- list(xmin = -76, xmax = -65, ymin = 35, ymax = 45)
+
+phys <- accessEnvDat(vars = c("SST", "SSS", "MLD"),
+                     years = 2003:2017, months = 1:12, bounding_box = bb)
+
+bio  <- accessEnvDat(vars = c("CHL", "NO3"),
+                     years = 2003:2017, months = 1:12, bounding_box = bb)
+
+matched <- matchData(speciesDat = observations, envDat = phys)
+matched <- matchData(speciesDat = matched,      envDat = bio)
+```
+
+`matchData()` chains. Each call adds that product's columns and leaves the row
+count alone, so the order does not matter and nothing needs combining by hand.
+
+This is not a limitation to work around. The two products are on different grids,
+and refusing to fetch them together means the package never quietly reconciles
+those grids on your behalf. `matchData()` handles both correctly because it
+matches to the nearest cell whatever its size.
+
+`variable_dataset(c("SST", "CHL"))` tells you which product each variable comes
+from, so you can plan the calls before making them. See [Putting it
+together](#putting-it-together) for the same pattern with seafloor and
+basin-scale covariates added.
 
 ## Variable names
 
