@@ -22,9 +22,24 @@
 #'                            network/API, not CPU.
 #' @return envDat <sf object> sf object containing requested environmental data from Copernicus Marine Service
 #' @export
-accessEnvDat <- function(product_id, dataset_id, vars, years, months,
+accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars, years, months,
                          bounding_box, depth = c(0,1),
                          overwrite = FALSE, n_workers = 1) {
+
+  # `vars` may be catalog names ("SST") or raw Copernicus codes ("thetao").
+  # Codes go to the API; names come back as the column names, so a caller who
+  # asked for SST gets a column called SST rather than thetao.
+  resolved <- resolve_variables(vars)
+  var_codes <- resolved$codes
+  var_names <- resolved$names
+
+  # With every variable in the catalog, the product and dataset are implied and
+  # need not be repeated at the call site.
+  if (is.null(product_id) || is.null(dataset_id)) {
+    inferred <- infer_dataset(vars)
+    product_id <- product_id %||% inferred$product_id
+    dataset_id <- dataset_id %||% inferred$dataset_id
+  }
 
   # Build the full list of (year, month, day) combinations to fetch up front,
   # so they can be dispatched in parallel instead of three nested serial loops.
@@ -75,20 +90,32 @@ accessEnvDat <- function(product_id, dataset_id, vars, years, months,
     })
     results <- tryCatch(
       parallel::parLapply(cl, work_items, fetch_one_day,
-                           product_id = product_id, dataset_id = dataset_id, vars = vars,
+                           product_id = product_id, dataset_id = dataset_id, vars = var_codes,
                            bounding_box = bounding_box, depth = depth, overwrite = overwrite),
       error = function(e) stop("accessEnvDat: parallel fetch failed - ", conditionMessage(e), call. = FALSE)
     )
   } else {
     results <- lapply(work_items, fetch_one_day,
-                       product_id = product_id, dataset_id = dataset_id, vars = vars,
+                       product_id = product_id, dataset_id = dataset_id, vars = var_codes,
                        bounding_box = bounding_box, depth = depth, overwrite = overwrite)
   }
 
   covars <- dplyr::bind_rows(results)
 
-  # Define column names
-  names(covars) <- c("x", "y", vars, "YEAR", "MONTH", "DAY")
+  # Names are assigned positionally, so the raster must have exactly one layer
+  # per requested variable. A depth range spanning several model levels returns
+  # more, and silently mislabelling those columns would be worse than stopping.
+  expected <- length(var_names) + 5  # x, y, vars..., YEAR, MONTH, DAY
+  if (ncol(covars) != expected) {
+    stop("Expected ", length(var_names), " variable column(s) but the download ",
+         "returned ", ncol(covars) - 5, ". This usually means the depth range ",
+         "spans several model levels; request a single level, or one variable ",
+         "at a time.", call. = FALSE)
+  }
+
+  # Columns take the names the caller asked for, so requesting "SST" yields a
+  # column called SST rather than thetao.
+  names(covars) <- c("x", "y", var_names, "YEAR", "MONTH", "DAY")
 
   # Convert data to sf and return
   sf::st_as_sf(covars,

@@ -208,3 +208,101 @@ test_that("accessEnvDat covers every requested year and month", {
   # One grid (4 cells) per year x month combination.
   expect_equal(nrow(result), 4 * 2 * 3)
 })
+
+test_that("catalog names become the result's column names", {
+  # The caller asked for SST, so the column is SST - not the thetao code that
+  # went to the API.
+  raster_path <- write_fake_raster(c("thetao", "so"))
+
+  local_mocked_bindings(
+    copernicus_path = function(...) raster_path,
+    .package = "copernicus"
+  )
+  local_mocked_bindings(
+    file_exists = function(...) TRUE,
+    .package = "fs"
+  )
+
+  result <- accessEnvDat(
+    product_id = "GLOBAL_TEST",
+    dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1M-m",
+    vars = c("SST", "SSS"),
+    years = 2020, months = 1,
+    bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45)
+  )
+
+  expect_true(all(c("SST", "SSS") %in% names(result)))
+  expect_false(any(c("thetao", "so") %in% names(result)))
+})
+
+test_that("the product and dataset are inferred from catalog names", {
+  # Both are omitted here; the catalog knows SST and SSS are physical variables.
+  raster_path <- write_fake_raster(c("thetao", "so"))
+  requested <- NULL
+
+  local_mocked_bindings(
+    copernicus_path = function(...) {
+      requested <<- c(...)
+      raster_path
+    },
+    .package = "copernicus"
+  )
+  local_mocked_bindings(
+    file_exists = function(...) TRUE,
+    .package = "fs"
+  )
+
+  result <- accessEnvDat(
+    vars = c("SST", "SSS"),
+    years = 2020, months = 1,
+    bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45)
+  )
+
+  expect_true(all(c("SST", "SSS") %in% names(result)))
+  # The inferred identifiers reach the cache path, which is built from them.
+  expect_true(any(grepl("GLOBAL_MULTIYEAR_PHY_001_030", requested)))
+})
+
+test_that("mixing datasets is refused before any download is attempted", {
+  downloaded <- FALSE
+  local_mocked_bindings(
+    download_copernicus_cli_subset = function(...) {
+      downloaded <<- TRUE
+      TRUE
+    },
+    .package = "copernicus"
+  )
+
+  expect_error(
+    accessEnvDat(vars = c("SST", "CHL"), years = 2020, months = 1,
+                 bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45)),
+    "different Copernicus datasets"
+  )
+  expect_false(downloaded)
+})
+
+test_that("a layer count that does not match the request is an error", {
+  # Names are assigned positionally, so a depth range spanning several model
+  # levels would silently mislabel columns. Stopping is the lesser evil.
+  raster_path <- write_fake_raster(c("thetao", "so", "extra_level"))
+
+  local_mocked_bindings(
+    copernicus_path = function(...) raster_path,
+    .package = "copernicus"
+  )
+  local_mocked_bindings(
+    file_exists = function(...) TRUE,
+    .package = "fs"
+  )
+
+  expect_error(
+    accessEnvDat(
+      product_id = "GLOBAL_TEST",
+      dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1M-m",
+      vars = c("SST", "SSS"),
+      years = 2020, months = 1,
+      bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45)
+    ),
+    "depth range spans several model levels"
+  )
+})

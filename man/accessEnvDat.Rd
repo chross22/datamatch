@@ -5,8 +5,8 @@
 \title{Access environmental data from Copernicus Marine Service}
 \usage{
 accessEnvDat(
-  product_id,
-  dataset_id,
+  product_id = NULL,
+  dataset_id = NULL,
   vars,
   years,
   months,
