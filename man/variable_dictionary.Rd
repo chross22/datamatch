@@ -18,7 +18,7 @@ variable_dictionary(product = c("all", "physical", "biogeochemical"))
 }
 \value{
 a data frame of class \code{datamatch_dictionary} with columns \code{name},
-\code{variable}, \code{label}, \code{units}, and \code{dataset}
+\code{variable}, \code{label}, \code{units}, \code{product}, \code{dataset}, \code{url}, and \code{description}
 }
 \description{
 The catalog as a data frame: what each short name means, its units, and the
@@ -31,4 +31,7 @@ variable_dictionary("biogeochemical")
 
 # As a plain data frame, for programmatic use
 as.data.frame(variable_dictionary())
+
+# The product page for a variable, to check its coverage and revisions
+as.data.frame(variable_dictionary())[c("name", "url")]
 }

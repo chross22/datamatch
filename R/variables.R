@@ -80,6 +80,21 @@ copernicus_variables <- function() {
   )
 }
 
+#' Copernicus Marine product page for a product identifier
+#'
+#' Where to check a product's coverage, resolution, revision history, and
+#' citation. Dataset identifiers change from time to time, and this is the page
+#' that says what the current one is.
+#'
+#' @param product_id a Copernicus product identifier
+#' @return the product page URL
+#' @examples
+#' product_url("GLOBAL_MULTIYEAR_PHY_001_030")
+#' @export
+product_url <- function(product_id) {
+  paste0("https://data.marine.copernicus.eu/product/", product_id, "/description")
+}
+
 #' Printable dictionary of variable names
 #'
 #' The catalog as a data frame: what each short name means, its units, and the
@@ -88,13 +103,16 @@ copernicus_variables <- function() {
 #'
 #' @param product filter to `"physical"`, `"biogeochemical"`, or `"all"`
 #' @return a data frame of class `datamatch_dictionary` with columns `name`,
-#'   `variable`, `label`, `units`, and `dataset`
+#'   `variable`, `label`, `units`, `product`, `dataset`, `url`, and `description`
 #' @examples
 #' variable_dictionary()
 #' variable_dictionary("biogeochemical")
 #'
 #' # As a plain data frame, for programmatic use
 #' as.data.frame(variable_dictionary())
+#'
+#' # The product page for a variable, to check its coverage and revisions
+#' as.data.frame(variable_dictionary())[c("name", "url")]
 #' @export
 variable_dictionary <- function(product = c("all", "physical", "biogeochemical")) {
   product <- match.arg(product)
@@ -104,7 +122,8 @@ variable_dictionary <- function(product = c("all", "physical", "biogeochemical")
     entry <- catalog[[name]]
     data.frame(
       name = name, variable = entry$variable, label = entry$label,
-      units = entry$units, dataset = entry$dataset_id,
+      units = entry$units, product = entry$product_id, dataset = entry$dataset_id,
+      url = product_url(entry$product_id),
       description = entry$description, stringsAsFactors = FALSE
     )
   }))
@@ -124,13 +143,23 @@ variable_dictionary <- function(product = c("all", "physical", "biogeochemical")
 #' @rdname variable_dictionary
 #' @export
 print.datamatch_dictionary <- function(x, ...) {
+  flat <- as.data.frame(x)
   cat("Copernicus variables available by name\n")
   cat(strrep("-", 62), "\n", sep = "")
 
-  # The description is the widest column by far and would wrap unreadably, so
-  # the printed view drops it; it remains in the returned object.
-  visible <- as.data.frame(x)[c("name", "variable", "label", "units")]
+  # Descriptions, dataset identifiers and URLs are all far too wide to tabulate
+  # and would wrap unreadably. The products are listed underneath instead, so
+  # the provenance is still visible without destroying the table.
+  visible <- flat[c("name", "variable", "label", "units")]
   print(visible, row.names = FALSE, right = FALSE)
+
+  cat("\nProducts\n")
+  for (product in unique(flat$product)) {
+    names_in <- flat$name[flat$product == product]
+    cat("  ", product, "\n", sep = "")
+    cat("    ", paste(names_in, collapse = ", "), "\n", sep = "")
+    cat("    ", product_url(product), "\n", sep = "")
+  }
 
   cat("\nPass a name to accessEnvDat(vars = ...), or the Copernicus code.\n")
   cat("Full descriptions: as.data.frame(variable_dictionary())$description\n")

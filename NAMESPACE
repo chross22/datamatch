@@ -2,7 +2,11 @@
 
 S3method(print,datamatch_dictionary)
 export(accessEnvDat)
+export(attach_bathymetry)
+export(bathymetry_variables)
 export(copernicus_variables)
+export(fetch_bathymetry)
 export(matchData)
+export(product_url)
 export(variable_dataset)
 export(variable_dictionary)
