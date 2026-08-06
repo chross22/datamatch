@@ -5,3 +5,6 @@
 .httr-oauth
 .DS_Store
 .quarto
+
+# Reference papers kept locally, not distributed with the package
+*.pdf
