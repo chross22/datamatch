@@ -2,7 +2,7 @@
 % Please edit documentation in R/bathymetry.R
 \name{bathymetry_layers}
 \alias{bathymetry_layers}
-\title{Convert a marmap bathy object into depth, slope, and aspect layers}
+\title{Convert a marmap bathy object into terrain layers}
 \usage{
 bathymetry_layers(bathy)
 }
@@ -10,7 +10,7 @@ bathymetry_layers(bathy)
 \item{bathy}{a \code{marmap} \code{bathy} object}
 }
 \value{
-a \code{terra::SpatRaster} with \code{DEPTH}, \code{SLOPE}, and \code{ASPECT} layers
+a \code{terra::SpatRaster} with \code{DEPTH}, \code{SLOPE}, \code{ASPECT}, and \code{TPI} layers
 }
 \description{
 Split from \code{fetch_bathymetry()} so the conversion can be tested without a

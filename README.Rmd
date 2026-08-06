@@ -32,9 +32,34 @@ devtools::install_github("chross22/datamatch")
 
 ## Set up
 
-Before installation, you must install the Copernicus Marine toolbox from Copernicus Marine Service. This requires registering for a Copernicus account if you don't already have one, as you will need these credentials to configure the toolbox. 
+Downloads go through `copernicusmarine`, the official Python client. It is not
+an R package and is not installed with this one:
 
-To install this toolbox, visit the Copernicus website. In brief, ...
+``` bash
+pip install copernicusmarine
+copernicusmarine login
+```
+
+`login` needs a free [Copernicus Marine
+account](https://data.marine.copernicus.eu/register), and only has to be run
+once — the client stores the credentials itself, and this package never sees
+them.
+
+If the client is installed but R cannot find it — common when it lives in a
+conda environment that RStudio does not inherit the `PATH` of — point at it
+directly in `~/.Rprofile`:
+
+``` r
+options(datamatch.copernicusmarine = "~/miniconda3/bin/copernicusmarine")
+```
+
+Downloaded files are cached so a repeated request is read from disk rather than
+re-fetched. The cache goes in `tools::R_user_dir("datamatch", "cache")` unless
+you say otherwise:
+
+``` r
+options(datamatch.cache = "~/data/copernicus")   # or DATAMATCH_CACHE
+```
 
 ## Quick start
 
@@ -185,6 +210,86 @@ gradient computed from it measures the source grid rather than the ocean. Keepin
 the coarser grid replicates nothing but discards resolution the fine variables
 really had. `taupatch` exposes this as a `covariates.grid` setting.
 
+`upscale_grid()` and `downscale_grid()` are how you act on that decision.
+
+## Resampling
+
+Four functions, one pair per axis. Each takes a `method`, because there is no
+single right way to change resolution:
+
+| | Coarser | Finer |
+|---|---|---|
+| **Space** | `upscale_grid()` | `downscale_grid()` |
+| **Time** | `upscale_time()` | `downscale_time()` |
+
+```{r resample, eval = FALSE}
+chl <- accessEnvDat(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
+sst <- accessEnvDat(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
+
+# Satellite CHL (4 km) onto the physics grid, so the two can be modelled together
+chl_on_sst <- upscale_grid(chl, to = sst)
+
+# Or onto a stated resolution
+chl_quarter <- upscale_grid(chl, to = 0.25, method = "median")
+
+# Daily data to monthly means; monthly back out to daily
+monthly <- upscale_time(daily_sst, to = "month")
+daily   <- downscale_time(monthly, to = "day")
+```
+
+The target is either a resolution or **another object whose grid to adopt** —
+the second form is what puts two products on one grid. A resolution is anchored
+to the origin rather than to your data's corner, so two products upscaled to
+0.25° land on the *same* cells instead of half a cell apart.
+
+### Aggregating loses detail, which is the safe direction
+
+`mean` is the default. The others exist because "the value of this coarse cell"
+is not one question: `median` resists the retrieval outliers at satellite cloud
+edges, `min` of depth is the shallowest point a cell contains rather than its
+average, `sum` is for per-cell totals and meaningless for a concentration, and
+`sd` over a period is variability as a covariate in its own right. Pass one
+method for everything, or a named vector per variable:
+
+```{r methods, eval = FALSE}
+upscale_grid(env, to = 0.25, method = c(CHL = "median", DEPTH = "min"))
+```
+
+**Partly-covered periods and cells come back `NA` by default.** A mean over the
+four days of January you happened to fetch is not a January mean, and nothing in
+the number itself says so. `min_coverage` defaults to 0.5, measured against the
+steps a period *has* — 31 for January — not the steps that were downloaded. Set
+`min_coverage = 0` to aggregate whatever is present, and `keep_counts = TRUE` to
+see what was behind each value.
+
+### Interpolating adds cells, not information
+
+This is the direction to be careful in. A 0.25° field rendered at 4 km has 4 km
+*cells*, but it still resolves nothing below 0.25°, and none of these methods
+consult any other data source — so there is nowhere for real fine-scale
+structure to come from.
+
+That is why the defaults are the blunt ones. `nearest` and `step` replicate the
+source value, leaving the result visibly blocky at the source resolution, so the
+output looks like what it is. `bilinear`, `cubic`, `linear`, and `spline` return
+smooth fields that look like finely-resolved measurements and are not.
+
+There is a further trap specific to the time axis:
+
+> **`linear` and `spline` do not preserve the period mean.** Interpolate twelve
+> monthly means to daily values, average those days back up, and you will not
+> recover the months you started from — in the package's own tests a March mean
+> of 15.0 comes back as 14.83. Any budget or total computed from such a series
+> inherits that error. `step` preserves it exactly.
+
+`idw` is the exception worth reaching for: alone among the spatial methods it
+fills across holes rather than propagating them, which makes it useful on gappy
+satellite data where `fill_satellite_gaps()` is not an option.
+
+Resampled output keeps the `YEAR`/`MONTH`/`DAY` stamping convention, so
+`matchData()` reads its resolution back correctly and can be used on the result
+directly.
+
 ## Forecasts
 
 The same variables can be requested from the analysis-and-forecast products,
@@ -230,6 +335,120 @@ is rescaled by default, and a `<var>_source` column records where each value cam
 from. `rescale = TRUE` matches the model's mean and variance to the satellite's
 over the cells where both exist, which reduces the step at the cost of altering
 the model values.
+
+## Looking at the data
+
+Four plots, in the order they are usually wanted. All use base graphics, so they
+need no extra packages, and each returns the data it drew so the numbers behind a
+picture are always available.
+
+```{r plot-env, eval = FALSE}
+env <- accessEnvDat(vars = c("SST", "CHL"), years = 2010, months = 1:12,
+                    bounding_box = bb)
+
+plot_env(env)                                # first variable, first time step
+plot_env(env, "CHL", time = c(MONTH = 6))    # June chlorophyll
+```
+
+`plot_env()` maps one variable for one time step. It is the first thing worth
+doing after a download and the fastest way to catch a bounding box that came out
+somewhere unintended, a variable that is entirely `NA`, or a depth range that
+returned the wrong level. Data are drawn as a raster, so gaps read as holes
+rather than as absent dots. The time step is named in the title, so a map is
+never ambiguous about which month it shows.
+
+```{r plot-coverage, eval = FALSE}
+plot_coverage(env)
+```
+
+`plot_coverage()` is the one to run before trusting a satellite series. It plots
+the fraction of cells carrying a value in each time step, and on ocean colour the
+shape is stark: near-complete in summer, a quarter of the grid in winter. That
+picture is what decides whether a monthly mean is worth having, whether
+`fill_satellite_gaps()` is worth the seam it introduces, and where to set
+`min_coverage` when aggregating.
+
+```{r plot-series, eval = FALSE}
+plot_series(env)                     # one panel per variable
+plot_series(env, "SST", fun = max)   # the warmest cell each month
+```
+
+`plot_series()` reduces each time step to one number over the study area, which
+is how a seasonal cycle, a trend, or a step change at a product boundary becomes
+visible. The interquartile range across cells is shaded behind the line, because
+a mean alone hides the difference between a uniformly warm month and one that is
+warm inshore and cold offshore.
+
+```{r plot-matched, eval = FALSE}
+matched <- matchData(speciesDat = observations, envDat = env)
+
+plot_matched(matched[matched$MONTH == 7, ], "SST")
+```
+
+`plot_matched()` shows what the join actually produced. Observations that matched
+nothing are drawn as open circles rather than dropped — a cluster of them is
+usually the real finding, marking observations outside the environmental data's
+extent or in a period it does not cover.
+
+Subset to one period first, as above. The colour scale spans everything passed
+in, so plotting a whole year of a seasonal variable mixes the seasons together
+and the map reads as noise: a warm February inshore point and a cool August
+offshore one can take the same colour.
+
+## Static and basin-scale covariates
+
+Not everything useful is a gridded Copernicus variable on a monthly time step.
+Two other kinds are available, and they behave differently from the Copernicus
+data and from each other.
+
+### Seafloor terrain
+
+Static — it does not vary by month or year — so it is fetched once for a study
+area and attached to every time step. Sourced from NOAA ETOPO via `marmap`,
+which is a suggested package rather than a hard dependency:
+
+```{r bathy, eval = FALSE}
+bathy <- fetch_bathymetry(
+  bounding_box = list(xmin = -70, xmax = -66, ymin = 41, ymax = 44)
+)
+
+observations <- attach_bathymetry(observations, bathy, c("DEPTH", "SLOPE", "TPI"))
+```
+
+`bathymetry_variables()` lists them: `DEPTH`, `SLOPE`, `ASPECT`, and `TPI`.
+
+`TPI` — topographic position index — is a cell's depth relative to the mean of
+the eight around it, and it answers a question depth cannot. A 100 m bank top
+and a 100 m basin floor are the same depth and very different places; TPI is
+positive on the first and negative on the second, and near zero on both flat
+bottom and uniform slopes. It is scale-dependent by construction, describing
+position within the immediate neighbourhood, so its meaning follows the
+resolution of the grid it was computed on.
+
+`attach_bathymetry()` takes either a plain data frame with coordinate columns or
+an `sf` object, so it works on observations and on `accessEnvDat()` output alike.
+
+### Climate indices
+
+Monthly, and with **no spatial dimension** — one value describes the whole basin,
+so every observation in a month receives the same number:
+
+```{r indices, eval = FALSE}
+observations <- attach_climate_index(observations, c("NAO", "AMO"))
+
+index_dictionary()          # NAO, AO, AMO, PDO
+```
+
+That makes them a different kind of covariate from local temperature. They carry
+information about *when* — what year and season it was — and none about *where*
+within a region conditions are better. Useful for interannual questions ("was
+this a warm-regime year?"), useless for spatial ones: a model given only indices
+cannot produce a map.
+
+One interaction to know: `attach_climate_index()` joins on year and month, and
+`upscale_time(to = "year")` stamps its output `MONTH = 1`. Attaching an index to
+annual data would therefore give every year January's value. Aggregate the index
+to a year first instead.
 
 ## Matching to observations
 

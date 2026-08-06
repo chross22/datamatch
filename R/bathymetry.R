@@ -32,6 +32,18 @@ bathymetry_variables <- function() {
       description = paste("Compass direction the seafloor slope faces, computed",
                           "from the depth grid. Meaningless where the bottom is",
                           "flat, so expect noise in deep basins.")
+    ),
+    TPI = list(
+      label = "Topographic position index", units = "m",
+      description = paste("A cell's depth relative to the mean of the eight cells",
+                          "around it. Positive on banks, ledges, and seamounts;",
+                          "negative in basins and channels; near zero on both flat",
+                          "bottom and uniform slopes. Separates local highs from",
+                          "lows, which raw depth cannot: a 100 m bank top and a",
+                          "100 m basin floor are the same depth and very different",
+                          "places. Scale-dependent - it describes position within",
+                          "the immediate neighbourhood, so its meaning follows the",
+                          "resolution of the grid it was computed on.")
     )
   )
 }
@@ -88,13 +100,13 @@ fetch_bathymetry <- function(bounding_box, resolution = 4, path = tempdir(),
   bathymetry_layers(bathy)
 }
 
-#' Convert a marmap bathy object into depth, slope, and aspect layers
+#' Convert a marmap bathy object into terrain layers
 #'
 #' Split from `fetch_bathymetry()` so the conversion can be tested without a
 #' network call.
 #'
 #' @param bathy a `marmap` `bathy` object
-#' @return a `terra::SpatRaster` with `DEPTH`, `SLOPE`, and `ASPECT` layers
+#' @return a `terra::SpatRaster` with `DEPTH`, `SLOPE`, `ASPECT`, and `TPI` layers
 #' @keywords internal
 bathymetry_layers <- function(bathy) {
   # marmap stores elevation with land positive and depth negative. Depth as a
@@ -111,7 +123,13 @@ bathymetry_layers <- function(bathy) {
   terrain <- terra::terrain(depth, v = c("slope", "aspect"), unit = "degrees")
   names(terrain) <- c("SLOPE", "ASPECT")
 
-  c(depth, terrain)
+  # TPI is computed on depth rather than elevation, so its sign follows the
+  # seafloor rather than inverting with it: positive is a local high (bank,
+  # ledge), negative a local low (basin, channel).
+  tpi <- -terra::terrain(depth, v = "TPI")
+  names(tpi) <- "TPI"
+
+  c(depth, terrain, tpi)
 }
 
 #' Attach static bathymetry to a table of points

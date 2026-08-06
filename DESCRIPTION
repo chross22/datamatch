@@ -10,15 +10,16 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Imports:
     utils,
-    copernicus,
+    graphics,
+    grDevices,
+    stats,
+    tools,
     dplyr,
     sf,
     lubridate,
     terra,
     fs,
     parallel
-Remotes:
-    BigelowLab/copernicus
 Suggests:
     marmap,
     testthat (>= 3.0.0)
