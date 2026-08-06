@@ -517,14 +517,44 @@ within a region conditions are better. Useful for interannual questions ("was
 this a warm-regime year?"), useless for spatial ones: a model given only indices
 cannot produce a map.
 
+Five are available, and they are not interchangeable.
+
+| Name | What it measures | Timescale |
+|---|---|---|
+| `NAO` | Pressure difference, Icelandic Low to Azores High | Year to year |
+| `AO` | Strength of the polar vortex | Year to year |
+| `AMO` | Detrended North Atlantic SST anomaly | Multidecadal |
+| `PDO` | Leading mode of North Pacific SST | Decadal |
+| `LCR` | Retroflection of the Labrador Current | Year to year |
+
+**`NAO`** is the usual first choice in the Northwest Atlantic. It sets the
+strength and track of the westerlies, and with them heat flux and mixing over the
+shelves. Its winter values carry most of the signal; summer values are noisier and
+mean less.
+
+**`AO`** is the hemispheric version of the same thing — polar vortex strength
+rather than an Atlantic-specific pressure dipole. In winter it correlates strongly
+with `NAO`, so including both usually buys little and costs collinearity. Pick one
+unless you have a reason.
+
+**`AMO`** is a slow background state, not a year-to-year signal: it varies over
+decades, so within a study period of ten or twenty years it may act more like a
+trend than a covariate. One caution — it is *derived from* North Atlantic SST, so
+using it to predict local SST is partly circular.
+
+**`PDO`** is North Pacific and included for completeness. It has limited relevance
+to Atlantic shelf systems, and a relationship found with it is worth treating
+sceptically.
+
 #### The Labrador Current retroflection index
 
-`LCR` is the odd one out and often the most directly useful of the five. The
-other four are atmospheric patterns; this one describes a *current* — how much
-of the Labrador Current turns eastward at the Grand Banks instead of continuing
-southwest along the shelf. Positive values mean stronger retroflection, so less
-cold, fresh, oxygen-rich Labrador water reaching the Scotian Shelf and Gulf of
-Maine. For shelf water properties that is a shorter causal chain than the NAO.
+`LCR` is the odd one out among the five, and often the most directly useful. The
+other four are atmospheric or SST patterns; this one describes a *current* — how
+much of the Labrador Current turns eastward at the Grand Banks instead of
+continuing southwest along the shelf. Positive values mean stronger retroflection,
+so less cold, fresh, oxygen-rich Labrador water reaching the Scotian Shelf and
+Gulf of Maine. For shelf water properties that is a shorter causal chain than the
+NAO, which acts on them only indirectly through winds.
 
 
 ``` r
@@ -542,18 +572,101 @@ It is the published output of one study rather than an operational product, so
 `index_dictionary()` prints that citation, and
 `as.data.frame(index_dictionary())$reference` carries it at runtime.
 
-Two limits worth knowing. It **covers 1993–2014 only**, so it cannot be attached
-to recent observations. And the series is fetched from the paper's published
-source data rather than recomputed — the authors derived it by tracking virtual
-particles through GLORYS12V1 with
-[OceanParcels](https://oceanparcels.org/), which is a Lagrangian modelling
-exercise rather than something this package reproduces. Extending the record
-past 2014 means redoing that computation, not calling a different function.
+Three limits worth knowing.
+
+It **covers 1993–2014 only**, so it cannot be attached to recent observations.
+
+The series is fetched from the paper's published source data rather than
+recomputed. The authors derived it by seeding 966 virtual particles per week
+across a line at (53°N, 56.7°W)–(54.3°N, 52.0°W), tracking each for three years
+through GLORYS12V1 velocities with [OceanParcels](https://oceanparcels.org/), and
+differencing the counts crossing hydrographic sections on the Labrador and
+Scotian Shelves. Extending the record past 2014 means redoing that computation,
+not calling a different function.
+
+**The values are the raw index, not the normalized one plotted in the paper.**
+The published source data runs roughly −0.09 to 0.18, consistent with a fraction
+of the seeded particles. Figure 3a of the paper shows a detrended, smoothed
+series normalized to [−1, 1], which spans about −0.6 to +0.5. Both describe the
+same quantity, but the numbers are not comparable — don't read a value here
+against that figure. If you need the paper's variant, apply its chain yourself:
+detrend, 12-month rolling mean, rescale to [−1, 1], subtract the 1993–2015 mean.
 
 One interaction to know: `attach_climate_index()` joins on year and month, and
 `upscale_time(to = "year")` stamps its output `MONTH = 1`. Attaching an index to
 annual data would therefore give every year January's value. Aggregate the index
 to a year first instead.
+
+## Putting it together
+
+A worked example: physical, biological, seafloor, and basin-scale covariates onto
+one table of species observations. The whole thing is a pipeline of joins, each
+one adding columns and never changing the number of rows.
+
+
+``` r
+library(datamatch)
+
+bb <- list(xmin = -70, xmax = -66, ymin = 41, ymax = 44)
+years <- 2010:2014
+
+# 1. Physical and biological variables come from different Copernicus datasets,
+#    so they are two calls. accessEnvDat() refuses to mix them in one.
+phys <- accessEnvDat(vars = c("SST", "SSS", "MLD"),
+                     years = years, months = 1:12, bounding_box = bb)
+
+bio  <- accessEnvDat(vars = c("CHL", "NO3"),
+                     years = years, months = 1:12, bounding_box = bb)
+
+# 2. Seafloor terrain: static, fetched once for the area.
+bathy <- fetch_bathymetry(bounding_box = bb)
+
+# 3. Join each source to the observations in turn.
+matched <- matchData(speciesDat = observations, envDat = phys)
+matched <- matchData(speciesDat = matched,      envDat = bio)
+
+matched <- attach_bathymetry(matched, bathy, c("DEPTH", "SLOPE", "TPI"))
+matched <- attach_climate_index(matched, c("NAO", "LCR"))
+```
+
+The result carries one row per original observation with every covariate
+attached:
+
+```
+YEAR MONTH count   SST   SSS   MLD   CHL   NO3  DEPTH  SLOPE    TPI   NAO   LCR
+2010     1     2  6.41 32.80  84.2  0.84  4.12  105.5   1.83   77.2  0.31  0.05
+2010     1     1  5.98 32.94  91.7  0.79  4.55  294.7   0.42 -114.7  0.31  0.05
+```
+
+Three things about this that are worth understanding rather than copying.
+
+**The two `accessEnvDat()` calls are not an inconvenience to work around.** `SST`
+and `CHL` live in different datasets on different grids — 0.083° for the physics,
+0.25° for the biogeochemistry — and the package refuses to fetch them together
+rather than quietly reconciling two grids on your behalf. `matchData()` then
+handles both correctly, because it matches to the nearest cell whatever its size.
+
+**`matchData()` chains.** Its output is an `sf` object with the same time columns
+it consumed, so feeding it back in for the next dataset works and the row count is
+preserved. Order does not matter.
+
+**Not every join can fail the same way.** `matchData()` warns and fills `NA` when
+an observation falls in a period the environmental data does not cover;
+`attach_climate_index()` gives `NA` outside the index's record — which for `LCR`
+means anything after 2014. Check for those before modelling:
+
+
+``` r
+colSums(is.na(sf::st_drop_geometry(matched)))
+```
+
+If you want everything on a common grid rather than joined to points — to model
+the field itself rather than the observations — regrid first and match after:
+
+
+``` r
+phys_coarse <- upscale_grid(phys, to = bio)    # 0.083° onto the 0.25° BGC grid
+```
 
 ## Matching to observations
 

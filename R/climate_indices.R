@@ -144,6 +144,14 @@ print.datamatch_index_dictionary <- function(x, ...) {
 #' from the journal rather than recomputed, so the values are the authors' own.
 #' `as.data.frame(index_dictionary())$reference` carries this at runtime.
 #'
+#' Note that these are the **raw** index values, running roughly -0.09 to 0.18,
+#' consistent with a fraction of the seeded particles. Figure 3a of the paper
+#' plots a detrended, smoothed series normalized to `[-1, 1]`, spanning about
+#' -0.6 to +0.5. Both describe the same quantity, but a value here is not
+#' comparable with that figure. Reproducing the plotted variant means applying
+#' the paper's chain: detrend, 12-month rolling mean, rescale to `[-1, 1]`,
+#' subtract the 1993-2015 mean.
+#'
 #' @param index an index name from [climate_indices()]
 #' @param years years to keep; `NULL` keeps the whole record
 #' @param url override the catalog URL, if a provider has moved the file
