@@ -677,9 +677,51 @@ test_that("days outside 1:31 are refused before anything is resolved", {
   )
 })
 
-test_that("days on a monthly dataset warns rather than silently doing nothing", {
-  # A monthly field has no days to choose between. Returning the month's mean
-  # for what was asked for as three days of it should be said out loud.
+test_that("days implies daily, without frequency being given", {
+  # Selecting days of the month means nothing to a monthly mean, so asking for
+  # days is asking for daily. Requiring frequency = "daily" as well would let
+  # `days` be passed to a monthly fetch and quietly do nothing.
+  raster_path <- write_fake_raster("thetao")
+  used <- NULL
+
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
+  local_mocked_bindings(file_exists = function(...) FALSE, .package = "fs")
+  local_mocked_bindings(
+    download_copernicus_subset = function(dataset_id, ...) {
+      used <<- dataset_id
+      invisible(0)
+    }
+  )
+
+  result <- accessEnvDat(
+    vars = "SST", years = 2020, months = 1,
+    bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
+    days = c(1, 15), n_workers = 1
+  )
+
+  expect_equal(used, "cmems_mod_glo_phy_my_0.083deg_P1D-m")
+  expect_equal(sort(unique(result$DAY)), c(1, 15))
+})
+
+test_that("days with an explicit frequency = 'monthly' is a contradiction", {
+  local_mocked_bindings(
+    download_copernicus_subset = function(...) stop("should not be called")
+  )
+
+  expect_error(
+    accessEnvDat(
+      vars = "SST", years = 2020, months = 1,
+      bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
+      days = c(1, 15), frequency = "monthly"
+    ),
+    "no ?days to select between|frequency = \"monthly\" was given"
+  )
+})
+
+test_that("days on an explicitly monthly dataset_id warns and is ignored", {
+  # Here the frequency is not a request but a property of the dataset, so there
+  # is nothing to resolve - but returning the month's mean for what was asked
+  # for as two days of it should still be said out loud.
   raster_path <- write_fake_raster("thetao")
 
   local_mocked_bindings(copernicus_cache = function(...) raster_path)
@@ -687,7 +729,9 @@ test_that("days on a monthly dataset warns rather than silently doing nothing", 
 
   expect_warning(
     result <- accessEnvDat(
-      vars = "SST", years = 2020, months = 1,
+      product_id = "GLOBAL_TEST",
+      dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1M-m",
+      vars = "thetao", years = 2020, months = 1,
       bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
       days = c(1, 15)
     ),
@@ -695,6 +739,34 @@ test_that("days on a monthly dataset warns rather than silently doing nothing", 
   )
 
   expect_equal(unique(result$DAY), 1)
+})
+
+test_that("the monthly default still needs nothing said about it", {
+  # The point of the change: a call that mentions neither frequency nor days is
+  # untouched by either.
+  raster_path <- write_fake_raster("thetao")
+  used <- NULL
+
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
+  local_mocked_bindings(file_exists = function(...) FALSE, .package = "fs")
+  local_mocked_bindings(
+    download_copernicus_subset = function(dataset_id, ...) {
+      used <<- dataset_id
+      invisible(0)
+    }
+  )
+
+  expect_silent(
+    result <- accessEnvDat(
+      vars = "SST", years = 2020, months = 1:3,
+      bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
+      n_workers = 1
+    )
+  )
+
+  expect_equal(used, "cmems_mod_glo_phy_my_0.083deg_P1M-m")
+  expect_equal(unique(result$DAY), 1)
+  expect_equal(sort(unique(result$MONTH)), 1:3)
 })
 
 test_that("only the selected days are downloaded", {

@@ -97,9 +97,15 @@
 
   `days` selects which days of each month to fetch — `days = c(1, 15)` over
   eleven years is 264 downloads rather than 4018 — so a long record can be
-  sampled instead of fetched whole. A day a month does not have is dropped from
-  that month, which is the calendar rather than an error; asking only for days
-  no requested month has is an error, since it describes an empty request.
+  sampled instead of fetched whole. Passing it implies `frequency = "daily"`,
+  since selecting days of the month means nothing to a monthly mean; passing it
+  alongside an explicit `frequency = "monthly"` is a contradiction and an error.
+  A day a month does not have is dropped from that month, which is the calendar
+  rather than an error; asking only for days no requested month has is an error,
+  since it describes an empty request.
+
+  **Monthly remains the default.** A call naming neither `frequency` nor `days`
+  fetches monthly means exactly as before.
 
 * **Downloads run in parallel.** Only the days not already cached are fetched,
   and they go out `n_workers` at a time (default 4). A month of daily SST and

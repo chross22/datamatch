@@ -154,8 +154,9 @@ matches to the nearest cell whatever its size.
 
 ### Monthly or daily
 
-Fetches are monthly means by default. `frequency = "daily"` uses the daily
-datasets instead, expanding each requested month into its days:
+**Fetches are monthly means by default**, and a call that mentions neither
+`frequency` nor `days` behaves exactly as it always has. `frequency = "daily"`
+uses the daily datasets instead, expanding each requested month into its days:
 
 
 ``` r
@@ -170,16 +171,17 @@ at a time.
 
 `days` is the other way to keep that in hand. It takes day-of-month numbers and
 applies them to every requested month, so a long record can be sampled rather
-than fetched whole:
+than fetched whole. Passing it implies `frequency = "daily"`, since selecting
+days of the month means nothing to a monthly mean:
 
 
 ``` r
 # The 1st and 15th of every month, 2005-2015: 264 days, not 4018
-accessEnvDat(vars = "SST", frequency = "daily", days = c(1, 15),
+accessEnvDat(vars = "SST", days = c(1, 15),
              years = 2005:2015, months = 1:12, bounding_box = bb)
 
 # Roughly weekly through a spring bloom
-accessEnvDat(vars = "CHL", frequency = "daily", days = seq(1, 29, by = 7),
+accessEnvDat(vars = "CHL", days = seq(1, 29, by = 7),
              years = 2015, months = 3:5, bounding_box = bb)
 ```
 

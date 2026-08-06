@@ -148,17 +148,21 @@ read_day <- function(item, vars) {
 #'
 #' `days` is the other way to keep that in hand: it takes day-of-month numbers
 #' and applies them to every requested month, so a decade can be sampled rather
-#' than fetched whole.
+#' than fetched whole. Passing it implies `frequency = "daily"`, since selecting
+#' days of the month means nothing to a monthly mean.
 #'
 #' ```
 #' # The 1st and 15th of every month, 2005 to 2015: 264 days, not 4018
-#' accessEnvDat(vars = "SST", frequency = "daily", days = c(1, 15),
+#' accessEnvDat(vars = "SST", days = c(1, 15),
 #'              years = 2005:2015, months = 1:12, bounding_box = bb)
 #'
 #' # Roughly weekly through a spring bloom
-#' accessEnvDat(vars = "CHL", frequency = "daily", days = seq(1, 29, by = 7),
+#' accessEnvDat(vars = "CHL", days = seq(1, 29, by = 7),
 #'              years = 2015, months = 3:5, bounding_box = bb)
 #' ```
+#'
+#' Passing `days` together with an explicit `frequency = "monthly"` is a
+#' contradiction rather than something to resolve by guessing, and is an error.
 #'
 #' Months are not the same length, so a day that does not exist in a given month
 #' is dropped from it: `days = 30` returns nothing for February and a value for
@@ -225,7 +229,8 @@ read_day <- function(item, vars) {
 #'   when `dataset_id` is given, since the dataset itself fixes the step.
 #' @param days <numeric> which days of the month to fetch, as day numbers
 #'   (`c(1, 15)`, `seq(1, 29, by = 7)`). Applies to every requested month.
-#'   `NULL`, the default, fetches every day. Daily data only.
+#'   `NULL`, the default, fetches every day of it. Passing `days` implies
+#'   `frequency = "daily"`, since a monthly mean has no days to select between.
 #' @param n_workers <integer> how many days to download at once. See the
 #'   Downloading in parallel section. Use `n_workers = 1` to download one day at
 #'   a time.
@@ -254,6 +259,17 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars, years, mont
     # Sorted and deduplicated so the result comes back in date order however the
     # argument was written, and a repeated day is not fetched twice.
     days <- sort(unique(as.integer(days)))
+
+    # Selecting days of the month only means anything in daily data, so asking
+    # for days is asking for daily. Requiring frequency = "daily" alongside
+    # would let `days` be passed to a monthly fetch and do nothing.
+    if (frequency_given && frequency == "monthly") {
+      stop("`days` selects days within daily data, but frequency = \"monthly\" ",
+           "was given.\nA monthly mean has one field per month, so there are no ",
+           "days to select between.\nDrop `days` for monthly means, or drop ",
+           "frequency = \"monthly\" to fetch those days.", call. = FALSE)
+    }
+    frequency <- "daily"
   }
 
   # `vars` may be catalog names ("SST") or raw Copernicus codes ("thetao").
