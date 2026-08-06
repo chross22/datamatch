@@ -73,8 +73,8 @@ variable_dictionary()
 #>  SIC       siconc   Sea ice concentration                   fraction 
 #>  CHL       CHL      Chlorophyll-a concentration (satellite) mg/m3    
 #>  PP        PP       Primary production (satellite)          mg/m2/day
-#>  DIATO     DIATO    Diatom chlorophyll                      mg/m3    
-#>  DINO      DINO     Dinophyte chlorophyll                   mg/m3    
+#>  DIATO     DIATO    Diatom chlorophyll-a concentration      mg/m3    
+#>  DINO      DINO     Dinophyte chlorophyll-a concentration   mg/m3    
 #>  NO3       no3      Nitrate concentration                   mmol/m3  
 #>  PO4       po4      Phosphate concentration                 mmol/m3  
 #>  O2        o2       Dissolved oxygen                        mmol/m3  
@@ -121,8 +121,8 @@ as_markdown(variable_dictionary())
 | SIC       | siconc   | Sea ice concentration                   | fraction  |
 | CHL       | CHL      | Chlorophyll-a concentration (satellite) | mg/m3     |
 | PP        | PP       | Primary production (satellite)          | mg/m2/day |
-| DIATO     | DIATO    | Diatom chlorophyll                      | mg/m3     |
-| DINO      | DINO     | Dinophyte chlorophyll                   | mg/m3     |
+| DIATO     | DIATO    | Diatom chlorophyll-a concentration      | mg/m3     |
+| DINO      | DINO     | Dinophyte chlorophyll-a concentration   | mg/m3     |
 | NO3       | no3      | Nitrate concentration                   | mmol/m3   |
 | PO4       | po4      | Phosphate concentration                 | mmol/m3   |
 | O2        | o2       | Dissolved oxygen                        | mmol/m3   |
@@ -204,8 +204,20 @@ as.data.frame(variable_dictionary())$description  # full descriptions
 
 ## Spatial and temporal resolution
 
-Products do not share a grid — the global physics reanalysis is 0.083 degrees
-and biogeochemistry 0.25 — so how resolution is handled matters.
+Products do not share a grid, so how resolution is handled matters:
+
+| Source | Spatial | Temporal | Gaps |
+|---|---|---|---|
+| Physics reanalysis | 0.083° (~9 km) | monthly, from 1993 | gap-free |
+| Biogeochemistry reanalysis | 0.25° (~28 km) | monthly, from 1993 | gap-free |
+| Satellite ocean colour | 4 km | monthly, from 1997 | **cloud gaps** |
+| Analysis-and-forecast | 0.083° / 0.25° | monthly, to ~10 days ahead | gap-free |
+
+Satellite is the finest and the only observed source, but it is also the only
+one with holes — and those holes are not random, clustering in the seasons and
+latitudes where cloud is persistent. `fill_satellite_gaps()` substitutes the
+model equivalent where the satellite saw nothing, and records the source of
+every value.
 
 **`accessEnvDat()` fetches one dataset per call**, on that dataset's native grid.
 It does not resample, and it refuses to fetch variables from different datasets
@@ -226,6 +238,52 @@ fine variables, but the coarse one is blocky rather than detailed, and a spatial
 gradient computed from it measures the source grid rather than the ocean. Keeping
 the coarser grid replicates nothing but discards resolution the fine variables
 really had. `taupatch` exposes this as a `covariates.grid` setting.
+
+## Forecasts
+
+The same variables can be requested from the analysis-and-forecast products,
+which run to about ten days ahead:
+
+``` r
+env <- accessEnvDat(
+  vars = c("SST", "MLD"),
+  years = 2026, months = 8,
+  bounding_box = list(xmin = -76, xmax = -65, ymin = 35, ymax = 45),
+  mode = "forecast"
+)
+```
+
+Two differences from the reanalysis are worth knowing, and are why this is a
+mapping rather than a swapped identifier:
+
+- **The forecast splits variables across more datasets.** `SST` and `SSS` share
+  a dataset in the reanalysis but not in the forecast, so a set that fetches in
+  one request may need several.
+- **Some codes differ.** Bottom temperature is `bottomT` in the reanalysis and
+  `tob` in the forecast. Requesting `BOTT` gets the right one either way.
+
+Satellite variables have no forecast — ocean colour is observation, and there is
+no observation of the future. Asking for `CHL` in forecast mode says so and
+points at `CHL_MODEL`.
+
+## Filling satellite gaps
+
+``` r
+chl_sat <- accessEnvDat(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
+chl_mod <- accessEnvDat(vars = "CHL_MODEL", years = 2010, months = 1:12, bounding_box = bb)
+
+filled <- fill_satellite_gaps(chl_sat, chl_mod, c(CHL = "CHL_MODEL"))
+table(filled$CHL_source)
+#> satellite     model   missing
+#>      8214      1902         0
+```
+
+The two sources are different measurements of the same quantity, not
+interchangeable ones, so the seam is left visible rather than smoothed: nothing
+is rescaled by default, and a `<var>_source` column records where each value came
+from. `rescale = TRUE` matches the model's mean and variance to the satellite's
+over the cells where both exist, which reduces the step at the cost of altering
+the model values.
 
 ## Matching to observations
 

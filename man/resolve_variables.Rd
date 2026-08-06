@@ -4,10 +4,12 @@
 \alias{resolve_variables}
 \title{Resolve variable names to Copernicus codes}
 \usage{
-resolve_variables(vars)
+resolve_variables(vars, mode = c("reanalysis", "forecast"))
 }
 \arguments{
 \item{vars}{variable names or codes}
+
+\item{mode}{\code{"reanalysis"} or \code{"forecast"}}
 }
 \value{
 a list with \code{codes} (Copernicus codes, in the given order) and

@@ -4,10 +4,12 @@
 \alias{catalog_entry}
 \title{Catalog entry for a name or a Copernicus code}
 \usage{
-catalog_entry(var)
+catalog_entry(var, mode = "reanalysis")
 }
 \arguments{
 \item{var}{a catalog name (\code{"SST"}) or a Copernicus code (\code{"thetao"})}
+
+\item{mode}{\code{"reanalysis"} or \code{"forecast"}}
 }
 \value{
 the catalog entry, or \code{NULL} if the variable is not in the catalog

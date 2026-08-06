@@ -4,10 +4,12 @@
 \alias{variable_dataset}
 \title{Look up the dataset a set of variables comes from}
 \usage{
-variable_dataset(vars)
+variable_dataset(vars, mode = c("reanalysis", "forecast"))
 }
 \arguments{
 \item{vars}{variable names from the catalog}
+
+\item{mode}{\code{"reanalysis"} (the default) or \code{"forecast"}}
 }
 \value{
 a named character vector of dataset identifiers, \code{NA} for names not in

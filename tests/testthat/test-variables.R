@@ -228,3 +228,57 @@ test_that("the printed dictionary shows product, dataset, and docs URL", {
   # And it should say that the identifiers can be left out.
   expect_true(any(grepl("can be", output)))
 })
+
+test_that("forecast mode resolves to the analysis-and-forecast products", {
+  inferred <- infer_dataset(c("SST"), mode = "forecast")
+
+  expect_equal(inferred$product_id, "GLOBAL_ANALYSISFORECAST_PHY_001_024")
+  expect_true(grepl("anfc", inferred$dataset_id))
+})
+
+test_that("forecast codes differ from reanalysis codes where Copernicus differs", {
+  # Bottom temperature is bottomT in the reanalysis and tob in the forecast.
+  # Reusing the reanalysis code would produce a failed download, which is why
+  # this is a mapping rather than a dataset substitution.
+  expect_equal(copernicus_variables()$BOTT$variable, "bottomT")
+  expect_equal(forecast_variables()$BOTT$variable, "tob")
+
+  expect_equal(resolve_variables("BOTT", mode = "forecast")$codes, "tob")
+  expect_equal(resolve_variables("BOTT")$codes, "bottomT")
+})
+
+test_that("forecast column names still follow the requested names", {
+  resolved <- resolve_variables(c("SST", "BOTT"), mode = "forecast")
+
+  expect_equal(resolved$codes, c("thetao", "tob"))
+  expect_equal(resolved$names, c("SST", "BOTT"))
+})
+
+test_that("the forecast products split variables across more datasets", {
+  # SST and SSS share a dataset in the reanalysis but not in the forecast, so a
+  # set that fetches in one request as reanalysis may need several as forecast.
+  expect_silent(infer_dataset(c("SST", "SSS")))
+  expect_error(infer_dataset(c("SST", "SSS"), mode = "forecast"),
+               "different Copernicus datasets")
+  expect_error(infer_dataset(c("SST", "SSS"), mode = "forecast"),
+               "split variables across datasets")
+
+  # Currents do share one.
+  expect_silent(infer_dataset(c("UO", "VO"), mode = "forecast"))
+})
+
+test_that("satellite variables have no forecast, and the error says why", {
+  expect_error(infer_dataset("CHL", mode = "forecast"), "No forecast exists")
+  expect_error(infer_dataset("CHL", mode = "forecast"),
+               "no observation of the future")
+  # And it points at the model equivalent, which does have one.
+  expect_silent(infer_dataset("CHL_MODEL", mode = "forecast"))
+})
+
+test_that("forecast entries keep the label and units of the same quantity", {
+  entry <- catalog_entry("SST", mode = "forecast")
+
+  expect_equal(entry$units, copernicus_variables()$SST$units)
+  expect_equal(entry$label, copernicus_variables()$SST$label)
+  expect_true(grepl("anfc", entry$dataset_id))
+})

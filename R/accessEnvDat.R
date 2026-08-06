@@ -43,6 +43,10 @@
 #' @param bounding_box <list> named list of spatial coordinates of bounding box
 #' @param depth <numeric> depth range to access (in meters)
 #' @param overwrite <logical> whether or not to overwrite the data if it exists locally
+#' @param mode <char> `"reanalysis"` (the default) for the multi-year hindcast,
+#'   or `"forecast"` for the analysis-and-forecast products, which run to about
+#'   ten days ahead. See [forecast_variables()] for which variables have a
+#'   forecast equivalent and how the identifiers differ.
 #' @param n_workers <integer> number of days to download/read in parallel, using a PSOCK
 #'                            cluster (parallel::makeCluster()). Defaults to 1 (serial, same
 #'                            behavior as before this argument existed). Deliberately NOT
@@ -57,19 +61,21 @@
 #' @export
 accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars, years, months,
                          bounding_box, depth = c(0,1),
-                         overwrite = FALSE, n_workers = 1) {
+                         overwrite = FALSE, n_workers = 1,
+                         mode = c("reanalysis", "forecast")) {
+  mode <- match.arg(mode)
 
   # `vars` may be catalog names ("SST") or raw Copernicus codes ("thetao").
   # Codes go to the API; names come back as the column names, so a caller who
   # asked for SST gets a column called SST rather than thetao.
-  resolved <- resolve_variables(vars)
+  resolved <- resolve_variables(vars, mode = mode)
   var_codes <- resolved$codes
   var_names <- resolved$names
 
   # With every variable in the catalog, the product and dataset are implied and
   # need not be repeated at the call site.
   if (is.null(product_id) || is.null(dataset_id)) {
-    inferred <- infer_dataset(vars)
+    inferred <- infer_dataset(vars, mode = mode)
     product_id <- product_id %||% inferred$product_id
     dataset_id <- dataset_id %||% inferred$dataset_id
   }

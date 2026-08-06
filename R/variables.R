@@ -90,16 +90,16 @@ copernicus_variables <- function() {
                          "units: this is depth-integrated, unlike the",
                          "volumetric model NPP."),
                    dataset_id = oc_pp),
-    DIATO = satellite("DIATO", "Diatom chlorophyll", "mg/m3",
+    DIATO = satellite("DIATO", "Diatom chlorophyll-a concentration", "mg/m3",
                       paste("Mass concentration of diatoms expressed as",
-                            "chlorophyll. Large, fast-growing cells that",
-                            "dominate the spring bloom and are the preferred",
-                            "prey of large copepods.")),
-    DINO = satellite("DINO", "Dinophyte chlorophyll", "mg/m3",
+                            "chlorophyll in sea water. Large, fast-growing",
+                            "cells that dominate the spring bloom and are the",
+                            "preferred prey of large copepods.")),
+    DINO = satellite("DINO", "Dinophyte chlorophyll-a concentration", "mg/m3",
                      paste("Mass concentration of dinophytes",
-                           "(dinoflagellates) expressed as chlorophyll.",
-                           "Typically later in the season than diatoms and",
-                           "favoured by stratified, low-nutrient water.")),
+                           "(dinoflagellates) expressed as chlorophyll in sea",
+                           "water. Typically later in the season than diatoms",
+                           "and favoured by stratified, low-nutrient water.")),
     NO3 = biogeochemical("no3", "Nitrate concentration", "mmol/m3",
                          "Mole concentration of nitrate, a limiting nutrient."),
     PO4 = biogeochemical("po4", "Phosphate concentration", "mmol/m3",
@@ -138,6 +138,70 @@ copernicus_variables <- function() {
 #' @export
 product_url <- function(product_id) {
   paste0("https://data.marine.copernicus.eu/product/", product_id, "/description")
+}
+
+#' Forecast equivalents of the catalog variables
+#'
+#' Where the reanalysis has a hindcast, the analysis-and-forecast products have a
+#' near-real-time equivalent running to about ten days ahead. This maps each
+#' catalog name onto the forecast product, dataset, and code that supply it.
+#'
+#' Two things make this a real mapping rather than a substitution of one
+#' identifier for another:
+#'
+#' \itemize{
+#'   \item **The forecast products split variables across datasets.** The
+#'     reanalysis serves all its physics from one dataset; the forecast has
+#'     separate ones for temperature, salinity, and currents. So a forecast fetch
+#'     of SST and SSS is two requests where the reanalysis is one.
+#'   \item **Some codes differ.** Bottom temperature is `bottomT` in the
+#'     reanalysis and `tob` in the forecast. Reusing the reanalysis code would
+#'     produce a failed download.
+#' }
+#'
+#' Satellite variables have no forecast: ocean colour is observation, and an
+#' observation of the future does not exist. `CHL`, `PP`, `DIATO`, and `DINO` are
+#' therefore absent here, and asking for them in forecast mode says so.
+#'
+#' @return a named list keyed by catalog name, each with `variable`,
+#'   `product_id`, and `dataset_id`
+#' @examples
+#' names(forecast_variables())
+#' forecast_variables()$BOTT$variable   # "tob", not "bottomT"
+#' @seealso [accessEnvDat()], which takes `mode = "forecast"`
+#' @export
+forecast_variables <- function() {
+  phy <- "GLOBAL_ANALYSISFORECAST_PHY_001_024"
+  bgc <- "GLOBAL_ANALYSISFORECAST_BGC_001_028"
+
+  entry <- function(variable, product_id, dataset_id) {
+    list(variable = variable, product_id = product_id, dataset_id = dataset_id)
+  }
+  physics <- function(variable, dataset) {
+    entry(variable, phy, paste0("cmems_mod_glo_phy", dataset, "_anfc_0.083deg_P1M-m"))
+  }
+  biogeochemistry <- function(variable, dataset) {
+    entry(variable, bgc, paste0("cmems_mod_glo_bgc-", dataset, "_anfc_0.25deg_P1M-m"))
+  }
+
+  list(
+    SST  = physics("thetao", "-thetao"),
+    SSS  = physics("so", "-so"),
+    UO   = physics("uo", "-cur"),
+    VO   = physics("vo", "-cur"),
+    # The merged physics dataset, which carries the surface and sea-floor fields.
+    SSH  = physics("zos", ""),
+    MLD  = physics("mlotst", ""),
+    SIC  = physics("siconc", ""),
+    BOTT = physics("tob", ""),
+
+    NO3       = biogeochemistry("no3", "nut"),
+    PO4       = biogeochemistry("po4", "nut"),
+    O2        = biogeochemistry("o2", "bio"),
+    NPP_MODEL = biogeochemistry("nppv", "bio"),
+    CHL_MODEL = biogeochemistry("chl", "pft"),
+    PH        = biogeochemistry("ph", "car")
+  )
 }
 
 #' Printable dictionary of variable names
@@ -281,16 +345,23 @@ as_markdown <- function(x, columns = NULL) {
 #' (`"thetao"`), so existing calls that pass codes keep working unchanged.
 #'
 #' @param vars variable names or codes
+#' @param mode `"reanalysis"` or `"forecast"`
 #' @return a list with `codes` (Copernicus codes, in the given order) and
 #'   `names` (what each should be called in the result)
 #' @keywords internal
-resolve_variables <- function(vars) {
+resolve_variables <- function(vars, mode = c("reanalysis", "forecast")) {
+  mode <- match.arg(mode)
   catalog <- copernicus_variables()
   known_codes <- vapply(catalog, function(entry) entry$variable, character(1))
 
   codes <- character(length(vars))
   for (i in seq_along(vars)) {
-    if (vars[i] %in% names(catalog)) {
+    entry <- catalog_entry(vars[i], mode = mode)
+    if (!is.null(entry)) {
+      # In forecast mode this is the forecast code, which is not always the
+      # reanalysis one - bottom temperature is bottomT then tob.
+      codes[i] <- entry$variable
+    } else if (vars[i] %in% names(catalog)) {
       codes[i] <- catalog[[vars[i]]]$variable
     } else if (vars[i] %in% known_codes) {
       # Already a Copernicus code.
@@ -318,13 +389,24 @@ resolve_variables <- function(vars) {
 #' them is an error here rather than a confusing failure at the API.
 #'
 #' @param vars variable names
+#' @param mode `"reanalysis"` or `"forecast"`
 #' @return `list(product_id =, dataset_id =)`
 #' @keywords internal
-infer_dataset <- function(vars) {
-  datasets <- variable_dataset(vars)
+infer_dataset <- function(vars, mode = c("reanalysis", "forecast")) {
+  mode <- match.arg(mode)
+  datasets <- variable_dataset(vars, mode = mode)
 
   unknown <- vars[is.na(datasets)]
   if (length(unknown) > 0) {
+    # Satellite variables are the common case in forecast mode, and "not in the
+    # catalog" would be misleading: they exist, but only as observations.
+    satellite <- intersect(unknown, names(copernicus_variables()))
+    if (mode == "forecast" && length(satellite) > 0) {
+      stop("No forecast exists for: ", paste(satellite, collapse = ", "),
+           "\nThese are satellite observations, and there is no observation of ",
+           "the future. Use the model equivalents (CHL_MODEL, NPP_MODEL) in ",
+           "forecast mode.", call. = FALSE)
+    }
     stop("Cannot infer the dataset for: ", paste(unknown, collapse = ", "),
          "\nEither use a name from variable_dictionary(), or pass product_id ",
          "and dataset_id explicitly.", call. = FALSE)
@@ -338,10 +420,15 @@ infer_dataset <- function(vars) {
     stop("These variables come from different Copernicus datasets and cannot ",
          "be fetched together:\n  ",
          paste(paste0(grouped, "  ->  ", distinct), collapse = "\n  "),
+         if (mode == "forecast") {
+           paste0("\nThe forecast products split variables across datasets more ",
+                  "than the reanalysis does, so a set that fetches in one ",
+                  "request as reanalysis may need several as forecast.")
+         },
          "\nCall accessEnvDat() once per dataset.", call. = FALSE)
   }
 
-  entry <- catalog_entry(vars[1])
+  entry <- catalog_entry(vars[1], mode = mode)
   list(product_id = entry$product_id, dataset_id = entry$dataset_id)
 }
 
@@ -352,15 +439,17 @@ infer_dataset <- function(vars) {
 #' a caller can group them.
 #'
 #' @param vars variable names from the catalog
+#' @param mode `"reanalysis"` (the default) or `"forecast"`
 #' @return a named character vector of dataset identifiers, `NA` for names not in
 #'   the catalog
 #' @examples
 #' variable_dataset(c("SST", "SSS", "CHL"))
 #' @export
-variable_dataset <- function(vars) {
+variable_dataset <- function(vars, mode = c("reanalysis", "forecast")) {
+  mode <- match.arg(mode)
   stats::setNames(
     vapply(vars, function(v) {
-      entry <- catalog_entry(v)
+      entry <- catalog_entry(v, mode = mode)
       if (is.null(entry)) NA_character_ else entry$dataset_id
     }, character(1)),
     vars
@@ -373,10 +462,30 @@ variable_dataset <- function(vars) {
 #' dataset inference as one using catalog names.
 #'
 #' @param var a catalog name (`"SST"`) or a Copernicus code (`"thetao"`)
+#' @param mode `"reanalysis"` or `"forecast"`
 #' @return the catalog entry, or `NULL` if the variable is not in the catalog
 #' @keywords internal
-catalog_entry <- function(var) {
+catalog_entry <- function(var, mode = "reanalysis") {
   catalog <- copernicus_variables()
+
+  if (mode == "forecast") {
+    forecast <- forecast_variables()
+    # A code may be given instead of a name, so map it back to its name first.
+    name <- if (var %in% names(catalog)) {
+      var
+    } else {
+      codes <- vapply(catalog, function(entry) entry$variable, character(1))
+      match <- which(codes == var)
+      if (length(match) == 1) names(catalog)[match] else var
+    }
+    if (name %in% names(forecast)) {
+      # The label, units and description are the same quantity in either mode;
+      # only the identifiers differ.
+      return(utils::modifyList(catalog[[name]] %||% list(), forecast[[name]]))
+    }
+    return(NULL)
+  }
+
   if (var %in% names(catalog)) return(catalog[[var]])
 
   codes <- vapply(catalog, function(entry) entry$variable, character(1))

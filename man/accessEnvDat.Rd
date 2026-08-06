@@ -13,7 +13,8 @@ accessEnvDat(
   bounding_box,
   depth = c(0, 1),
   overwrite = FALSE,
-  n_workers = 1
+  n_workers = 1,
+  mode = c("reanalysis", "forecast")
 )
 }
 \arguments{
@@ -46,6 +47,11 @@ workers are fresh R sessions instead, which avoids that.
 Downloads hit the Copernicus Marine API, so keep this modest
 (4-8) rather than maxing out cores - the bottleneck is the
 network/API, not CPU.}
+
+\item{mode}{\if{html}{\out{<char>}} \code{"reanalysis"} (the default) for the multi-year hindcast,
+or \code{"forecast"} for the analysis-and-forecast products, which run to about
+ten days ahead. See \code{\link[=forecast_variables]{forecast_variables()}} for which variables have a
+forecast equivalent and how the identifiers differ.}
 }
 \value{
 envDat \if{html}{\out{<sf object>}} sf object containing requested environmental data from Copernicus Marine Service
