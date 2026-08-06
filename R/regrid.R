@@ -443,6 +443,8 @@ resolve_methods <- function(method, vars, env_dat, direction) {
     c(nearest = "near", bilinear = "bilinear", cubic = "cubic", idw = "idw")
   }
 
+  explicit <- if (is.null(names(method))) character(0) else names(method)
+
   if (is.null(names(method))) {
     if (length(method) != 1) {
       stop("`method` must be one name for all variables, or a named vector ",
@@ -470,19 +472,25 @@ resolve_methods <- function(method, vars, env_dat, direction) {
   # A factor's levels are integers underneath, and averaging them yields a level
   # that may not exist. The <var>_source columns fill_satellite_gaps() adds are
   # exactly this case, and they travel with the variables they describe.
-  categorical <- vars[!vapply(vars, function(v) is.numeric(env_dat[[v]]), logical(1))]
+  #
   # idw is excluded for categoricals as well as the smooth methods: a distance
   # weighted average of level codes lands between them, which decodes to
   # whichever level happens to sit at that number.
+  categorical <- vars[!vapply(vars, function(v) is.numeric(env_dat[[v]]), logical(1))]
   keeps_levels <- if (direction == "up") "mode" else "nearest"
-  offending <- categorical[!method[categorical] %in% keeps_levels]
+
+  # A method given for everything is about the numeric variables; a source column
+  # riding along should not force the caller to enumerate every column. One named
+  # for a categorical explicitly is a different matter, and is an error.
+  method[setdiff(categorical, explicit)] <- keeps_levels
+  offending <- intersect(categorical, explicit)
+  offending <- offending[!method[offending] %in% keeps_levels]
   if (length(offending) > 0) {
     stop("Column(s) ", paste(offending, collapse = ", "), " are not numeric, so ",
          paste(unique(method[offending]), collapse = "/"), " has no meaning for them.\n",
-         "Use ", if (direction == "up") "\"mode\"" else "\"nearest\"",
-         " for categorical columns, e.g. method = c(",
-         offending[1], " = ", if (direction == "up") "\"mode\"" else "\"nearest\"",
-         "), or drop them with `vars`.", call. = FALSE)
+         "Use \"", keeps_levels, "\" for categorical columns, e.g. method = c(",
+         offending[1], " = \"", keeps_levels, "\"), or drop them with `vars`.",
+         call. = FALSE)
   }
 
   stats::setNames(valid[method[vars]], vars)
