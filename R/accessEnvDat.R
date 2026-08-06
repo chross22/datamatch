@@ -343,7 +343,8 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars, years, mont
   work_items <- lapply(work_items, function(item) {
     item$time <- lubridate::ymd(paste(item$year, item$month, item$day, sep = "-"))
     item$ofile <- copernicus_cache(
-      "tmp", paste0(product_id, "_", dataset_id, "_", item$time, ".nc"))
+      "tmp", cache_filename(product_id, dataset_id, item$time, var_codes,
+                            bounding_box, depth))
     item
   })
 

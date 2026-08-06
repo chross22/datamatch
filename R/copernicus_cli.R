@@ -209,3 +209,65 @@ download_copernicus_subset <- function(dataset_id, vars, bb, depth, time, ofile,
        "Client output:\n", paste(utils::tail(output, 20), collapse = "\n"),
        call. = FALSE)
 }
+
+#' The cache filename for one day's download
+#'
+#' A cached file is only reusable by a request that would have produced the same
+#' file, so everything that changes the file has to be in its name: the
+#' variables, the bounding box and the depth as well as the product, dataset and
+#' date.
+#'
+#' Leaving them out was a real bug rather than a theoretical one. A request for
+#' `thetao` over a small box wrote a file that a later request for
+#' `thetao, so` over a large one then reused - and the second request either
+#' failed for the missing variable, which is the lucky case, or silently
+#' returned a grid covering the wrong area, which is not. Two people sharing a
+#' cache, or one person narrowing a study area between runs, hit this without
+#' doing anything unusual.
+#'
+#' The identifying part is a short hash rather than the values spelled out. A
+#' dozen variables and four coordinates make a filename longer than some file
+#' systems accept, and the date and dataset stay readable at the front so the
+#' cache can still be browsed.
+#'
+#' @param product_id,dataset_id the Copernicus product and dataset
+#' @param time the day, as a `Date`
+#' @param vars variable codes requested
+#' @param bb the bounding box
+#' @param depth the depth range
+#' @return a filename
+#' @keywords internal
+cache_filename <- function(product_id, dataset_id, time, vars, bb, depth) {
+  key <- paste(
+    paste(sort(vars), collapse = ","),
+    # Rounded, so that floating-point noise in a bounding box does not make two
+    # identical requests miss each other.
+    paste(round(unlist(bb[c("xmin", "xmax", "ymin", "ymax")]), 6), collapse = ","),
+    paste(round(as.numeric(depth), 6), collapse = ","),
+    sep = "|"
+  )
+  paste0(product_id, "_", dataset_id, "_", time, "_", short_hash(key), ".nc")
+}
+
+#' A short, stable hash of a string
+#'
+#' Base R has no string hash, and this needs no cryptographic strength: it
+#' distinguishes cache keys, and a collision would have to occur between two
+#' requests for the same dataset on the same day. Written out rather than taken
+#' from a package so that the cache does not gain a dependency.
+#'
+#' @param x a string
+#' @return eight hexadecimal characters
+#' @keywords internal
+short_hash <- function(x) {
+  bytes <- as.integer(charToRaw(paste(x, collapse = "")))
+  # FNV-1a, in doubles. R has no unsigned 32-bit integer, so the modulus is
+  # applied at every step to keep the value inside what a double represents
+  # exactly.
+  hash <- 2166136261
+  for (byte in bytes) {
+    hash <- bitwXor(hash %% 2^31, byte)
+    hash <- (hash * 16777619) %% 2^31
+  }
+  sprintf("%08x", as.integer(hash %% 2^31))
+}
