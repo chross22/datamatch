@@ -1,4 +1,52 @@
 
+#' Put a downloaded raster's layers into the order they were requested
+#'
+#' Copernicus returns layers in the NetCDF's own order, which is alphabetical by
+#' variable code and has nothing to do with the order they were asked for. Column
+#' names are assigned from `vars`, so the two have to be reconciled before naming
+#' or the names land on the wrong layers.
+#'
+#' That failure is silent and severe: requesting `c("SST", "SSS")` sends
+#' `c("thetao", "so")`, gets back `so` then `thetao`, and would label salinity as
+#' temperature and temperature as salinity with nothing to indicate it. Matching
+#' by name rather than position is the whole point of this function.
+#'
+#' @section Layer names:
+#' Three-dimensional variables come back as `thetao_depth=0.494025`, so the depth
+#' suffix is stripped before matching. Two-dimensional ones such as `mlotst` and
+#' `zos` carry no suffix.
+#'
+#' A code appearing on more than one layer means the depth range spanned several
+#' model levels. That is reported as such, rather than left to be caught later by
+#' a column count that cannot say which variable caused it.
+#'
+#' @param x a `SpatRaster` read from a Copernicus download
+#' @param vars <char> variable codes, in the order they were requested
+#' @return `x`, with one layer per requested code, in that order
+#' @keywords internal
+order_layers <- function(x, vars) {
+  codes <- sub("_depth=.*$", "", names(x))
+
+  missing <- setdiff(vars, codes)
+  if (length(missing) > 0) {
+    stop("The download did not return: ", paste(missing, collapse = ", "),
+         "\nIt contains: ", paste(unique(codes), collapse = ", "),
+         "\nThat variable may not exist in this dataset, or may not be served ",
+         "at the requested depth or date.", call. = FALSE)
+  }
+
+  repeated <- vars[vapply(vars, function(v) sum(codes == v) > 1, logical(1))]
+  if (length(repeated) > 0) {
+    depths <- unique(sub("^.*_depth=", "", grep("_depth=", names(x), value = TRUE)))
+    stop("The depth range returned several model levels for: ",
+         paste(repeated, collapse = ", "),
+         "\nLevels returned: ", paste(depths, collapse = ", "),
+         "\nRequest a single level, e.g. depth = c(0, 1).", call. = FALSE)
+  }
+
+  x[[match(vars, codes)]]
+}
+
 #' Access environmental data from Copernicus Marine Service
 #'
 #' Downloads a Copernicus dataset over a bounding box and time range, and returns
@@ -114,6 +162,9 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars, years, mont
       # Read in .nc file as terra object (raster)
       x = terra::rast(ofile)
     }
+
+    # Put the layers in the order they were requested before anything is named.
+    x <- order_layers(x, vars)
 
     # Convert to data frame
     as.data.frame(x, xy = TRUE) |>
