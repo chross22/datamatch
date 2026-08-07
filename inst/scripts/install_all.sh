@@ -61,14 +61,49 @@ if $check_only; then
   exit 0
 fi
 
+# A tarball is built once and installed into each R, rather than installing the
+# source directory. Installing a directory skips vignettes entirely - R CMD
+# INSTALL has no option to build them, and --build-vignettes belongs to R CMD
+# build - so vignette("datamatch") comes back empty however often the package is
+# reinstalled. Building first is the only way the vignette index reaches the
+# library.
+#
+# Vignettes need pandoc. RStudio bundles one, which is often the only copy on a
+# Mac, so it is added to PATH when nothing else provides it. Without pandoc the
+# build falls back to skipping vignettes rather than failing: an installed
+# package without a vignette beats no installed package.
 echo
+build_dir="$(mktemp -d)"
+trap 'rm -rf "$build_dir"' EXIT
+
+rstudio_pandoc="/Applications/RStudio.app/Contents/Resources/app/quarto/bin/tools"
+if ! command -v pandoc >/dev/null 2>&1 && [[ -x "$rstudio_pandoc/pandoc" ]]; then
+  PATH="$rstudio_pandoc:$PATH"
+  export PATH
+fi
+
+builder="${found[0]%script}"
+echo "Building the package ..."
+if ! out="$(cd "$build_dir" && "$builder" CMD build "$pkg_root" 2>&1)"; then
+  echo "$out" >&2
+  echo "Build failed; retrying without vignettes." >&2
+  if ! out="$(cd "$build_dir" && "$builder" CMD build --no-build-vignettes "$pkg_root" 2>&1)"; then
+    echo "$out" >&2
+    echo "FAILED to build" >&2
+    exit 1
+  fi
+  echo "Built without vignettes. Install pandoc for vignette(\"datamatch\")." >&2
+fi
+
+tarball="$(ls "$build_dir"/*.tar.gz | head -1)"
+
 for rscript in "${found[@]}"; do
   r="${rscript%script}"          # /path/to/Rscript -> /path/to/R
   version="$("$rscript" --vanilla -e 'cat(paste0(R.version$major, ".", R.version$minor))' 2>/dev/null)"
   echo "Installing into R $version ..."
   # Output is kept unless the install fails, where it is the only thing that
   # says why.
-  if ! out="$("$r" CMD INSTALL "$pkg_root" 2>&1)"; then
+  if ! out="$("$r" CMD INSTALL "$tarball" 2>&1)"; then
     echo "$out" >&2
     echo "FAILED for R $version" >&2
     exit 1
