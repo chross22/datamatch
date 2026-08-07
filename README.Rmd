@@ -1046,8 +1046,8 @@ Update and re-fetch. `NEWS.md` describes what was affected and how to check.
 
 ## References
 
-datamatch is plumbing: everything it returns comes from someone else's data, and
-the obligation to cite travels with the data rather than with this package.
+Everything datamatch returns comes from someone else's data, and the obligation
+to cite travels with the data rather than with this package.
 `index_dictionary()` carries the references for the indices at runtime, and
 `variable_dictionary()` links to each Copernicus product page.
 
