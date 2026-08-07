@@ -476,8 +476,22 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars,
 
     failures <- unlist(failures)
     if (length(failures) > 0) {
+      # Asking a reanalysis for a date it does not reach yet is the common
+      # cause, and retrying it forever will not help. The client names the
+      # dataset's own coverage when it refuses, so say what to do about it
+      # rather than leaving that to be inferred from a date range.
+      out_of_range <- any(grepl("exceed the dataset coordinates", failures,
+                                fixed = TRUE))
       stop(length(failures), " of ", length(needed), " day(s) could not be ",
            "downloaded:\n", paste(failures, collapse = "\n"),
+           if (out_of_range) {
+             paste0("\nSome dates are outside what this dataset covers. A ",
+                    "reanalysis ('_my_' in the\ndataset id) runs behind the ",
+                    "present by months, so recent dates are not in it yet.\n",
+                    "Use mode = \"forecast\" for dates near or slightly ahead ",
+                    "of today; note that\nthe forecast reaches about ten days ",
+                    "ahead, so dates beyond that are in no product.\n")
+           },
            "\nThe days that did succeed are cached, so re-running this call ",
            "retries only the failures.", call. = FALSE)
     }
