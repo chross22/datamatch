@@ -10,8 +10,8 @@
 #' year?") and useless for spatial ones. A model given only indices cannot
 #' produce a map.
 #'
-#' @return a named list, one entry per index, each with `label`, `source`,
-#'   `url`, and `description`
+#' @return a named list, one entry per index, each with `label`, `units`,
+#'   `source`, `url`, and `description`
 #' @examples
 #' names(climate_indices())
 #' @seealso [fetch_climate_index()], [attach_climate_index()]
@@ -20,6 +20,7 @@ climate_indices <- function() {
   list(
     NAO = list(
       label = "North Atlantic Oscillation",
+      units = "standardized anomaly",
       source = "NOAA CPC",
       url = "https://www.cpc.ncep.noaa.gov/products/precip/CWlink/pna/norm.nao.monthly.b5001.current.ascii.table",
       format = "cpc_table",
@@ -31,6 +32,7 @@ climate_indices <- function() {
     ),
     AO = list(
       label = "Arctic Oscillation",
+      units = "standardized anomaly",
       source = "NOAA CPC",
       url = "https://www.cpc.ncep.noaa.gov/products/precip/CWlink/daily_ao_index/monthly.ao.index.b50.current.ascii.table",
       format = "cpc_table",
@@ -40,6 +42,7 @@ climate_indices <- function() {
     ),
     AMO = list(
       label = "Atlantic Multidecadal Oscillation",
+      units = "degrees C",
       source = "NOAA PSL",
       url = "https://psl.noaa.gov/data/correlation/amon.us.long.data",
       format = "psl_table",
@@ -50,6 +53,7 @@ climate_indices <- function() {
     ),
     PDO = list(
       label = "Pacific Decadal Oscillation",
+      units = "standardized anomaly",
       source = "NOAA PSL",
       url = "https://psl.noaa.gov/data/correlation/pdo.data",
       format = "psl_table",
@@ -60,6 +64,7 @@ climate_indices <- function() {
     ),
     LCR = list(
       label = "Labrador Current retroflection",
+      units = "fraction",
       source = "Jutras et al. 2023, Nature Communications",
       url = paste0("https://static-content.springer.com/esm/",
                    "art%3A10.1038%2Fs41467-023-38321-y/MediaObjects/",
@@ -83,6 +88,7 @@ climate_indices <- function() {
     ),
     AMOC = list(
       label = "Atlantic Meridional Overturning Circulation",
+      units = "Sv",
       source = "RAPID-MOCHA-WBTS array at 26.5N",
       url = "https://rapid.ac.uk/sites/default/files/rapid_data/moc_transports.nc",
       format = "rapid_netcdf",
@@ -118,8 +124,13 @@ index_dictionary <- function() {
   catalog <- climate_indices()
   dictionary <- do.call(rbind, lapply(names(catalog), function(name) {
     entry <- catalog[[name]]
-    data.frame(name = name, label = entry$label, source = entry$source,
-               url = entry$url,
+    data.frame(name = name, label = entry$label,
+               # Most of these are standardized anomalies, which is a unit in
+               # the sense that matters: it says the number is in standard
+               # deviations rather than in anything physical, so a coefficient
+               # fitted to it is not comparable with one fitted to AMOC.
+               units = entry$units %||% NA_character_,
+               source = entry$source, url = entry$url,
                # Indices published with a paper carry its citation. The
                # operational ones from NOAA have no single paper to point at,
                # so this is empty for them rather than invented.
@@ -139,7 +150,7 @@ print.datamatch_index_dictionary <- function(x, ...) {
   flat <- as.data.frame(x)
   cat("Climate indices available by name\n")
   cat(strrep("-", 62), "\n", sep = "")
-  print(flat[c("name", "label", "source")], row.names = FALSE, right = FALSE)
+  print(flat[c("name", "label", "units", "source")], row.names = FALSE, right = FALSE)
   cat("\nThese have no spatial dimension: one value per month, basin-wide.\n")
 
   cited <- flat[!is.na(flat$reference), ]

@@ -701,14 +701,19 @@ useless for spatial ones. A model given only indices cannot produce a map.
 
 Six are available, and they are not interchangeable.
 
-| Name | What it measures | Timescale | Record |
-|---|---|---|---|
-| `NAO` | Pressure difference, Icelandic Low to Azores High | Year to year | 1950– |
-| `AO` | Strength of the polar vortex | Year to year | 1950– |
-| `AMO` | Detrended North Atlantic SST anomaly | Multidecadal | 1948– |
-| `PDO` | Leading mode of North Pacific SST | Decadal | 1948– |
-| `LCR` | Retroflection of the Labrador Current | Year to year | 1993–2014 |
-| `AMOC` | Overturning transport at 26.5°N | Year to year | 2004– |
+| Name | What it measures | Units | Timescale | Record |
+|---|---|---|---|---|
+| `NAO` | Pressure difference, Icelandic Low to Azores High | standardized anomaly | Year to year | 1950– |
+| `AO` | Strength of the polar vortex | standardized anomaly | Year to year | 1950– |
+| `AMO` | Detrended North Atlantic SST anomaly | degrees C | Multidecadal | 1948– |
+| `PDO` | Leading mode of North Pacific SST | standardized anomaly | Decadal | 1948– |
+| `LCR` | Retroflection of the Labrador Current | fraction | Year to year | 1993–2014 |
+| `AMOC` | Overturning transport at 26.5°N | Sv | Year to year | 2004– |
+
+Most are **standardized anomalies** — in standard deviations, not anything
+physical. Only `AMO` (degrees C) and `AMOC` (Sverdrups) carry real units, so a
+coefficient fitted to one of those is not comparable with one fitted to `NAO`.
+`index_dictionary()` carries the units at runtime.
 
 **`NAO`** is the usual first choice in the Northwest Atlantic. It sets the
 strength and track of the westerlies, and with them heat flux and mixing over the

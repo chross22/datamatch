@@ -7,8 +7,8 @@
 climate_indices()
 }
 \value{
-a named list, one entry per index, each with \code{label}, \code{source},
-\code{url}, and \code{description}
+a named list, one entry per index, each with \code{label}, \code{units},
+\code{source}, \code{url}, and \code{description}
 }
 \description{
 Unlike the gridded variables, these have \strong{no spatial dimension} — one value

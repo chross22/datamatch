@@ -173,6 +173,12 @@
 * **`LCR`**, the Labrador Current retroflection index, joins the climate index
   catalog. Published with Jutras et al. (2023) and cited in `index_dictionary()`.
 
+* **Every climate index now declares its `units`**, surfaced in
+  `index_dictionary()`. Most are standardized anomalies, in standard deviations
+  rather than anything physical; only `AMO` (degrees C) and `AMOC` (Sverdrups)
+  carry real units. A coefficient fitted to one of those is not comparable with
+  one fitted to `NAO`, and a table of model output gave no way to tell.
+
 * **`AMOC`**, the overturning transport measured by the RAPID array at 26.5°N,
   joins it too. Unlike the other indices this is a direct measurement rather than
   a pressure or SST pattern — which is also its limitation: it begins in April
