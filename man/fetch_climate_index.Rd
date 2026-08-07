@@ -26,8 +26,17 @@ missing-value codes, which are parsed here into one row per month.
 }
 \section{Citing an index}{
 
-\code{LCR} is the published output of a specific study rather than an operational
-product, and should be cited when used:Jutras M, Dufour CO, Mucci A, Talbot LC (2023) Large-scale control of theretroflection of the Labrador Current. Nature Communications 14:2623.\doi{10.1038/s41467-023-38321-y}
+\code{LCR} and \code{AMOC} come from specific published sources rather than being
+operational products, and should be cited when used:
+
+\itemize{
+\item Jutras M, Dufour CO, Mucci A, Talbot LC (2023) Large-scale control of
+the retroflection of the Labrador Current. \emph{Nature Communications}
+\strong{14}:2623. \doi{10.1038/s41467-023-38321-y}
+\item Moat BI et al. Atlantic meridional overturning circulation observed by
+the RAPID-MOCHA-WBTS array at 26N. British Oceanographic Data Centre,
+NERC, UK. \doi{10.5285/223b34a3-2dc5-c945-e063-6c86abc0f5b3}
+}
 
 The series is the source data published with that paper's Figure 3, fetched
 from the journal rather than recomputed, so the values are the authors' own.

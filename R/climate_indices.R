@@ -74,6 +74,28 @@ climate_indices <- function() {
                           "than a pressure or temperature pattern, which makes it",
                           "the more direct predictor of shelf water properties.",
                           "Covers 1993-2014 only.")
+    ),
+    AMOC = list(
+      label = "Atlantic Meridional Overturning Circulation",
+      source = "RAPID-MOCHA-WBTS array at 26.5N",
+      url = "https://rapid.ac.uk/sites/default/files/rapid_data/moc_transports.nc",
+      format = "rapid_netcdf",
+      reference = paste("Moat BI et al. Atlantic meridional overturning",
+                        "circulation observed by the RAPID-MOCHA-WBTS array at",
+                        "26N. British Oceanographic Data Centre, NERC, UK.",
+                        "doi:10.5285/223b34a3-2dc5-c945-e063-6c86abc0f5b3"),
+      description = paste("Strength of the overturning circulation, in",
+                          "Sverdrups, measured directly by a mooring array at",
+                          "26.5N. This is the real thing rather than a proxy,",
+                          "which is also its limitation: it starts in April 2004",
+                          "and is measured far south of the shelf, so it",
+                          "describes the basin-scale circulation the Labrador",
+                          "and slope currents sit within rather than local",
+                          "conditions. The published series is twelve-hourly and",
+                          "is averaged to monthly here. A weaker AMOC is",
+                          "associated with a warming Northwest Atlantic shelf,",
+                          "so the sign of any relationship is worth checking",
+                          "against LCR and AMO rather than assumed.")
     )
   )
 }
@@ -133,12 +155,17 @@ print.datamatch_index_dictionary <- function(x, ...) {
 #' missing-value codes, which are parsed here into one row per month.
 #'
 #' @section Citing an index:
-#' `LCR` is the published output of a specific study rather than an operational
-#' product, and should be cited when used:
+#' `LCR` and `AMOC` come from specific published sources rather than being
+#' operational products, and should be cited when used:
 #'
-#' > Jutras M, Dufour CO, Mucci A, Talbot LC (2023) Large-scale control of the
-#' > retroflection of the Labrador Current. *Nature Communications* **14**:2623.
-#' > \doi{10.1038/s41467-023-38321-y}
+#' \itemize{
+#'   \item Jutras M, Dufour CO, Mucci A, Talbot LC (2023) Large-scale control of
+#'     the retroflection of the Labrador Current. *Nature Communications*
+#'     **14**:2623. \doi{10.1038/s41467-023-38321-y}
+#'   \item Moat BI et al. Atlantic meridional overturning circulation observed by
+#'     the RAPID-MOCHA-WBTS array at 26N. British Oceanographic Data Centre,
+#'     NERC, UK. \doi{10.5285/223b34a3-2dc5-c945-e063-6c86abc0f5b3}
+#' }
 #'
 #' The series is the source data published with that paper's Figure 3, fetched
 #' from the journal rather than recomputed, so the values are the authors' own.
@@ -169,22 +196,120 @@ fetch_climate_index <- function(index, years = NULL, url = NULL) {
          "\nAvailable: ", paste(names(catalog), collapse = ", "), call. = FALSE)
   }
   entry <- catalog[[index]]
+  source_url <- url %||% entry$url
 
-  lines <- tryCatch(
-    readLines(url %||% entry$url, warn = FALSE),
-    error = function(e) {
-      stop("Could not download the ", index, " index from ", url %||% entry$url,
-           "\n", conditionMessage(e),
-           "\nProviders move these files; pass `url` to override.", call. = FALSE)
-    }
-  )
-
-  series <- parse_index_table(lines, format = entry$format, name = index)
+  # Most of these are plain text tables. RAPID publishes only NetCDF at a stable
+  # URL - the ASCII version is behind a signup form - so that one is downloaded
+  # as bytes and read separately rather than through readLines().
+  if (identical(entry$format, "rapid_netcdf")) {
+    series <- fetch_rapid_netcdf(source_url, index)
+  } else {
+    lines <- tryCatch(
+      readLines(source_url, warn = FALSE),
+      error = function(e) {
+        stop("Could not download the ", index, " index from ", source_url,
+             "\n", conditionMessage(e),
+             "\nProviders move these files; pass `url` to override.",
+             call. = FALSE)
+      }
+    )
+    series <- parse_index_table(lines, format = entry$format, name = index)
+  }
   if (!is.null(years)) {
     series <- series[series$YEAR %in% years, ]
     rownames(series) <- NULL
   }
   series
+}
+
+#' Read the RAPID overturning series and average it to monthly
+#'
+#' The RAPID array publishes a twelve-hourly NetCDF series at a stable URL,
+#' while the ASCII equivalent sits behind a signup form. So this downloads the
+#' binary, reads the overturning variable, and aggregates to the monthly step the
+#' rest of the indices use.
+#'
+#' Averaging is the honest direction here. The twelve-hourly series is dominated
+#' by Ekman variability that a monthly covariate cannot represent anyway, and a
+#' monthly mean of it is a well-defined quantity. Months are not filtered on
+#' completeness: the array reports continuously within its deployment periods, so
+#' a short month is a gap in the record rather than a partial average, and it is
+#' more useful to see it than to drop it.
+#'
+#' @param url the NetCDF file to read
+#' @param name the index name, for error messages
+#' @return a data frame with `YEAR`, `MONTH`, and a column named for the index
+#' @keywords internal
+fetch_rapid_netcdf <- function(url, name) {
+  if (!requireNamespace("ncdf4", quietly = TRUE)) {
+    stop("The '", name, "' index is published as NetCDF, which needs the ",
+         "'ncdf4' package.\n  install.packages(\"ncdf4\")", call. = FALSE)
+  }
+
+  # Cached like the Copernicus downloads, and for the same reason: this one is
+  # over a megabyte, and RAPID times out on repeated requests, so re-fetching it
+  # for every call fails as well as wasting bandwidth.
+  file <- copernicus_cache("indices", paste0(name, ".nc"))
+
+  if (!file.exists(file) || file.size(file) == 0) {
+    # download.file() defaults to 60s, which is not always enough for this host.
+    previous <- options(timeout = max(300, getOption("timeout", 60)))
+    on.exit(options(previous), add = TRUE)
+
+    partial <- paste0(file, ".part")
+    tryCatch(
+      utils::download.file(url, destfile = partial, mode = "wb", quiet = TRUE),
+      error = function(e) {
+        unlink(partial)
+        stop("Could not download the ", name, " index from ", url, "\n",
+             conditionMessage(e),
+             "\nProviders move these files; pass `url` to override.",
+             call. = FALSE)
+      }
+    )
+    if (!file.exists(partial) || file.size(partial) == 0) {
+      unlink(partial)
+      stop("The ", name, " download from ", url, " was empty.", call. = FALSE)
+    }
+    # Rename only once the download is complete, so an interrupted fetch cannot
+    # leave a truncated file in the cache to be trusted later.
+    file.rename(partial, file)
+  }
+
+  nc <- ncdf4::nc_open(file)
+  on.exit(ncdf4::nc_close(nc), add = TRUE)
+
+  variable <- "moc_mar_hc10"
+  if (!variable %in% names(nc$var)) {
+    stop("The ", name, " file no longer contains '", variable, "'.",
+         "\nVariables present: ", paste(names(nc$var), collapse = ", "),
+         call. = FALSE)
+  }
+
+  values <- as.numeric(ncdf4::ncvar_get(nc, variable))
+  offset <- as.numeric(ncdf4::ncvar_get(nc, "time"))
+
+  # "days since <date>", so the origin is read from the file rather than
+  # hard-coded: RAPID has re-based it across releases.
+  units <- ncdf4::ncatt_get(nc, "time", "units")$value
+  origin <- as.Date(trimws(sub("^days since", "", units)), format = "%Y-%m-%d")
+  if (is.na(origin)) {
+    stop("Could not read the time origin from the ", name, " file. ",
+         "Units were: ", units, call. = FALSE)
+  }
+
+  dates <- origin + offset
+  monthly <- stats::aggregate(
+    values,
+    by = list(YEAR = as.integer(format(dates, "%Y")),
+              MONTH = as.integer(format(dates, "%m"))),
+    FUN = function(z) mean(z, na.rm = TRUE)
+  )
+
+  names(monthly)[3] <- name
+  monthly <- monthly[order(monthly$YEAR, monthly$MONTH), ]
+  rownames(monthly) <- NULL
+  monthly
 }
 
 #' Parse a published climate index table

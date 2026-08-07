@@ -214,3 +214,98 @@ test_that("differently named time columns are supported", {
   expect_equal(result$NAO, 0.92)
   expect_error(attach_climate_index(observations, series), "Column 'YEAR' not found")
 })
+
+# The RAPID overturning series is NetCDF rather than a text table, so it is
+# tested against a file written here rather than a downloaded one. Same reason
+# as the fixtures above: no network, no dependence on a provider's file layout.
+
+write_rapid_fixture <- function(path, origin = "2004-01-01") {
+  # Twelve-hourly through January and February 2004, with a different constant
+  # in each month, so the monthly means are exactly 10 and 20.
+  offsets <- seq(0, 59.5, by = 0.5)
+  dates <- as.Date(origin) + offsets
+  values <- ifelse(as.integer(format(dates, "%m")) == 1, 10, 20)
+
+  time <- ncdf4::ncdim_def("time", paste("days since", origin, "00:00:00"),
+                           offsets)
+  moc <- ncdf4::ncvar_def("moc_mar_hc10", "Sv", time, -99999)
+  nc <- ncdf4::nc_create(path, moc)
+  ncdf4::ncvar_put(nc, moc, values)
+  ncdf4::nc_close(nc)
+  path
+}
+
+local_index_cache <- function(env = parent.frame()) {
+  cache <- file.path(tempdir(), paste0("datamatch-index-", sample.int(1e6, 1)))
+  previous <- options(datamatch.cache = cache)
+  withr::defer({ options(previous); unlink(cache, recursive = TRUE) }, envir = env)
+  cache
+}
+
+test_that("AMOC is in the catalog, with a source and a citation", {
+  catalog <- climate_indices()
+
+  expect_true("AMOC" %in% names(catalog))
+  expect_equal(catalog$AMOC$format, "rapid_netcdf")
+  expect_true(nzchar(catalog$AMOC$reference))
+  expect_match(catalog$AMOC$url, "^https://")
+  # It is one of the two indices that must be cited, so it has to reach the
+  # dictionary's reference column rather than only the description.
+  dictionary <- as.data.frame(index_dictionary())
+  expect_false(is.na(dictionary$reference[dictionary$name == "AMOC"]))
+})
+
+test_that("the twelve-hourly RAPID series is averaged to monthly", {
+  skip_if_not_installed("ncdf4")
+  local_index_cache()
+
+  path <- write_rapid_fixture(tempfile(fileext = ".nc"))
+  series <- fetch_rapid_netcdf(paste0("file://", path), "AMOC")
+
+  expect_equal(names(series), c("YEAR", "MONTH", "AMOC"))
+  expect_equal(nrow(series), 2)
+  expect_equal(series$MONTH, c(1, 2))
+  expect_equal(series$AMOC, c(10, 20))
+})
+
+test_that("the time origin is read from the file, not assumed", {
+  # RAPID has re-based the time axis between releases, so hard-coding 2004-04-01
+  # would silently shift every date.
+  skip_if_not_installed("ncdf4")
+  local_index_cache()
+
+  path <- write_rapid_fixture(tempfile(fileext = ".nc"), origin = "2010-01-01")
+  series <- fetch_rapid_netcdf(paste0("file://", path), "AMOC")
+
+  expect_equal(unique(series$YEAR), 2010)
+})
+
+test_that("a second call is served from the cache", {
+  skip_if_not_installed("ncdf4")
+  cache <- local_index_cache()
+
+  path <- write_rapid_fixture(tempfile(fileext = ".nc"))
+  first <- fetch_rapid_netcdf(paste0("file://", path), "AMOC")
+
+  cached <- file.path(cache, "indices", "AMOC.nc")
+  expect_true(file.exists(cached))
+
+  # Remove the source: if the cache were not used this would fail.
+  unlink(path)
+  expect_equal(fetch_rapid_netcdf(paste0("file://", path), "AMOC"), first)
+})
+
+test_that("a renamed variable is reported rather than returning nothing", {
+  skip_if_not_installed("ncdf4")
+  local_index_cache()
+
+  path <- tempfile(fileext = ".nc")
+  time <- ncdf4::ncdim_def("time", "days since 2004-01-01 00:00:00", c(0, 1))
+  other <- ncdf4::ncvar_def("something_else", "Sv", time, -99999)
+  nc <- ncdf4::nc_create(path, other)
+  ncdf4::ncvar_put(nc, other, c(1, 2))
+  ncdf4::nc_close(nc)
+
+  expect_error(fetch_rapid_netcdf(paste0("file://", path), "AMOC"),
+               "no longer contains")
+})

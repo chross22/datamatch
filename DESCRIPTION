@@ -34,7 +34,9 @@ Imports:
     parallel
 Suggests:
     marmap,
-    testthat (>= 3.0.0)
+    ncdf4,
+    testthat (>= 3.0.0),
+    withr
 Config/testthat/edition: 3
 URL: https://github.com/chross22/datamatch
 BugReports: https://github.com/chross22/datamatch/issues
