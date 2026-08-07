@@ -23,7 +23,9 @@ The goal of datamatch is to pull environmental data from Copernicus Marine Servi
 - [Set up](#set-up) — the Copernicus client, sign-in, and where downloads are cached
 - [Quick start](#quick-start)
   - [One call per product](#one-call-per-product) — why `SST` and `CHL` are two fetches
-  - [Monthly or daily](#monthly-or-daily) — monthly by default, and how to fetch particular dates
+  - [Monthly or daily](#monthly-or-daily) — monthly by default; every day of a period, or particular dates
+    - [Every day in a period](#every-day-in-a-period)
+    - [Particular days](#particular-days)
   - [Downloads run in parallel](#downloads-run-in-parallel) — `n_workers`, and what is already cached
 
 **Choosing what to fetch**
@@ -158,8 +160,19 @@ matches to the nearest cell whatever its size.
 ### Monthly or daily
 
 **Fetches are monthly means by default**, and a call that mentions neither
-`frequency` nor `dates` behaves exactly as it always has. `frequency = "daily"`
-uses the daily datasets instead, expanding each requested month into its days:
+`frequency` nor `dates` behaves exactly as it always has.
+
+There are two ways to ask for daily data, for two different jobs:
+
+| Want | Use | Gives |
+|---|---|---|
+| Every day in a period | `frequency = "daily"` with `years` and `months` | a continuous series |
+| Particular days | `dates` | only those dates |
+
+#### Every day in a period
+
+`frequency = "daily"` uses the daily datasets, expanding each requested month
+into all of its days:
 
 
 ``` r
@@ -167,13 +180,18 @@ sst <- accessEnvDat(vars = c("SST", "MLD"), frequency = "daily",
                     years = 2015, months = 4:6, bounding_box = bb)
 ```
 
+That is the form to use for a continuous series — a time series at one station,
+an animation, anything where the gaps between days would matter.
+
 Daily is a real cost, not a flag: three months is 91 downloads rather than 3,
 and 91 grids rather than 3 in memory. A decade of daily data over a large box
 will not fit in a laptop's RAM as an `sf` object, and is better fetched a season
 at a time.
 
-`dates` is the other way to keep that in hand. It names the exact dates to
-fetch, so only the days that matter are downloaded:
+#### Particular days
+
+`dates` names the exact dates to fetch, so only the days that matter are
+downloaded:
 
 
 ``` r
@@ -199,6 +217,20 @@ an error naming it, not a silently dropped request.
 
 `dates` says which time steps to fetch, so `years` and `months` are neither
 needed nor accepted alongside it, and it implies `frequency = "daily"`.
+
+It is also how a long record is thinned rather than fetched whole, since any
+sequence of dates will do:
+
+
+``` r
+# Weekly through a decade: 574 downloads rather than 4,017
+accessEnvDat(vars = "SST", bounding_box = bb,
+             dates = seq(as.Date("2005-01-01"), as.Date("2015-12-31"), by = "week"))
+
+# Or the same day each month, if that is genuinely what you want
+accessEnvDat(vars = "SST", bounding_box = bb,
+             dates = seq(as.Date("2005-01-15"), as.Date("2015-12-15"), by = "month"))
+```
 
 Fetching dates is not the same as averaging a month. Three dates are a sample of
 the month, carrying whatever weather fell on them; a monthly mean is the month.
@@ -812,6 +844,7 @@ a megabyte, so it is cached like the Copernicus downloads.
 Four of the six indices are still growing. Downloads are cached, and the cache
 expires on an interval matched to how often each provider actually publishes, so
 a living index re-downloads on its own without being asked:
+
 
 ``` r
 climate_index_status()      # what is cached, how old, what is due
