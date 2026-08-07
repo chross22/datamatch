@@ -12,7 +12,11 @@ output: github_document
 [![R-CMD-check](https://github.com/chross22/datamatch/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/chross22/datamatch/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-The goal of datamatch is to pull environmental data from Copernicus Marine Service and match spatially and temporally to species occurrence data.
+datamatch pulls environmental data from the Copernicus Marine Service and joins
+it to point data in space and time. The join is general — species observations,
+survey stations, tag positions, or another gridded product — and the package
+also covers regridding, gap filling, seafloor terrain, and basin-scale climate
+indices.
 
 <details>
 <summary><b>Contents</b></summary>
