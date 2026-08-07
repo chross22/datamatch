@@ -4,7 +4,12 @@
 \alias{fetch_bathymetry}
 \title{Fetch static bathymetry for a study area}
 \usage{
-fetch_bathymetry(bounding_box, resolution = 4, path = tempdir(), keep = TRUE)
+fetch_bathymetry(
+  bounding_box,
+  resolution = 4,
+  path = copernicus_cache("bathymetry"),
+  keep = TRUE
+)
 }
 \arguments{
 \item{bounding_box}{named list with \code{xmin}, \code{xmax}, \code{ymin}, \code{ymax}}
@@ -12,9 +17,12 @@ fetch_bathymetry(bounding_box, resolution = 4, path = tempdir(), keep = TRUE)
 \item{resolution}{grid resolution in arc-minutes, as \code{marmap} defines it;
 smaller is finer and slower. 4 is roughly 7 km at mid latitudes.}
 
-\item{path}{directory for \code{marmap}'s download cache; created if absent}
+\item{path}{directory for the download cache; created if absent. Defaults to
+a \code{bathymetry} folder under \code{\link[tools:R_user_dir]{tools::R_user_dir()}}, so downloads persist
+between sessions.}
 
-\item{keep}{whether \code{marmap} should cache the downloaded grid for reuse}
+\item{keep}{whether \code{marmap} should cache the downloaded grid for reuse. With
+\code{FALSE} nothing is written, so nothing can be read back later either.}
 }
 \value{
 a \code{terra::SpatRaster} with one layer per variable in
@@ -27,11 +35,21 @@ slope and aspect from it.
 \details{
 The bounding box takes the same shape as \code{accessEnvDat()}'s, so a single
 definition of the study area serves both.
+}
+\section{Caching}{
 
 \code{marmap} caches downloads into the working directory by default, which
-scatters them wherever R happened to be started. Passing \code{path} keeps a run's
-downloads together.
+scatters them wherever R happened to be started. This puts them beside the
+Copernicus cache instead, under \code{\link[tools:R_user_dir]{tools::R_user_dir()}}, so a study area
+downloaded once stays downloaded across sessions. \code{path} overrides that.
+
+A grid already on disk is read with \code{marmap::read.bathy()} rather than
+re-requested through \code{marmap::getNOAA.bathy()}. Both return the same object,
+but the second announces itself — "Querying NOAA database", then "File
+already exists ; loading ..." — and there is no reason to narrate a local
+file read. Reading directly also skips the NOAA round trip entirely.
 }
+
 \examples{
 \dontrun{
 bathy <- fetch_bathymetry(

@@ -142,18 +142,56 @@ download_day <- function(item, dataset_id, vars, bounding_box, depth) {
   }, error = function(e) paste0("  ", format(item$time), ": ", conditionMessage(e)))
 }
 
+#' Evaluate something, muffling only terra's unknown-calendar warning
+#'
+#' Some Copernicus files declare their calendar as `Gregorian`, which is not one
+#' of the spellings the CF conventions list. terra warns and assumes the standard
+#' calendar, which is correct — `Gregorian` *is* the standard calendar, spelled
+#' with a capital — so the warning says nothing a caller can act on. One per file
+#' makes fifty on a fifty-day fetch, burying the warnings that do matter.
+#'
+#' Matched on the message text so that only this one is caught. Every other
+#' warning is left to propagate, since a file that is genuinely unreadable should
+#' still say so.
+#'
+#' @param expr an expression to evaluate
+#' @return the value of `expr`
+#' @keywords internal
+without_calendar_warning <- function(expr) {
+  withCallingHandlers(
+    expr,
+    warning = function(w) {
+      if (grepl("unknown calendar", conditionMessage(w), fixed = TRUE)) {
+        invokeRestart("muffleWarning")
+      }
+    }
+  )
+}
+
 #' Read one day's cached file into a data frame
 #'
 #' Reads stay in the calling session. They are local file reads, and running
 #' them in workers would mean serialising every day's data frame back over a
 #' socket — for a large bounding box that costs more than the read itself.
 #'
+#' @section The calendar warning:
+#' Some Copernicus files declare their time calendar as `Gregorian`, which is not
+#' one of the spellings the CF conventions list, so terra warns and assumes the
+#' standard calendar. That assumption is correct — `Gregorian` is the standard
+#' calendar, spelled with a capital — and the warning says nothing a caller can
+#' act on. One per file makes fifty on a fifty-day fetch, which buries the
+#' warnings that do matter.
+#'
+#' Only that one message is muffled, matched on its text. Every other warning
+#' from the read is left alone, since a file that is genuinely unreadable should
+#' still say so.
+#'
 #' @param item <list> one work item, as built by [accessEnvDat()]
 #' @param vars <char> variable codes, in the order they were requested
 #' @return a data frame of one grid, with `YEAR`, `MONTH` and `DAY`
 #' @keywords internal
 read_day <- function(item, vars) {
-  x <- terra::rast(item$ofile)
+  x <- without_calendar_warning(terra::rast(item$ofile))
 
   # Put the layers in the order they were requested before anything is named.
   x <- order_layers(x, vars)
