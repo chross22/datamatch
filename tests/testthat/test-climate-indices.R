@@ -309,3 +309,127 @@ test_that("a renamed variable is reported rather than returning nothing", {
   expect_error(fetch_rapid_netcdf(paste0("file://", path), "AMOC"),
                "no longer contains")
 })
+
+# ---- the RAPID overturning series -------------------------------------------
+
+# Twelve-hourly steps, as Dates. seq.Date has no "12 hours", but a Date is a
+# number of days, so half-day increments give the same axis.
+twelve_hourly <- function(from, to) seq(as.Date(from), as.Date(to), by = 0.5)
+
+# A miniature of the file RAPID publishes: a twelve-hourly `moc_mar_hc10`
+# series with its time axis given as "days since <origin>". Written rather than
+# downloaded, so these tests need no network and no 1 MB fetch.
+write_rapid_nc <- function(path, dates, values, origin = as.Date("2004-04-01"),
+                           variable = "moc_mar_hc10") {
+  time_dim <- ncdf4::ncdim_def("time", paste("days since", format(origin)),
+                               as.numeric(dates - origin), unlim = TRUE)
+  var <- ncdf4::ncvar_def(variable, "Sv", list(time_dim), -9999)
+  nc <- ncdf4::nc_create(path, list(var))
+  ncdf4::ncvar_put(nc, var, values)
+  ncdf4::nc_close(nc)
+  path
+}
+
+test_that("the twelve-hourly RAPID series averages to monthly", {
+  skip_if_not_installed("ncdf4")
+
+  # Two months at twelve-hourly steps. Each month's values are its own month
+  # number, so the monthly mean is known without recomputing it here.
+  dates <- twelve_hourly("2004-04-01", "2004-05-31")
+  values <- as.numeric(format(dates, "%m"))
+  path <- write_rapid_nc(tempfile(fileext = ".nc"), dates, values)
+
+  local_mocked_bindings(copernicus_cache = function(...) path)
+
+  series <- fetch_rapid_netcdf("unused", "AMOC")
+
+  expect_setequal(names(series), c("YEAR", "MONTH", "AMOC"))
+  expect_equal(series$MONTH, c(4, 5))
+  expect_equal(series$AMOC, c(4, 5))
+})
+
+test_that("the time origin is read from the file, not assumed", {
+  skip_if_not_installed("ncdf4")
+
+  # RAPID has re-based its time axis across releases, so a hard-coded origin
+  # would silently shift every value into the wrong month.
+  dates <- twelve_hourly("2010-07-01", "2010-07-31")
+  path <- write_rapid_nc(tempfile(fileext = ".nc"), dates,
+                         rep(17, length(dates)),
+                         origin = as.Date("1950-01-01"))
+
+  local_mocked_bindings(copernicus_cache = function(...) path)
+  series <- fetch_rapid_netcdf("unused", "AMOC")
+
+  expect_equal(series$YEAR, 2010)
+  expect_equal(series$MONTH, 7)
+  expect_equal(series$AMOC, 17)
+})
+
+test_that("a renamed variable is reported with what the file does hold", {
+  skip_if_not_installed("ncdf4")
+
+  # The transport variable is named in the code. If RAPID renames it, saying so
+  # beats returning nothing or failing inside ncvar_get().
+  dates <- twelve_hourly("2004-04-01", "2004-04-30")
+  path <- write_rapid_nc(tempfile(fileext = ".nc"), dates,
+                         rep(17, length(dates)), variable = "moc_renamed")
+
+  local_mocked_bindings(copernicus_cache = function(...) path)
+
+  expect_error(fetch_rapid_netcdf("unused", "AMOC"), "moc_mar_hc10")
+  expect_error(fetch_rapid_netcdf("unused", "AMOC"), "moc_renamed")
+})
+
+test_that("a cached file is not downloaded again", {
+  skip_if_not_installed("ncdf4")
+
+  dates <- twelve_hourly("2004-04-01", "2004-04-30")
+  path <- write_rapid_nc(tempfile(fileext = ".nc"), dates,
+                         rep(17, length(dates)))
+
+  local_mocked_bindings(copernicus_cache = function(...) path)
+  # The file is over a megabyte and RAPID times out on repeated requests, so a
+  # re-fetch is a real cost rather than a tidiness point.
+  local_mocked_bindings(
+    download.file = function(...) stop("should not be downloaded again"),
+    .package = "utils"
+  )
+
+  expect_equal(nrow(fetch_rapid_netcdf("unused", "AMOC")), 1)
+})
+
+test_that("fetch_climate_index routes AMOC to the NetCDF reader", {
+  skip_if_not_installed("ncdf4")
+
+  dates <- twelve_hourly("2004-04-01", "2004-05-31")
+  path <- write_rapid_nc(tempfile(fileext = ".nc"), dates,
+                         as.numeric(format(dates, "%m")))
+
+  local_mocked_bindings(copernicus_cache = function(...) path)
+  # readLines() is what every other index uses; AMOC must not reach it.
+  local_mocked_bindings(
+    readLines = function(...) stop("AMOC is NetCDF, not a text table"),
+    .package = "base"
+  )
+
+  series <- fetch_climate_index("AMOC")
+
+  expect_setequal(names(series), c("YEAR", "MONTH", "AMOC"))
+  expect_equal(series$AMOC, c(4, 5))
+  expect_equal(nrow(fetch_climate_index("AMOC", years = 2004)), 2)
+})
+
+test_that("the overturning index carries its citation", {
+  entry <- climate_indices()$AMOC
+
+  expect_match(entry$reference, "RAPID|Moat")
+  expect_match(entry$source, "RAPID")
+
+  dictionary <- as.data.frame(index_dictionary())
+  expect_false(is.na(dictionary$reference[dictionary$name == "AMOC"]))
+  # Both cited indices show up where someone will read them.
+  output <- capture.output(print(index_dictionary()))
+  expect_true(any(grepl("Cite when used", output)))
+  expect_true(any(grepl("AMOC", output)))
+})

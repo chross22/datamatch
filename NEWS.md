@@ -152,5 +152,19 @@
 * **`LCR`**, the Labrador Current retroflection index, joins the climate index
   catalog. Published with Jutras et al. (2023) and cited in `index_dictionary()`.
 
+* **`AMOC`**, the overturning transport measured by the RAPID array at 26.5°N,
+  joins it too. Unlike the other indices this is a direct measurement rather than
+  a pressure or SST pattern — which is also its limitation: it begins in April
+  2004 and is recorded far south of the shelf, so it describes the basin-scale
+  circulation the Labrador and slope currents sit within rather than local
+  conditions.
+
+  RAPID publishes only NetCDF at a stable URL, so this one is downloaded as
+  bytes and read with `ncdf4` (a `Suggests`) rather than parsed as text. The
+  twelve-hourly series is averaged to monthly. The file is cached like the
+  Copernicus downloads, since it is over a megabyte and RAPID times out on
+  repeated requests, and the time origin is read from the file rather than
+  hard-coded — RAPID has re-based it across releases.
+
 * **A monthly workflow** checks the variable catalog against the live Copernicus
   catalogue and opens an issue when dataset identifiers drift.

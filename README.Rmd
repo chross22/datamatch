@@ -52,7 +52,8 @@ The goal of datamatch is to pull environmental data from Copernicus Marine Servi
 
 - [Static and basin-scale covariates](#static-and-basin-scale-covariates)
   - [Seafloor terrain](#seafloor-terrain) — depth, slope, aspect, and TPI
-  - [Climate indices](#climate-indices) — NAO, AO, AMO, PDO
+  - [Climate indices](#climate-indices) — NAO, AO, AMO, PDO, LCR, AMOC
+    - [The overturning circulation](#the-overturning-circulation)
     - [The Labrador Current retroflection index](#the-labrador-current-retroflection-index)
 
 **Putting it to use**
@@ -667,15 +668,16 @@ you about *when* — what year and season it was. They tell you nothing about
 So they are useful for interannual questions ("was this a warm-regime year?") and
 useless for spatial ones. A model given only indices cannot produce a map.
 
-Five are available, and they are not interchangeable.
+Six are available, and they are not interchangeable.
 
-| Name | What it measures | Timescale |
-|---|---|---|
-| `NAO` | Pressure difference, Icelandic Low to Azores High | Year to year |
-| `AO` | Strength of the polar vortex | Year to year |
-| `AMO` | Detrended North Atlantic SST anomaly | Multidecadal |
-| `PDO` | Leading mode of North Pacific SST | Decadal |
-| `LCR` | Retroflection of the Labrador Current | Year to year |
+| Name | What it measures | Timescale | Record |
+|---|---|---|---|
+| `NAO` | Pressure difference, Icelandic Low to Azores High | Year to year | 1950– |
+| `AO` | Strength of the polar vortex | Year to year | 1950– |
+| `AMO` | Detrended North Atlantic SST anomaly | Multidecadal | 1948– |
+| `PDO` | Leading mode of North Pacific SST | Decadal | 1948– |
+| `LCR` | Retroflection of the Labrador Current | Year to year | 1993–2014 |
+| `AMOC` | Overturning transport at 26.5°N | Year to year | 2004– |
 
 **`NAO`** is the usual first choice in the Northwest Atlantic. It sets the
 strength and track of the westerlies, and with them heat flux and mixing over the
@@ -695,6 +697,36 @@ using it to predict local SST is partly circular.
 **`PDO`** is North Pacific and included for completeness. It has limited relevance
 to Atlantic shelf systems, and a relationship found with it is worth treating
 sceptically.
+
+The last two are different in kind, and get their own sections below.
+
+#### The overturning circulation
+
+`AMOC` is the strength of the Atlantic overturning in Sverdrups, measured
+directly by the RAPID mooring array at 26.5°N. Alone among these it is a
+measurement rather than a pattern derived from pressure or SST.
+
+```{r amoc, eval = FALSE}
+amoc <- fetch_climate_index("AMOC")      # monthly, April 2004 onward
+observations <- attach_climate_index(observations, "AMOC")
+```
+
+Being real is also its limitation, in two ways. It **starts in April 2004**, so
+it cannot reach back over a longer survey record. And it is measured **far south
+of the shelf**: it describes the basin-scale circulation the Labrador and slope
+currents sit within, not conditions on the Gulf of Maine or Scotian Shelf. A
+weakening AMOC is associated with a warming Northwest Atlantic shelf, but that
+is a chain of several links, so check the sign of any relationship against `LCR`
+and `AMO` rather than assuming it.
+
+Two practical notes. RAPID publishes this only as NetCDF, so it needs the
+`ncdf4` package — a `Suggests`, installed with `install.packages("ncdf4")`. And
+the published series is twelve-hourly, averaged to monthly here; the file is over
+a megabyte, so it is cached like the Copernicus downloads.
+
+> Moat BI et al. Atlantic meridional overturning circulation observed by the
+> RAPID-MOCHA-WBTS array at 26°N. British Oceanographic Data Centre, NERC, UK.
+> <https://doi.org/10.5285/223b34a3-2dc5-c945-e063-6c86abc0f5b3>
 
 #### The Labrador Current retroflection index
 
