@@ -66,6 +66,7 @@ indices.
 
 - [Putting it together](#putting-it-together) — a full worked example, four sources onto one table
 - [Matching](#matching) — a general spatiotemporal join, not just observations
+- [Looking things up](#looking-things-up) — dictionaries, catalogs, and small helpers
 - [Troubleshooting](#troubleshooting) — what the error messages mean
 - [Related packages](#related-packages)
 
@@ -955,6 +956,30 @@ is suffixed `.matched`, so nothing of yours is overwritten.
 
 > The arguments used to be `speciesDat` and `envDat`. Those still work and warn;
 > they will be removed in a later version.
+
+## Looking things up
+
+Small helpers for asking the package what it knows, rather than reading the
+source or guessing:
+
+```{r reference, eval = FALSE}
+variable_dictionary()          # printable table of Copernicus variables
+copernicus_variables()         # the same catalog as a list, for programmatic use
+forecast_variables()           # which variables have a forecast equivalent
+variable_dataset("SST")        # which dataset a variable comes from
+product_url("GLOBAL_MULTIYEAR_PHY_001_030")   # link to the product page
+
+index_dictionary()             # printable table of climate indices
+climate_indices()              # the same catalog as a list
+bathymetry_variables()         # DEPTH, SLOPE, ASPECT, TPI
+
+covariate_columns(env)         # which columns of an object are covariates
+grid_resolution(env)           # the grid spacing, for deciding which way to resample
+```
+
+The `_dictionary()` pair print as tables and are what to read; the plain catalog
+functions return lists and are what to write code against. `as_markdown()`
+renders either dictionary for pasting into documentation.
 
 ## Troubleshooting
 
