@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# datamatch
+# datamatch: Fetch Copernicus Marine Data and Match It in Space and Time
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/chross22/datamatch/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/chross22/datamatch/actions/workflows/R-CMD-check.yaml)

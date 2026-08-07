@@ -11,3 +11,4 @@
 
 # knitr scratch output from building the vignette outside the package machinery
 figure/
+README.html
