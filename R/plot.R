@@ -223,7 +223,7 @@ plot_series <- function(env_dat, vars = NULL, fun = mean, spread = TRUE, ...) {
 #' @return the plotted values, invisibly
 #' @examples
 #' \dontrun{
-#' matched <- matchData(speciesDat = observations, envDat = env)
+#' matched <- matchData(observations, env)
 #'
 #' plot_matched(matched, "SST")
 #' # Open circles are observations that matched nothing.

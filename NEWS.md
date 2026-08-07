@@ -71,6 +71,27 @@
 
 ## Breaking changes
 
+* **`matchData()`'s arguments are now `dat` and `source`**, replacing
+  `speciesDat` and `envDat`.
+
+  The function was never specific to species observations or environmental data.
+  It is a spatiotemporal nearest-feature join between two `sf` point objects, and
+  works as well for tag positions against a model field, moorings against
+  satellite retrievals, or one gridded product against another. The old names
+  described one use of it as though it were the only one.
+
+  **The old names still work**, with a warning, so existing scripts and
+  `taupatch` keep running. They will be removed in a later version.
+
+  ```r
+  matchData(observations, env)                 # positional, unchanged
+  matchData(dat = observations, source = env)  # new names
+  matchData(speciesDat = obs, envDat = env)    # still works, warns
+  ```
+
+  One related change: a `source` column whose name collides with one already in
+  `dat` is now suffixed **`.matched`** rather than `.env`, for the same reason.
+
 * **The `BigelowLab/copernicus` dependency is gone.** It was used in two places,
   both in `accessEnvDat()`, and both are now internal. This removes the
   `Remotes:` field and the hand-created `~/.copernicusdata` file that a new

@@ -40,7 +40,7 @@ reappears:
 
 \examples{
 \dontrun{
-matched <- matchData(speciesDat = observations, envDat = env)
+matched <- matchData(observations, env)
 
 plot_matched(matched, "SST")
 # Open circles are observations that matched nothing.

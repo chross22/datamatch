@@ -2,12 +2,13 @@
 % Please edit documentation in R/matchData.R
 \name{detect_temporal_resolution}
 \alias{detect_temporal_resolution}
-\title{Infer the temporal resolution of environmental data}
+\title{Infer the temporal resolution of a set of time steps}
 \usage{
-detect_temporal_resolution(envDat)
+detect_temporal_resolution(x)
 }
 \arguments{
-\item{envDat}{\if{html}{\out{<sf object>}} environmental data with YEAR/MONTH/DAY columns}
+\item{x}{\if{html}{\out{<sf object>}} an object with YEAR/MONTH/DAY columns, typically the
+\code{source} side of a match}
 }
 \value{
 one of "day", "month", or "year"

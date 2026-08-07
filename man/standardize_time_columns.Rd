@@ -2,17 +2,17 @@
 % Please edit documentation in R/matchData.R
 \name{standardize_time_columns}
 \alias{standardize_time_columns}
-\title{Rename a species dataset's time columns to YEAR/MONTH/DAY}
+\title{Rename a table's time columns to YEAR/MONTH/DAY}
 \usage{
-standardize_time_columns(speciesDat, match_keys)
+standardize_time_columns(dat, match_keys)
 }
 \arguments{
-\item{speciesDat}{\if{html}{\out{<sf object>}} species observation data}
+\item{dat}{\if{html}{\out{<sf object>}} the table being matched}
 
 \item{match_keys}{\if{html}{\out{<char>}} the standardized time columns needed, e.g. c("YEAR", "MONTH")}
 }
 \value{
-\code{speciesDat} with its time columns renamed to YEAR/MONTH/DAY
+\code{dat} with its time columns renamed to YEAR/MONTH/DAY
 }
 \description{
 Only the columns needed for the requested match keys are required, so monthly
