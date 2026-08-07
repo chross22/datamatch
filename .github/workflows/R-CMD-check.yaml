@@ -1,81 +1,18 @@
-# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
-# Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
+name: R-CMD-check
+
+# Calls the shared workflow in chross22/distsamp so the check configuration
+# lives in one place across these packages.
+
 on:
   push:
     branches: [main, master]
   pull_request:
-    branches: [main, master]
-
-name: R-CMD-check.yaml
+  workflow_dispatch:
 
 permissions: read-all
 
-# Supersede rather than queue. Each run is five jobs across three operating
-# systems, so a handful of pushes in quick succession can put twenty jobs in the
-# queue - all but the last testing a commit nobody is waiting on any more. That
-# is wasteful when runners are plentiful and actively harmful when they are
-# scarce: during a GitHub Actions capacity incident this repository had four
-# superseded runs queued for over two hours while the commit people cared about
-# had no signal at all.
-#
-# The trade-off is that an intermediate commit can be cancelled before it
-# finishes, so "every commit was green" is no longer guaranteed - only that the
-# tip of each branch is. That is the useful guarantee anyway, and it is the one
-# that survives a busy queue.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  R-CMD-check:
-    runs-on: ${{ matrix.config.os }}
-
-    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
-
-    strategy:
-      fail-fast: false
-      matrix:
-        config:
-          - {os: macos-latest,   r: 'release'}
-          - {os: windows-latest, r: 'release'}
-          - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
-          - {os: ubuntu-latest,   r: 'release'}
-          - {os: ubuntu-latest,   r: 'oldrel-1'}
-
-    env:
-      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      R_KEEP_PKG_SOURCE: yes
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: r-lib/actions/setup-pandoc@v2
-
-      - uses: r-lib/actions/setup-r@v2
-        with:
-          r-version: ${{ matrix.config.r }}
-          http-user-agent: ${{ matrix.config.http-user-agent }}
-          use-public-rspm: true
-
-      # sf/terra need these system libraries on Linux runners; macOS and
-      # Windows runners get them bundled via the R binary packages, so this
-      # step is skipped there.
-      - name: Install GDAL/GEOS/PROJ system dependencies (Linux only)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libgdal-dev \
-            libgeos-dev \
-            libproj-dev \
-            libudunits2-dev
-
-      - uses: r-lib/actions/setup-r-dependencies@v2
-        with:
-          extra-packages: any::rcmdcheck
-          needs: check
-
-      - uses: r-lib/actions/check-r-package@v2
-        with:
-          upload-snapshots: true
-          build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
+  check:
+    uses: chross22/distsamp/.github/workflows/r-cmd-check-reusable.yaml@main
+    with:
+      apt-packages: 'libgdal-dev libgeos-dev libproj-dev libudunits2-dev'
