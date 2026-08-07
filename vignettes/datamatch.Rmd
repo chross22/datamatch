@@ -1,0 +1,218 @@
+---
+title: "Getting started with datamatch"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with datamatch}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7, fig.height = 4.2)
+library(datamatch)
+set.seed(1)
+```
+
+This walks a set of observations from raw positions to a table a model can be
+fitted to, and shows what each step actually returns.
+
+Every number and figure below is computed when the vignette is built. Nothing is
+downloaded: the covariates are synthetic, generated to look like a Gulf of Maine
+grid with a seasonal cycle and satellite cloud gaps. The calls are the ones you
+would make against real data, so a fetch is the only thing to substitute.
+
+```{r fetch-for-real, eval = FALSE}
+bb <- list(xmin = -70, xmax = -66, ymin = 41, ymax = 44)
+
+env <- accessEnvDat(vars = c("SST", "MLD"), years = 2015, months = 1:12,
+                    bounding_box = bb)
+```
+
+```{r synthetic, echo = FALSE}
+grid <- expand.grid(x = seq(-70, -66, by = 0.25), y = seq(41, 44, by = 0.25))
+
+make_month <- function(m) {
+  d <- grid
+  # Warm in late summer, cool in late winter; colder to the north.
+  d$SST <- 9 + 5.5 * sin(2 * pi * (m - 4.5) / 12) - 1.4 * (d$y - 41) +
+    stats::rnorm(nrow(d), 0, 0.25)
+  # Deep mixed layer in winter, shallow in summer.
+  d$MLD <- 45 - 32 * sin(2 * pi * (m - 4.5) / 12) + stats::rnorm(nrow(d), 0, 3)
+  d$YEAR <- 2015L
+  d$MONTH <- as.integer(m)
+  d$DAY <- 1L
+  d
+}
+
+env <- sf::st_as_sf(do.call(rbind, lapply(1:12, make_month)),
+                    coords = c("x", "y"), crs = 4326)
+attr(env, "datamatch_step") <- "month"
+```
+
+`accessEnvDat()` returns one row per grid cell per time step, as an `sf` point
+object:
+
+```{r shape}
+env
+```
+
+## Look before you model
+
+Three plots answer the questions worth asking of a download, and each returns the
+data it drew rather than only drawing it.
+
+`plot_env()` maps one variable for one time step. This is the fastest way to
+catch a bounding box that landed somewhere unintended, or a variable that is
+entirely `NA`:
+
+```{r plot-env}
+plot_env(env, "SST", time = c(MONTH = 8))
+```
+
+`plot_series()` reduces each step to one number over the study area, so the
+seasonal cycle and its spatial spread are both visible:
+
+```{r plot-series}
+series <- plot_series(env, "SST")
+head(series, 4)
+```
+
+## Gaps are not spread evenly
+
+Satellite variables are missing wherever cloud blocked the view, and those gaps
+cluster in particular seasons. Adding a chlorophyll field with realistic winter
+gaps:
+
+```{r gappy}
+env$CHL <- 1.2 + 2.4 * exp(-((env$MONTH - 5)^2) / 5) + stats::rnorm(nrow(env), 0, 0.1)
+
+winter <- env$MONTH %in% c(11, 12, 1, 2)
+env$CHL[winter][sample(sum(winter), round(sum(winter) * 0.8))] <- NA
+env$CHL[!winter][sample(sum(!winter), round(sum(!winter) * 0.1))] <- NA
+```
+
+`plot_coverage()` is the one to run before trusting a monthly mean:
+
+```{r plot-coverage}
+coverage <- plot_coverage(env, c("SST", "CHL"))
+```
+
+```{r coverage-numbers}
+round(coverage$coverage[coverage$variable == "CHL"], 2)
+```
+
+A quarter of the grid in winter and near-complete in summer is exactly the shape
+that decides whether a winter value means anything.
+
+## Matching
+
+`matchData()` joins each observation to the nearest cell within the same time
+period. Some observations here are deliberately placed in a month the covariates
+do not cover, and some outside the grid:
+
+```{r observations}
+observations <- sf::st_as_sf(
+  data.frame(
+    lon   = c(-69.5, -68.2, -67.1, -66.5, -69.0, -64.0),
+    lat   = c(41.5,  42.3,  43.1,  41.9,  43.6,  42.0),
+    YEAR  = 2015L,
+    MONTH = c(3L, 6L, 8L, 6L, 11L, 6L),
+    count = c(12, 45, 7, 88, 3, 21)
+  ),
+  coords = c("lon", "lat"), crs = 4326)
+
+matched <- matchData(observations, env)
+sf::st_drop_geometry(matched)[c("MONTH", "count", "SST", "MLD", "CHL")]
+```
+
+Every observation comes back, in the same order, with the covariates attached.
+The last one sits well outside the grid and still matched — `matchData()` uses
+the *nearest* cell, and nearest has no maximum distance. That is worth knowing:
+an observation far outside the study area is joined to the closest edge cell
+rather than dropped, so check your bounding box covers your stations.
+
+The November observation has `NA` chlorophyll, because that cell was under cloud.
+That is a real gap rather than a failure, and the source of it is worth checking
+before dropping the row:
+
+```{r missing}
+colSums(is.na(sf::st_drop_geometry(matched)))
+```
+
+## Choosing a resolution
+
+Real products do not share a grid. Physics is 0.083°, biogeochemistry 0.25°, and
+satellite ocean colour 4 km, so combining them means deciding which grid to keep.
+
+Aggregating is the safe direction, because every value in the result summarises
+values that were really measured:
+
+```{r upscale}
+coarse <- upscale_grid(env, to = 0.5, vars = "SST", min_coverage = 0)
+
+c(cells_before = nrow(env) / 12, cells_after = nrow(coarse) / 12)
+```
+
+Interpolating is the direction to be careful in. It adds cells, not information:
+
+```{r downscale}
+fine <- downscale_grid(coarse, to = 0.25, vars = "SST")
+
+# `nearest`, the default, invents no values: every one was already in the source.
+all(stats::na.omit(fine$SST) %in% coarse$SST)
+```
+
+`bilinear` would return a smooth field that looks like a finely-resolved
+measurement and is not, which is why the blunt method is the default.
+
+### Partial coverage comes back NA
+
+Aggregating chlorophyll over the winter, when most cells are empty, is the case
+`min_coverage` exists for:
+
+```{r min-coverage}
+january <- env[env$MONTH == 1, ]
+
+strict <- upscale_grid(january, to = 0.5, vars = "CHL", min_coverage = 0.5)
+loose  <- upscale_grid(january, to = 0.5, vars = "CHL", min_coverage = 0)
+
+c(reported_at_half_coverage = sum(!is.na(strict$CHL)),
+  reported_with_no_guard    = sum(!is.na(loose$CHL)))
+```
+
+Both numbers are available; only one of them says how much went into it.
+`keep_counts = TRUE` returns the fraction behind each value.
+
+## Covariates that are not gridded
+
+Two other kinds attach differently. Seafloor terrain is static, so the same
+value goes to every time step at a location:
+
+```{r bathymetry, eval = FALSE}
+bathy <- fetch_bathymetry(bounding_box = bb)
+matched <- attach_bathymetry(matched, bathy, c("DEPTH", "SLOPE", "TPI"))
+```
+
+Climate indices have no spatial dimension at all — one value per month describes
+the whole basin, so every observation in a month receives the same number:
+
+```{r indices, eval = FALSE}
+matched <- attach_climate_index(matched, c("NAO", "AMOC"))
+```
+
+That makes them a different kind of covariate. They carry information about
+*when*, and none about *where* within a region conditions are better. A model
+given only indices cannot produce a map.
+
+```{r index-table}
+as.data.frame(index_dictionary())[c("name", "units", "source")]
+```
+
+## Where to go next
+
+- `vignette("datamatch")` is this document; the
+  [README](https://github.com/chross22/datamatch) covers the same ground in more
+  depth, including forecasts, daily data, and gap filling.
+- `variable_dictionary()` and `index_dictionary()` list what can be fetched.
+- The README's References section lists the DOI for every data source, since the
+  obligation to cite travels with the data.
