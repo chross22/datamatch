@@ -1280,3 +1280,12 @@ Both run on demand from the Actions tab, and locally:
 system("Rscript inst/scripts/check_citations.R")
 system("Rscript inst/scripts/check_catalog.R")
 ```
+
+## Citing datamatch
+
+``` r
+citation("datamatch")
+```
+
+The data products a run fetches carry their own citations; the References
+section above says which, and each function's `?help` repeats it.

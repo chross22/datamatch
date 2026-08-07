@@ -1,0 +1,15 @@
+citHeader(
+  "Cite the package for the implementation. The data products a given run ",
+  "fetches carry their own citations - see the References section of the ",
+  "README, and each function's own help page."
+)
+
+bibentry(
+  bibtype = "Manual",
+  key     = "datamatch",
+  title   = "datamatch: Fetch Copernicus Marine Data and Match It in Space and Time",
+  author  = person("Camille", "Ross"),
+  year    = format(Sys.Date(), "%Y"),
+  note    = paste0("R package version ", meta$Version),
+  url     = "https://github.com/chross22/datamatch"
+)
