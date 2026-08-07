@@ -13,7 +13,7 @@ build_copernicus_args(
   ofile,
   overwrite = TRUE,
   dry_run = FALSE,
-  log_level = "QUIET"
+  log_level = "ERROR"
 )
 }
 \arguments{
@@ -36,7 +36,10 @@ build_copernicus_args(
 the API without downloading anything}
 
 \item{log_level}{\if{html}{\out{<char>}} one of the client's levels: DEBUG, INFO, WARN, ERROR,
-CRITICAL, QUIET}
+CRITICAL, QUIET. \code{ERROR} is the default rather than \code{QUIET}, because the
+client says \emph{why} a request failed at ERROR and says nothing at all at
+QUIET. A date past the end of a reanalysis, for instance, exits non-zero
+with no output under QUIET, leaving the caller an empty failure to explain.}
 }
 \value{
 character vector of arguments, suitable for \code{\link[=system2]{system2()}}

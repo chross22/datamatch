@@ -100,12 +100,15 @@ copernicus_app <- function() {
 #' @param dry_run <logical> pass `--dry-run`, which validates the request against
 #'   the API without downloading anything
 #' @param log_level <char> one of the client's levels: DEBUG, INFO, WARN, ERROR,
-#'   CRITICAL, QUIET
+#'   CRITICAL, QUIET. `ERROR` is the default rather than `QUIET`, because the
+#'   client says *why* a request failed at ERROR and says nothing at all at
+#'   QUIET. A date past the end of a reanalysis, for instance, exits non-zero
+#'   with no output under QUIET, leaving the caller an empty failure to explain.
 #' @return character vector of arguments, suitable for [system2()]
 #' @keywords internal
 build_copernicus_args <- function(dataset_id, vars, bb, depth, time, ofile,
                                   overwrite = TRUE, dry_run = FALSE,
-                                  log_level = "QUIET") {
+                                  log_level = "ERROR") {
   args <- c("subset", "--dataset-id", dataset_id[1],
             "--log-level", toupper(log_level))
 
@@ -183,7 +186,7 @@ build_copernicus_args <- function(dataset_id, vars, bb, depth, time, ofile,
 download_copernicus_subset <- function(dataset_id, vars, bb, depth, time, ofile,
                                        overwrite = TRUE, tries = 3, wait = 10,
                                        verbose = FALSE, dry_run = FALSE,
-                                       log_level = "QUIET") {
+                                       log_level = "ERROR") {
   app <- copernicus_app()
   args <- build_copernicus_args(dataset_id = dataset_id, vars = vars, bb = bb,
                                 depth = depth, time = time, ofile = ofile,

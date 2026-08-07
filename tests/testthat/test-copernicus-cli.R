@@ -29,3 +29,16 @@ test_that("the hash is stable and looks like a hash", {
   expect_match(short_hash("abc"), "^[0-9a-f]{8}$")
   expect_match(short_hash(""), "^[0-9a-f]{8}$")
 })
+
+test_that("the client is asked to report errors, not silenced", {
+  # QUIET suppresses the client's explanation as well as its chatter. An
+  # out-of-range date then exits non-zero with no output at all, which leaves
+  # accessEnvDat() promising "Client output:" and showing nothing.
+  args <- build_copernicus_args(
+    dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1D-m", vars = "thetao",
+    bb = list(xmin = -70, xmax = -69, ymin = 42, ymax = 43),
+    depth = c(0, 1), time = as.Date("2020-01-01"), ofile = "/tmp/x.nc")
+
+  expect_equal(args[which(args == "--log-level") + 1], "ERROR")
+  expect_false("QUIET" %in% args)
+})

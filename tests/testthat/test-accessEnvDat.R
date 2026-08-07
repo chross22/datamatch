@@ -822,3 +822,31 @@ test_that("only the named dates are downloaded", {
 
   expect_equal(requested, c("2020-01-03", "2020-01-15", "2020-02-17"))
 })
+
+test_that("dates outside a dataset's coverage are explained, not just reported", {
+  # A reanalysis runs behind the present, so asking it for a recent date fails
+  # every retry and will keep failing. The client names its own coverage when it
+  # refuses; this turns that into something actionable.
+  raster_path <- write_fake_raster("thetao")
+
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
+  local_mocked_bindings(file_exists = function(...) FALSE, .package = "fs")
+  local_mocked_bindings(
+    download_copernicus_subset = function(...) {
+      stop("Copernicus download failed after 3 attempt(s).\nClient output:\n",
+           "ERROR - Some of your subset selection [2026-07-15, 2026-07-15] for ",
+           "the time dimension exceed the dataset coordinates ",
+           "[1993-01-01, 2026-06-23]", call. = FALSE)
+    }
+  )
+
+  err <- tryCatch(
+    accessEnvDat(vars = "SST",
+                 bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
+                 dates = "20260715", n_workers = 1),
+    error = function(e) conditionMessage(e))
+
+  expect_match(err, "outside what this dataset covers")
+  expect_match(err, "reanalysis")
+  expect_match(err, "forecast")
+})
