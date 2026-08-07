@@ -8,3 +8,6 @@
 
 # Reference papers kept locally, not distributed with the package
 *.pdf
+
+# knitr scratch output from building the vignette outside the package machinery
+figure/
