@@ -62,6 +62,7 @@ indices.
 - [Looking things up](#looking-things-up) — dictionaries, catalogs, and small helpers
 - [Troubleshooting](#troubleshooting) — what the error messages mean
 - [Related packages](#related-packages)
+- [References](#references) — cite the data, not this package
 
 </details>
 
@@ -845,9 +846,11 @@ Two practical notes. RAPID publishes this only as NetCDF, so it needs the
 the published series is twelve-hourly, averaged to monthly here; the file is over
 a megabyte, so it is cached like the Copernicus downloads.
 
-> Moat BI et al. Atlantic meridional overturning circulation observed by the
-> RAPID-MOCHA-WBTS array at 26°N. British Oceanographic Data Centre, NERC, UK.
-> <https://doi.org/10.5285/223b34a3-2dc5-c945-e063-6c86abc0f5b3>
+> Moat BI, Smeed DA, Rayner D, Johns WE, Smith R, Volkov D, Elipot S, Petit T,
+> Kajtar J, Baringer MO, Collins J (2026). Atlantic meridional overturning
+> circulation observed by the RAPID-MOCHA-WBTS array at 26°N from 2004 to 2024
+> (v2024.1a). British Oceanographic Data Centre, NERC, UK.
+> <https://doi.org/10.5285/48d0bf43-0598-ceb2-e063-7086abc062f1>
 
 #### Staying current
 
@@ -1128,3 +1131,90 @@ Update and re-fetch. `NEWS.md` describes what was affected and how to check.
 - [derivoce](https://github.com/chross22/derivoce) — derived covariates
   (gradients, FTLE/FSLE, front and isobath distances, lags, integrals) computed
   from what `accessEnvDat()` returns
+
+## References
+
+datamatch is plumbing: everything it returns comes from someone else's data, and
+the obligation to cite travels with the data rather than with this package.
+`index_dictionary()` carries the references for the indices at runtime, and
+`variable_dictionary()` links to each Copernicus product page.
+
+**Cite whichever of these you actually used.**
+
+### Copernicus Marine Service
+
+[Copernicus asks for a specific
+form](https://help.marine.copernicus.eu/en/articles/4444611-how-to-cite-copernicus-marine-products-and-services),
+including the access date:
+
+> *Product Title*. E.U. Copernicus Marine Service Information (CMEMS). Marine
+> Data Store (MDS). DOI: 10.48670/moi-xxxxx (Accessed on DD MMM YYYY)
+
+Reanalysis products, used by default:
+
+| Product | Supplies | DOI |
+|---|---|---|
+| Global Ocean Physics Reanalysis (GLORYS12V1) | `SST`, `SSS`, `BOTT`, `UO`, `VO`, `SSH`, `MLD`, `SIC` | [10.48670/moi-00021](https://doi.org/10.48670/moi-00021) |
+| Global Ocean Biogeochemistry Hindcast | `CHL_MODEL`, `NPP_MODEL`, `NO3`, `PO4`, `O2`, `PH` | [10.48670/moi-00019](https://doi.org/10.48670/moi-00019) |
+| Global Ocean Colour (Copernicus-GlobColour) | satellite `CHL`, `PP`, `DIATO`, `DINO` | [10.48670/moi-00281](https://doi.org/10.48670/moi-00281) |
+
+Analysis-and-forecast products, used with `mode = "forecast"`:
+
+| Product | DOI |
+|---|---|
+| Global Ocean Physics Analysis and Forecast | [10.48670/moi-00016](https://doi.org/10.48670/moi-00016) |
+| Global Ocean Biogeochemistry Analysis and Forecast | [10.48670/moi-00015](https://doi.org/10.48670/moi-00015) |
+
+`variable_dataset()` says which product a variable came from, so only the ones
+you used need citing. Downloads go through the [Copernicus Marine
+Toolbox](https://toolbox-docs.marine.copernicus.eu/), which publishes no DOI of
+its own — cite the products.
+
+### Seafloor terrain
+
+- NOAA National Centers for Environmental Information (2022). *ETOPO 2022
+  15 Arc-Second Global Relief Model*. <https://doi.org/10.25921/fd45-gt74>
+- Pante E, Simon-Bouhet B, Irisson J (2025). *marmap: Import, Plot and Analyze
+  Bathymetric and Topographic Data*.
+  <https://doi.org/10.32614/CRAN.package.marmap>
+
+`fetch_bathymetry()` requests the 60 arc-second bedrock grid
+(`ETOPO_2022_v1_60s_bed`) through `marmap`.
+
+### Climate indices
+
+Two are the published output of specific work and **should be cited when used**:
+
+- **`LCR`** — Jutras M, Dufour CO, Mucci A, Talbot LC (2023). Large-scale control
+  of the retroflection of the Labrador Current. *Nature Communications*
+  **14**:2623. <https://doi.org/10.1038/s41467-023-38321-y>
+- **`AMOC`** — Moat BI, Smeed DA, Rayner D, Johns WE, Smith R, Volkov D, Elipot
+  S, Petit T, Kajtar J, Baringer MO, Collins J (2026). *Atlantic meridional
+  overturning circulation observed by the RAPID-MOCHA-WBTS array at 26°N from
+  2004 to 2024 (v2024.1a)*. British Oceanographic Data Centre, NERC, UK.
+  <https://doi.org/10.5285/48d0bf43-0598-ceb2-e063-7086abc062f1>
+
+  BODC mints a new DOI for each release and retires the old one, so this changes
+  when RAPID publishes a new version. `index_dictionary()` carries the current
+  reference.
+
+The other four are operational products with no single paper behind them. Credit
+the provider:
+
+- **`NAO`**, **`AO`** — NOAA Climate Prediction Center.
+  <https://www.cpc.ncep.noaa.gov/>
+- **`AMO`**, **`PDO`** — NOAA Physical Sciences Laboratory.
+  <https://psl.noaa.gov/data/climateindices/>
+
+### Software this is built on
+
+- Pebesma E, Bivand R (2023). *Spatial Data Science: With Applications in R*.
+  Chapman and Hall/CRC. <https://doi.org/10.1201/9780429459016> — the `sf`
+  reference
+- Hijmans R, Brown A, Barbosa M (2026). *terra: Spatial Data Analysis*.
+  <https://doi.org/10.32614/CRAN.package.terra>
+- Pierce D (2025). *ncdf4: Interface to Unidata netCDF Format Data Files*.
+  <https://doi.org/10.32614/CRAN.package.ncdf4> — needed for `AMOC`
+
+`citation("datamatch")` gives this package's own entry, and `citation()` works on
+any of the above.

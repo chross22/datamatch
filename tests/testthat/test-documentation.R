@@ -86,8 +86,57 @@ test_that("NEWS.md is in the shape R can parse", {
   # "# datamatch (development version)", the usethis convention, yields a
   # "No news entries found" NOTE from R CMD check. The version heading has to be
   # something R can parse as a version.
-  db <- tools:::.build_news_db_from_package_NEWS_md(news)
+  #
+  # Checked by pattern rather than by parsing, because R's own NEWS.md reader
+  # needs commonmark, which is not on the CI runners. Depending on it here would
+  # make this test fail for a reason that has nothing to do with NEWS.md.
+  headings <- grep("^#+ ", readLines(news, warn = FALSE), value = TRUE)
+  expect_gt(length(headings), 0)
 
+  version_heading <- headings[1]
+  expect_match(version_heading, "^# datamatch [0-9]+\\.[0-9]+")
+  expect_false(grepl("development version", version_heading, fixed = TRUE))
+
+  # Where commonmark is available, confirm R really does read entries from it.
+  skip_if_not_installed("commonmark")
+  db <- tools:::.build_news_db_from_package_NEWS_md(news)
   expect_gt(nrow(db), 0)
   expect_false(anyNA(db$Version))
+})
+
+test_that("cited DOIs are the ones that resolve", {
+  # A dead DOI is worse than a missing one: it looks like a citation and sends
+  # the reader nowhere. BODC retires the old DOI on each RAPID release, and the
+  # one this package first shipped (223b34a3-...) now 404s. Pinned here so a
+  # revert to it is caught without the tests needing a network.
+  amoc <- climate_indices()$AMOC$reference
+
+  expect_match(amoc, "10.5285/48d0bf43-0598-ceb2-e063-7086abc062f1", fixed = TRUE)
+  expect_false(grepl("223b34a3-2dc5-c945-e063-6c86abc0f5b3", amoc, fixed = TRUE))
+
+  readme <- readme_text()
+  skip_if(is.null(readme), "README.md not reachable")
+  expect_false(grepl("223b34a3-2dc5-c945-e063-6c86abc0f5b3", readme, fixed = TRUE))
+})
+
+test_that("every data source the package uses is cited in the README", {
+  readme <- readme_text()
+  skip_if(is.null(readme), "README.md not reachable")
+
+  # Everything datamatch returns comes from someone else's data, so each source
+  # needs a DOI or a named provider in the reference list.
+  for (doi in c("10.48670/moi-00021",   # physics reanalysis
+                "10.48670/moi-00019",   # biogeochemistry hindcast
+                "10.48670/moi-00281",   # ocean colour
+                "10.48670/moi-00016",   # physics forecast
+                "10.48670/moi-00015",   # biogeochemistry forecast
+                "10.25921/fd45-gt74",   # ETOPO 2022
+                "10.1038/s41467-023-38321-y")) {   # LCR
+    expect_true(grepl(doi, readme, fixed = TRUE),
+                info = paste("DOI missing from the README:", doi))
+  }
+
+  # The operational indices have no paper, so the provider is the credit.
+  expect_match(readme, "Climate Prediction Center")
+  expect_match(readme, "Physical Sciences Laboratory")
 })

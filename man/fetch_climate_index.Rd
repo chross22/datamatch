@@ -44,10 +44,16 @@ operational products, and should be cited when used:
 \item Jutras M, Dufour CO, Mucci A, Talbot LC (2023) Large-scale control of
 the retroflection of the Labrador Current. \emph{Nature Communications}
 \strong{14}:2623. \doi{10.1038/s41467-023-38321-y}
-\item Moat BI et al. Atlantic meridional overturning circulation observed by
-the RAPID-MOCHA-WBTS array at 26N. British Oceanographic Data Centre,
-NERC, UK. \doi{10.5285/223b34a3-2dc5-c945-e063-6c86abc0f5b3}
+\item Moat BI, Smeed DA, Rayner D, Johns WE, Smith R, Volkov D, Elipot S,
+Petit T, Kajtar J, Baringer MO, Collins J (2026). Atlantic meridional
+overturning circulation observed by the RAPID-MOCHA-WBTS array at 26N
+from 2004 to 2024 (v2024.1a). British Oceanographic Data Centre, NERC,
+UK. \doi{10.5285/48d0bf43-0598-ceb2-e063-7086abc062f1}
 }
+
+BODC mints a new DOI for each RAPID release and retires the old one, so the
+\code{AMOC} reference changes when a new version is published.
+\code{as.data.frame(index_dictionary())$reference} is the current one.
 
 The series is the source data published with that paper's Figure 3, fetched
 from the journal rather than recomputed, so the values are the authors' own.
