@@ -18,7 +18,10 @@ index_dictionary()
 a data frame of class \code{datamatch_index_dictionary}
 }
 \description{
-Printable dictionary of climate indices
+The \code{reference} column carries a citation for the indices that have one.
+\code{LCR} and \code{AMOC} are published output and should be cited when used; the NOAA
+indices are operational products with no single paper, and credit the provider
+instead. Both are printed by the print method.
 }
 \examples{
 index_dictionary()

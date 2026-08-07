@@ -94,10 +94,16 @@ climate_indices <- function() {
       format = "rapid_netcdf",
       # RAPID extends the series in versioned releases roughly yearly.
       updates = "annual",
-      reference = paste("Moat BI et al. Atlantic meridional overturning",
+      # BODC mints a new DOI per release, and retires the old one: the
+      # 2004-2020 DOI this entry first carried now 404s. Checked before
+      # changing, and worth re-checking whenever RAPID publishes a new version.
+      reference = paste("Moat BI, Smeed DA, Rayner D, Johns WE, Smith R,",
+                        "Volkov D, Elipot S, Petit T, Kajtar J, Baringer MO,",
+                        "Collins J (2026). Atlantic meridional overturning",
                         "circulation observed by the RAPID-MOCHA-WBTS array at",
-                        "26N. British Oceanographic Data Centre, NERC, UK.",
-                        "doi:10.5285/223b34a3-2dc5-c945-e063-6c86abc0f5b3"),
+                        "26N from 2004 to 2024 (v2024.1a). British",
+                        "Oceanographic Data Centre, NERC, UK.",
+                        "doi:10.5285/48d0bf43-0598-ceb2-e063-7086abc062f1"),
       description = paste("Strength of the overturning circulation, in",
                           "Sverdrups, measured directly by a mooring array at",
                           "26.5N. This is the real thing rather than a proxy,",
@@ -115,6 +121,11 @@ climate_indices <- function() {
 }
 
 #' Printable dictionary of climate indices
+#'
+#' The `reference` column carries a citation for the indices that have one.
+#' `LCR` and `AMOC` are published output and should be cited when used; the NOAA
+#' indices are operational products with no single paper, and credit the provider
+#' instead. Both are printed by the print method.
 #'
 #' @return a data frame of class `datamatch_index_dictionary`
 #' @examples
@@ -181,10 +192,16 @@ print.datamatch_index_dictionary <- function(x, ...) {
 #'   \item Jutras M, Dufour CO, Mucci A, Talbot LC (2023) Large-scale control of
 #'     the retroflection of the Labrador Current. *Nature Communications*
 #'     **14**:2623. \doi{10.1038/s41467-023-38321-y}
-#'   \item Moat BI et al. Atlantic meridional overturning circulation observed by
-#'     the RAPID-MOCHA-WBTS array at 26N. British Oceanographic Data Centre,
-#'     NERC, UK. \doi{10.5285/223b34a3-2dc5-c945-e063-6c86abc0f5b3}
+#'   \item Moat BI, Smeed DA, Rayner D, Johns WE, Smith R, Volkov D, Elipot S,
+#'     Petit T, Kajtar J, Baringer MO, Collins J (2026). Atlantic meridional
+#'     overturning circulation observed by the RAPID-MOCHA-WBTS array at 26N
+#'     from 2004 to 2024 (v2024.1a). British Oceanographic Data Centre, NERC,
+#'     UK. \doi{10.5285/48d0bf43-0598-ceb2-e063-7086abc062f1}
 #' }
+#'
+#' BODC mints a new DOI for each RAPID release and retires the old one, so the
+#' `AMOC` reference changes when a new version is published.
+#' `as.data.frame(index_dictionary())$reference` is the current one.
 #'
 #' The series is the source data published with that paper's Figure 3, fetched
 #' from the journal rather than recomputed, so the values are the authors' own.

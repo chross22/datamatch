@@ -215,6 +215,12 @@ read_day <- function(item, vars) {
 #' Names carry through to the result, so a request for `"SST"` returns a column
 #' called `SST` rather than `thetao`.
 #'
+#' @section Citing the data:
+#' The products carry their own DOIs and Copernicus asks that they be cited with
+#' an access date. `variable_dataset()` says which product a variable came from,
+#' and `product_url()` links to its page. The README's References section lists
+#' every DOI.
+#'
 #' Because the catalog knows which product and dataset holds each variable,
 #' **`product_id` and `dataset_id` can be omitted** when every requested variable
 #' is in it:

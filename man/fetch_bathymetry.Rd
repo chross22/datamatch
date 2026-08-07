@@ -32,10 +32,23 @@ a \code{terra::SpatRaster} with one layer per variable in
 Downloads NOAA ETOPO bathymetry via \code{marmap::getNOAA.bathy()} and derives
 slope and aspect from it.
 }
-\details{
+\section{Citation}{
+
+The grid is NOAA NCEI ETOPO 2022, requested at 60 arc-second bedrock
+resolution through \code{marmap}. Both want citing when the result is published:
+
+\itemize{
+\item NOAA National Centers for Environmental Information (2022). ETOPO 2022
+15 Arc-Second Global Relief Model. \doi{10.25921/fd45-gt74}
+\item Pante E, Simon-Bouhet B, Irisson J (2025). marmap: Import, Plot and
+Analyze Bathymetric and Topographic Data.
+\doi{10.32614/CRAN.package.marmap}
+}
+
 The bounding box takes the same shape as \code{accessEnvDat()}'s, so a single
 definition of the study area serves both.
 }
+
 \section{Caching}{
 
 \code{marmap} caches downloads into the working directory by default, which

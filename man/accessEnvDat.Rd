@@ -77,6 +77,14 @@ download rather than an obvious mistake.
 
 Names carry through to the result, so a request for \code{"SST"} returns a column
 called \code{SST} rather than \code{thetao}.
+}
+
+\section{Citing the data}{
+
+The products carry their own DOIs and Copernicus asks that they be cited with
+an access date. \code{variable_dataset()} says which product a variable came from,
+and \code{product_url()} links to its page. The README's References section lists
+every DOI.
 
 Because the catalog knows which product and dataset holds each variable,
 \strong{\code{product_id} and \code{dataset_id} can be omitted} when every requested variable
