@@ -2,43 +2,82 @@
 % Please edit documentation in R/matchData.R
 \name{matchData}
 \alias{matchData}
-\title{Match environmental data to species occurrence data}
+\title{Match one set of points to another in space and time}
 \usage{
 matchData(
-  speciesDat,
-  envDat,
-  temporal_resolution = c("auto", "day", "month", "year")
+  dat,
+  source,
+  temporal_resolution = c("auto", "day", "month", "year"),
+  speciesDat = NULL,
+  envDat = NULL
 )
 }
 \arguments{
-\item{speciesDat}{\if{html}{\out{<sf object>}} species observation data (e.g., presence, density, count);
-must have spatial and temporal components. Needs
-year and month columns, plus a day column when
-matching at daily resolution.}
+\item{dat}{\if{html}{\out{<sf object>}} the points to add columns to: observations, stations,
+tag positions, anything with coordinates and time. Needs year and month
+columns, plus a day column when matching at daily resolution. Columns whose
+names begin with those words are recognised, so \code{Year} or \code{obs_month} work.}
 
-\item{envDat}{\if{html}{\out{<sf object>}} environmental data accessed using the datamatch::accessEnvDat
-function to be matched to the species observation data}
+\item{source}{\if{html}{\out{<sf object>}} the points to take values from, typically a grid
+from \code{\link[=accessEnvDat]{accessEnvDat()}}. Must carry \code{YEAR}/\code{MONTH}/\code{DAY}.}
 
-\item{temporal_resolution}{\if{html}{\out{<char>}} one of "auto" (default), "day", "month", or
-"year". "auto" infers the resolution from
-\code{envDat}'s own time steps.}
+\item{temporal_resolution}{\if{html}{\out{<char>}} one of \code{"auto"} (default), \code{"day"},
+\code{"month"}, or \code{"year"}. \code{"auto"} uses the step \code{accessEnvDat()} recorded on
+\code{source}, or infers it from \code{source}'s time steps.}
+
+\item{speciesDat, envDat}{deprecated names for \code{dat} and \code{source}. Still
+accepted, with a warning.}
 }
 \value{
-\if{html}{\out{<sf object>}} \code{speciesDat} with the matched environmental variables joined on,
-one row per input observation, plus LON/LAT coordinate columns.
-Observations in a period with no environmental data get NA
-for the environmental variables, and a warning is issued.
-An environmental variable whose name collides with a column
-already in \code{speciesDat} is suffixed \code{.env}.
+\if{html}{\out{<sf object>}} \code{dat} with \code{source}'s columns joined on, one row per input
+row, plus \code{LON}/\code{LAT} coordinate columns.
 }
 \description{
-Joins each species observation to the nearest environmental grid point within
-the same time period. The time period is the environmental data's own temporal
-resolution: daily products match on year/month/day, monthly products (e.g.
-Copernicus \code{...P1M-m} means) on year/month, and annual products on year alone.
+Joins each row of \code{dat} to the nearest feature of \code{source} within the same
+time period, and returns \code{dat} with \code{source}'s columns added.
 }
 \details{
-Matching at the environmental data's native resolution matters because a
-day-exact join against monthly data matches nothing - a monthly product carries
-one time step per month, while observations fall on arbitrary days.
+Neither side has to be species observations or environmental data. It is a
+spatiotemporal nearest-feature join between two \code{sf} point objects that carry
+\code{YEAR}/\code{MONTH}/\code{DAY} columns, so it works equally for stations against a
+covariate grid, tag positions against a model field, moorings against
+satellite retrievals, or one gridded product against another.
+}
+\section{Matching in time}{
+
+The time period is \code{source}'s own resolution: daily data matches on
+year/month/day, monthly data (Copernicus \code{...P1M-m} means, say) on
+year/month, and annual data on year alone.
+
+That matters because a day-exact join against monthly data matches nothing. A
+monthly product carries one time step per month, while observations fall on
+arbitrary days. \code{temporal_resolution} overrides the inference when the data
+cannot speak for itself.
+}
+
+\section{What is preserved}{
+
+One row out per row of \code{dat}, in the same order, whatever happens. A period
+\code{source} does not cover gives \code{NA} for its columns and a warning naming the
+periods, rather than dropping those rows — a silent change in row count is a
+worse outcome than a visible gap.
+
+\code{dat} keeps its own columns. One of \code{source}'s that collides with a name
+already in \code{dat} is suffixed \code{.matched}, so nothing of \code{dat}'s is overwritten
+or renamed.
+}
+
+\examples{
+\dontrun{
+env <- accessEnvDat(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
+
+matched <- matchData(observations, env)
+
+# Chains, so several sources land on one table
+matched <- matchData(matched, chlorophyll)
+}
+}
+\seealso{
+\code{\link[=accessEnvDat]{accessEnvDat()}} for the usual \code{source}, \code{\link[=attach_bathymetry]{attach_bathymetry()}} and
+\code{\link[=attach_climate_index]{attach_climate_index()}} for covariates that are not matched this way
 }

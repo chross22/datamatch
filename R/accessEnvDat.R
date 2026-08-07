@@ -347,7 +347,7 @@ read_day <- function(item, vars) {
 #' @param n_workers <integer> how many days to download at once. See the
 #'   Downloading in parallel section. Use `n_workers = 1` to download one day at
 #'   a time.
-#' @return envDat <sf object> sf object containing requested environmental data from Copernicus Marine Service
+#' @return <sf object> sf object containing requested environmental data from Copernicus Marine Service
 #' @export
 accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars,
                          years = NULL, months = NULL,

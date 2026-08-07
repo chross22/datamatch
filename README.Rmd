@@ -61,7 +61,7 @@ The goal of datamatch is to pull environmental data from Copernicus Marine Servi
 **Putting it to use**
 
 - [Putting it together](#putting-it-together) — a full worked example, four sources onto one table
-- [Matching to observations](#matching-to-observations)
+- [Matching](#matching) — a general spatiotemporal join, not just observations
 - [Troubleshooting](#troubleshooting) — what the error messages mean
 - [Related packages](#related-packages)
 
@@ -121,7 +121,7 @@ env <- accessEnvDat(
   bounding_box = list(xmin = -76, xmax = -65, ymin = 35, ymax = 45)
 )
 
-matched <- matchData(speciesDat = observations, envDat = env)
+matched <- matchData(observations, env)
 ```
 
 `variable_dictionary()` lists what is available.
@@ -149,8 +149,8 @@ phys <- accessEnvDat(vars = c("SST", "SSS", "MLD"),
 bio  <- accessEnvDat(vars = c("CHL", "NO3"),
                      years = 2003:2017, months = 1:12, bounding_box = bb)
 
-matched <- matchData(speciesDat = observations, envDat = phys)
-matched <- matchData(speciesDat = matched,      envDat = bio)
+matched <- matchData(observations, phys)
+matched <- matchData(matched, bio)
 ```
 
 `matchData()` chains. Each call adds that product's columns and leaves the row
@@ -208,7 +208,7 @@ describe them. Take the dates from the observations themselves:
 env <- accessEnvDat(vars = "SST", dates = unique(observations$date),
                     bounding_box = bb)
 
-matched <- matchData(speciesDat = observations, envDat = env)
+matched <- matchData(observations, env)
 ```
 
 `YYYYMMDD` strings, `YYYY-MM-DD` strings, and `Date` objects are all accepted.
@@ -631,7 +631,7 @@ hides the difference between a uniformly warm month and one that is warm inshore
 and cold offshore.
 
 ```{r plot-matched, eval = FALSE}
-matched <- matchData(speciesDat = observations, envDat = env)
+matched <- matchData(observations, env)
 
 plot_matched(matched[matched$MONTH == 7, ], "SST")
 ```
@@ -873,8 +873,8 @@ bio  <- accessEnvDat(vars = c("CHL", "NO3"),
 bathy <- fetch_bathymetry(bounding_box = bb)
 
 # 3. Join each source to the observations in turn.
-matched <- matchData(speciesDat = observations, envDat = phys)
-matched <- matchData(speciesDat = matched,      envDat = bio)
+matched <- matchData(observations, phys)
+matched <- matchData(matched, bio)
 
 matched <- attach_bathymetry(matched, bathy, c("DEPTH", "SLOPE", "TPI"))
 matched <- attach_climate_index(matched, c("NAO", "LCR"))
@@ -917,20 +917,35 @@ rather than the observations. Regrid first, then match:
 phys_coarse <- upscale_grid(phys, to = bio)    # 0.083° onto the 0.25° BGC grid
 ```
 
-## Matching to observations
+## Matching
 
-`matchData()` joins environmental data to species observations at the
-environmental data's own temporal resolution, inferred from its time steps. This
-matters for monthly products: a monthly mean carries one time step per month
-while observations fall on arbitrary days, so matching on exact dates would
-match nothing.
+`matchData(dat, source)` joins each row of `dat` to the nearest feature of
+`source` within the same time period, and returns `dat` with `source`'s columns
+added.
 
 ```{r match, eval = FALSE}
-matched <- matchData(speciesDat = observations, envDat = env)
+matched <- matchData(observations, env)
 ```
 
-Observations falling in a period with no environmental data are returned with
-`NA` values and a warning naming the periods, rather than being dropped silently.
+**Neither side has to be observations or environmental data.** It is a
+spatiotemporal nearest-feature join between two `sf` point objects carrying
+`YEAR`/`MONTH`/`DAY`, so it works equally for stations against a covariate grid,
+tag positions against a model field, moorings against satellite retrievals, or
+one gridded product against another. The arguments are named `dat` and `source`
+for that reason.
+
+Matching happens at **`source`'s** temporal resolution, inferred from its time
+steps. That matters for monthly products: a monthly mean carries one time step
+per month while observations fall on arbitrary days, so matching on exact dates
+would match nothing. Pass `temporal_resolution` to override.
+
+Rows falling in a period `source` does not cover are returned with `NA` and a
+warning naming the periods, rather than being dropped silently. One row out per
+row in, always. A `source` column whose name collides with one already in `dat`
+is suffixed `.matched`, so nothing of yours is overwritten.
+
+> The arguments used to be `speciesDat` and `envDat`. Those still work and warn;
+> they will be removed in a later version.
 
 ## Troubleshooting
 

@@ -61,7 +61,7 @@ ten days ahead. See \code{\link[=forecast_variables]{forecast_variables()}} for 
 forecast equivalent and how the identifiers differ.}
 }
 \value{
-envDat \if{html}{\out{<sf object>}} sf object containing requested environmental data from Copernicus Marine Service
+\if{html}{\out{<sf object>}} sf object containing requested environmental data from Copernicus Marine Service
 }
 \description{
 Downloads a Copernicus dataset over a bounding box and time range, and returns

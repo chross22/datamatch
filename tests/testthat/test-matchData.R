@@ -1,7 +1,7 @@
 # Helpers -----------------------------------------------------------------
 
 # Species observations: points with known lon/lat and YEAR/MONTH/DAY columns.
-make_species_dat <- function(year_col = "YEAR", month_col = "MONTH", day_col = "DAY") {
+make_observations <- function(year_col = "YEAR", month_col = "MONTH", day_col = "DAY") {
   df <- data.frame(
     id    = 1:3,
     lon   = c(-70.0, -69.5, -69.0),
@@ -24,8 +24,8 @@ make_species_dat <- function(year_col = "YEAR", month_col = "MONTH", day_col = "
 # matching the two January species points below) with deliberately different
 # thetao values at the same locations, so a test can confirm matchData()
 # picks the value for the correct day rather than whichever day happens to
-# come first in envDat.
-make_env_dat <- function() {
+# come first in env.
+make_env <- function() {
   grid <- expand.grid(
     lon = c(-70.0, -69.5, -69.0),
     lat = c(42.0, 42.5, 43.0)
@@ -41,19 +41,19 @@ make_env_dat <- function() {
 # Tests ---------------------------------------------------------------------
 
 test_that("matchData renames YEAR/MONTH/DAY columns regardless of input naming", {
-  speciesDat <- make_species_dat(year_col = "Year", month_col = "Month", day_col = "Day")
-  envDat <- make_env_dat()
+  observations <- make_observations(year_col = "Year", month_col = "Month", day_col = "Day")
+  env <- make_env()
 
-  result <- matchData(speciesDat, envDat)
+  result <- matchData(observations, env)
 
   expect_true(all(c("YEAR", "MONTH", "DAY") %in% names(result)))
 })
 
 test_that("matchData joins the correct environmental value via nearest feature and matching day", {
-  speciesDat <- make_species_dat()
-  envDat <- make_env_dat()
+  observations <- make_observations()
+  env <- make_env()
 
-  result <- matchData(speciesDat, envDat)
+  result <- matchData(observations, env)
 
   # Species point 1: Jan 1 2020, sits exactly on env grid point 1 -> the Jan-1 value
   expect_equal(result$thetao[result$id == 1], 11)
@@ -67,19 +67,19 @@ test_that("matchData joins the correct environmental value via nearest feature a
 })
 
 test_that("matchData returns one row per species observation", {
-  speciesDat <- make_species_dat()
-  envDat <- make_env_dat()
+  observations <- make_observations()
+  env <- make_env()
 
-  result <- matchData(speciesDat, envDat)
+  result <- matchData(observations, env)
 
-  expect_equal(nrow(result), nrow(speciesDat))
+  expect_equal(nrow(result), nrow(observations))
 })
 
 test_that("matchData assigns LAT and LON correctly (not swapped)", {
-  speciesDat <- make_species_dat()
-  envDat <- make_env_dat()
+  observations <- make_observations()
+  env <- make_env()
 
-  result <- matchData(speciesDat, envDat)
+  result <- matchData(observations, env)
   row <- result[result$id == 1, ]
 
   expect_equal(row$LON, -70.0, tolerance = 1e-6)
@@ -87,12 +87,12 @@ test_that("matchData assigns LAT and LON correctly (not swapped)", {
 })
 
 test_that("matchData drops YEAR/MONTH duplication from the env side", {
-  speciesDat <- make_species_dat()
-  envDat <- make_env_dat()
+  observations <- make_observations()
+  env <- make_env()
 
-  result <- matchData(speciesDat, envDat)
+  result <- matchData(observations, env)
 
-  # YEAR/MONTH should appear exactly once each (from speciesDat), not duplicated
+  # YEAR/MONTH should appear exactly once each (from observations), not duplicated
   expect_equal(sum(names(result) == "YEAR"), 1)
   expect_equal(sum(names(result) == "MONTH"), 1)
 })
@@ -102,7 +102,7 @@ test_that("matchData drops YEAR/MONTH duplication from the env side", {
 # Monthly products (e.g. Copernicus "...P1M-m" means) carry one time step per
 # month, conventionally stamped on a single nominal day. Observations still fall
 # on arbitrary days, so a day-exact join would match nothing.
-make_monthly_env_dat <- function(nominal_day = 1) {
+make_monthly_env <- function(nominal_day = 1) {
   grid <- expand.grid(
     lon = c(-70.0, -69.5, -69.0),
     lat = c(42.0, 42.5, 43.0)
@@ -115,15 +115,15 @@ make_monthly_env_dat <- function(nominal_day = 1) {
 }
 
 test_that("detect_temporal_resolution reads resolution off the time steps", {
-  expect_equal(detect_temporal_resolution(make_env_dat()), "day")
-  expect_equal(detect_temporal_resolution(make_monthly_env_dat()), "month")
+  expect_equal(detect_temporal_resolution(make_env()), "day")
+  expect_equal(detect_temporal_resolution(make_monthly_env()), "month")
 })
 
 test_that("detect_temporal_resolution prefers month over year when ambiguous", {
   # One month of monthly data looks identical to one year of annual data. Falling
   # back to "month" keeps unmatched observations unmatched (and warned about),
   # rather than silently matching them to another month's time step.
-  one_month <- make_monthly_env_dat()
+  one_month <- make_monthly_env()
   one_month <- one_month[one_month$MONTH == 1, ]
   expect_equal(detect_temporal_resolution(one_month), "month")
 
@@ -137,14 +137,14 @@ test_that("detect_temporal_resolution prefers month over year when ambiguous", {
 })
 
 test_that("matchData matches monthly env data whose nominal day never matches observations", {
-  speciesDat <- make_species_dat()
+  observations <- make_observations()
   # Env data is stamped on day 15; observations are on days 1 and 15. A day-exact
   # join would drop both January-day-1 and February-day-1 observations entirely.
-  envDat <- make_monthly_env_dat(nominal_day = 15)
+  env <- make_monthly_env(nominal_day = 15)
 
-  result <- matchData(speciesDat, envDat)
+  result <- matchData(observations, env)
 
-  expect_equal(nrow(result), nrow(speciesDat))
+  expect_equal(nrow(result), nrow(observations))
   expect_false(any(is.na(result$thetao)))
   # Point 1: Jan, on grid point 1 -> January value at that location
   expect_equal(result$thetao[result$id == 1], 11)
@@ -153,62 +153,62 @@ test_that("matchData matches monthly env data whose nominal day never matches ob
 })
 
 test_that("matchData still matches per-day when env data is daily", {
-  speciesDat <- make_species_dat()
-  envDat <- make_env_dat()
+  observations <- make_observations()
+  env <- make_env()
 
   # Explicitly requesting month resolution against daily data is ambiguous by
   # design; auto-detection is what keeps daily data matching per day.
-  result <- matchData(speciesDat, envDat, temporal_resolution = "day")
+  result <- matchData(observations, env, temporal_resolution = "day")
 
   expect_equal(result$thetao[result$id == 2], 115)
 })
 
 test_that("matchData works on species data with no day column at monthly resolution", {
-  speciesDat <- make_species_dat()
-  speciesDat$DAY <- NULL
-  envDat <- make_monthly_env_dat()
+  observations <- make_observations()
+  observations$DAY <- NULL
+  env <- make_monthly_env()
 
-  result <- matchData(speciesDat, envDat)
+  result <- matchData(observations, env)
 
-  expect_equal(nrow(result), nrow(speciesDat))
+  expect_equal(nrow(result), nrow(observations))
   expect_false(any(is.na(result$thetao)))
 })
 
 test_that("matchData resolves an exact day column ahead of a prefix match", {
-  speciesDat <- make_species_dat()
-  speciesDat$dayofyear <- c(1, 15, 32)
-  envDat <- make_env_dat()
+  observations <- make_observations()
+  observations$dayofyear <- c(1, 15, 32)
+  env <- make_env()
 
   # Both "DAY" and "dayofyear" start with "day"; the exact match must win rather
   # than the lookup failing as ambiguous.
-  expect_no_error(matchData(speciesDat, envDat))
+  expect_no_error(matchData(observations, env))
 })
 
 test_that("matchData keeps observations in periods with no env data, as NA", {
-  speciesDat <- make_species_dat()
+  observations <- make_observations()
   # Env data covers January only; the February observation has no match.
-  envDat <- make_monthly_env_dat()
-  envDat <- envDat[envDat$MONTH == 1, ]
+  env <- make_monthly_env()
+  env <- env[env$MONTH == 1, ]
 
-  expect_warning(result <- matchData(speciesDat, envDat), "No environmental data")
+  expect_warning(result <- matchData(observations, env), "No data in `source`")
 
-  expect_equal(nrow(result), nrow(speciesDat))
+  expect_equal(nrow(result), nrow(observations))
   expect_true(is.na(result$thetao[result$id == 3]))
   expect_false(is.na(result$thetao[result$id == 1]))
 })
 
-test_that("matchData does not depend on the order periods appear in speciesDat", {
-  speciesDat <- make_species_dat()
-  envDat <- make_env_dat()
+test_that("matchData does not depend on the order periods appear in observations", {
+  observations <- make_observations()
+  env <- make_env()
 
   # Reversing row order puts the chronologically last period first. The previous
   # implementation initialized its accumulator only on the chronologically first
   # period, so this ordering made it fail outright.
-  reversed <- speciesDat[rev(seq_len(nrow(speciesDat))), ]
+  reversed <- observations[rev(seq_len(nrow(observations))), ]
 
-  result <- matchData(reversed, envDat)
+  result <- matchData(reversed, env)
 
-  expect_equal(nrow(result), nrow(speciesDat))
+  expect_equal(nrow(result), nrow(observations))
   expect_equal(result$thetao[result$id == 2], 115)
 })
 
@@ -223,13 +223,13 @@ test_that("a missing CRS is named, on whichever side it is missing", {
   # neither which object nor what to do about it.
   expect_error(
     matchData(sf::st_as_sf(obs, coords = c("lon", "lat")), env),
-    "speciesDat has no coordinate reference system")
+    "`dat` has no coordinate reference system")
 
   env_no_crs <- env
   sf::st_crs(env_no_crs) <- NA
   expect_error(
     matchData(sf::st_as_sf(obs, coords = c("lon", "lat"), crs = 4326), env_no_crs),
-    "envDat has no coordinate reference system")
+    "`source` has no coordinate reference system")
 })
 
 test_that("projected observations match the same cells as geographic ones", {
@@ -245,4 +245,64 @@ test_that("projected observations match the same cells as geographic ones", {
 
   expect_equal(suppressWarnings(matchData(projected, env))$SST,
                suppressWarnings(matchData(geographic, env))$SST)
+})
+
+test_that("the deprecated argument names still work, with a warning", {
+  # taupatch and any script written against the old signature call these by
+  # name. Breaking them silently would be worse than carrying the shim.
+  observations <- make_observations()
+  env <- make_env()
+
+  # Both names warn, so both have to be caught or the second escapes the test.
+  expect_warning(
+    expect_warning(matchData(speciesDat = observations, envDat = env),
+                   "`speciesDat` is now `dat`"),
+    "`envDat` is now `source`")
+
+  old <- suppressWarnings(matchData(speciesDat = observations, envDat = env))
+  new <- matchData(dat = observations, source = env)
+
+  expect_equal(sf::st_drop_geometry(old), sf::st_drop_geometry(new))
+})
+
+test_that("the new names work positionally and by name", {
+  observations <- make_observations()
+  env <- make_env()
+
+  expect_equal(sf::st_drop_geometry(matchData(observations, env)),
+               sf::st_drop_geometry(matchData(dat = observations, source = env)))
+  expect_silent(matchData(observations, env))
+})
+
+test_that("a colliding column is suffixed rather than overwriting the caller's", {
+  # The suffix is ".matched" now: the join is no longer specific to
+  # environmental data, so ".env" described only one use of it.
+  observations <- make_observations()
+  env <- make_env()
+  observations$thetao <- seq_len(nrow(observations)) * 100
+
+  result <- matchData(observations, env)
+
+  expect_true(all(c("thetao", "thetao.matched") %in% names(result)))
+  # The caller's own column is untouched.
+  expect_equal(result$thetao, seq_len(nrow(observations)) * 100)
+})
+
+test_that("neither side has to be observations or a covariate grid", {
+  # The generalisation this rename is about: two gridded products matched to
+  # each other, with nothing species-shaped involved.
+  grid_a <- sf::st_as_sf(
+    data.frame(x = rep(seq(-70, -69, by = 0.5), 2), y = rep(c(42, 43), each = 3),
+               SST = 1:6, YEAR = 2010L, MONTH = 1L, DAY = 1L),
+    coords = c("x", "y"), crs = 4326)
+  grid_b <- sf::st_as_sf(
+    data.frame(x = c(-69.75, -69.25), y = c(42, 43),
+               CHL = c(0.5, 0.9), YEAR = 2010L, MONTH = 1L, DAY = 1L),
+    coords = c("x", "y"), crs = 4326)
+
+  result <- matchData(grid_a, grid_b)
+
+  expect_equal(nrow(result), nrow(grid_a))
+  expect_true(all(c("SST", "CHL") %in% names(result)))
+  expect_false(anyNA(result$CHL))
 })
