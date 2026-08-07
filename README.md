@@ -1218,3 +1218,28 @@ the provider:
 
 `citation("datamatch")` gives this package's own entry, and `citation()` works on
 any of the above.
+
+### Keeping these current
+
+Citations go stale without anyone touching them. Data centres reissue a DOI when
+a record is superseded and retire the old one, so a reference that was correct
+when written stops resolving on its own. The `AMOC` entry here has already been
+through that once, when BODC published a newer RAPID release.
+
+Two scheduled workflows watch for it, and open an issue rather than editing
+anything, since choosing a replacement is a judgement about which version to
+track:
+
+- **Citation check**, quarterly, resolves every DOI cited in the README, the
+  catalogs, and `NEWS.md`.
+- **Copernicus catalog check**, monthly, compares the variable catalog against
+  the live Copernicus catalogue, since dataset identifiers are revised too.
+
+Both run on demand from the Actions tab, and locally:
+
+
+``` r
+# from the package root
+system("Rscript inst/scripts/check_citations.R")
+system("Rscript inst/scripts/check_catalog.R")
+```
