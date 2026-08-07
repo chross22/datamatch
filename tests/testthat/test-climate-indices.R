@@ -542,3 +542,33 @@ test_that("the overturning index carries its citation", {
   expect_true(any(grepl("Cite when used", output)))
   expect_true(any(grepl("AMOC", output)))
 })
+
+test_that("every index declares its units", {
+  # A coefficient fitted to AMOC is in Sverdrups; one fitted to NAO is per
+  # standard deviation. Without units recorded, the two look comparable in a
+  # table of model output and are not.
+  catalog <- climate_indices()
+
+  for (name in names(catalog)) {
+    expect_true(nzchar(catalog[[name]]$units %||% ""),
+                info = paste(name, "has no units"))
+  }
+
+  # The physical ones say what they are; the standardized ones say that they
+  # are standardized rather than pretending to be dimensionless.
+  expect_equal(catalog$AMOC$units, "Sv")
+  expect_equal(catalog$AMO$units, "degrees C")
+  expect_equal(catalog$NAO$units, "standardized anomaly")
+})
+
+test_that("units reach the dictionary and its printed output", {
+  dictionary <- as.data.frame(index_dictionary())
+
+  expect_true("units" %in% names(dictionary))
+  expect_false(anyNA(dictionary$units))
+  expect_equal(dictionary$units[dictionary$name == "AMOC"], "Sv")
+
+  output <- capture.output(print(index_dictionary()))
+  expect_true(any(grepl("units", output)))
+  expect_true(any(grepl("Sv", output)))
+})
