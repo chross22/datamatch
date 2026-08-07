@@ -260,7 +260,7 @@ test_that("the twelve-hourly RAPID series is averaged to monthly", {
   local_index_cache()
 
   path <- write_rapid_fixture(tempfile(fileext = ".nc"))
-  series <- fetch_rapid_netcdf(paste0("file://", path), "AMOC")
+  series <- read_rapid_netcdf(path, "AMOC")
 
   expect_equal(names(series), c("YEAR", "MONTH", "AMOC"))
   expect_equal(nrow(series), 2)
@@ -275,24 +275,133 @@ test_that("the time origin is read from the file, not assumed", {
   local_index_cache()
 
   path <- write_rapid_fixture(tempfile(fileext = ".nc"), origin = "2010-01-01")
-  series <- fetch_rapid_netcdf(paste0("file://", path), "AMOC")
+  series <- read_rapid_netcdf(path, "AMOC")
 
   expect_equal(unique(series$YEAR), 2010)
 })
 
-test_that("a second call is served from the cache", {
-  skip_if_not_installed("ncdf4")
+test_that("the cache expires on the provider's publishing cadence", {
+  # The hazard in caching a living dataset is that it quietly stops being
+  # current. Each index says how often its source publishes, and that sets how
+  # long a cached copy may be reused.
+  expect_equal(index_max_age("monthly"), 7)
+  expect_equal(index_max_age("annual"), 30)
+  expect_equal(index_max_age("none"), Inf)
+
+  # LCR finished at 2014, so re-downloading it can never add anything.
+  expect_equal(index_max_age(climate_indices()$LCR$updates), Inf)
+  expect_true(is.finite(index_max_age(climate_indices()$AMOC$updates)))
+})
+
+test_that("a fresh cached file is reused and a stale one is re-downloaded", {
   cache <- local_index_cache()
+  entry <- list(format = "cpc_table", updates = "monthly")
+  target <- copernicus_cache("indices", "TEST.txt")
 
-  path <- write_rapid_fixture(tempfile(fileext = ".nc"))
-  first <- fetch_rapid_netcdf(paste0("file://", path), "AMOC")
+  dir.create(dirname(target), recursive = TRUE, showWarnings = FALSE)
+  writeLines("cached", target)
 
-  cached <- file.path(cache, "indices", "AMOC.nc")
-  expect_true(file.exists(cached))
+  # Fresh: no download attempted at all.
+  local_mocked_bindings(
+    download.file = function(...) stop("should not download a fresh cache"),
+    .package = "utils"
+  )
+  expect_equal(cached_index_file("unused", "TEST", entry), target)
 
-  # Remove the source: if the cache were not used this would fail.
-  unlink(path)
-  expect_equal(fetch_rapid_netcdf(paste0("file://", path), "AMOC"), first)
+  # Stale: the age limit is what forces the re-fetch, so backdating the file is
+  # enough to trigger it without waiting a week.
+  Sys.setFileTime(target, Sys.time() - as.difftime(30, units = "days"))
+  expect_gt(index_cache_age(target), 7)
+
+  # Now it does try, and since the fake download fails it falls back to the
+  # cached copy with a warning rather than erroring. Losing access to data
+  # already on disk would be the worse failure.
+  expect_warning(cached_index_file("unused", "TEST", entry), "may be out of date")
+})
+
+test_that("a stale cache with no fallback is an error", {
+  local_index_cache()
+  entry <- list(format = "cpc_table", updates = "monthly")
+
+  local_mocked_bindings(
+    download.file = function(...) stop("provider is down"),
+    .package = "utils"
+  )
+  expect_error(cached_index_file("unused", "MISSING", entry),
+               "Could not download")
+})
+
+test_that("a failed refresh falls back to the cached copy with a warning", {
+  # A provider being briefly down should not become our outage. Returning the
+  # old file is right; returning it silently is not.
+  local_index_cache()
+  entry <- list(format = "cpc_table", updates = "monthly")
+  target <- copernicus_cache("indices", "TEST.txt")
+
+  dir.create(dirname(target), recursive = TRUE, showWarnings = FALSE)
+  writeLines("cached", target)
+  Sys.setFileTime(target, Sys.time() - as.difftime(30, units = "days"))
+
+  local_mocked_bindings(
+    download.file = function(...) stop("provider is down"),
+    .package = "utils"
+  )
+
+  expect_warning(file <- cached_index_file("unused", "TEST", entry),
+                 "may be out of date")
+  expect_equal(file, target)
+})
+
+test_that("refresh = TRUE ignores a cache that is still fresh", {
+  local_index_cache()
+  entry <- list(format = "cpc_table", updates = "monthly")
+  target <- copernicus_cache("indices", "TEST.txt")
+
+  dir.create(dirname(target), recursive = TRUE, showWarnings = FALSE)
+  writeLines("cached", target)
+
+  local_mocked_bindings(
+    download.file = function(...) stop("asked for"),
+    .package = "utils"
+  )
+  expect_warning(cached_index_file("unused", "TEST", entry, refresh = TRUE),
+                 "may be out of date")
+})
+
+test_that("a living series that has stopped short is reported", {
+  # The check is on the data, not the cache: a fresh download of a stale file is
+  # still stale.
+  old <- data.frame(YEAR = 2004, MONTH = 1:2, AMOC = c(1, 2))
+  current <- data.frame(YEAR = as.integer(format(Sys.Date(), "%Y")),
+                        MONTH = as.integer(format(Sys.Date(), "%m")),
+                        NAO = 0)
+
+  expect_message(warn_if_stale(old, "AMOC", climate_indices()$AMOC),
+                 "ends .* months ago")
+  expect_no_message(warn_if_stale(current, "NAO", climate_indices()$NAO))
+  # A finished dataset ending years ago is not a problem to report.
+  expect_no_message(warn_if_stale(old, "LCR", climate_indices()$LCR))
+})
+
+test_that("status reports what is cached without downloading anything", {
+  local_index_cache()
+
+  local_mocked_bindings(
+    download.file = function(...) stop("status must not download"),
+    .package = "utils"
+  )
+
+  status <- climate_index_status()
+  expect_setequal(status$index, names(climate_indices()))
+  expect_true(all(!status$cached))          # nothing cached yet
+  expect_equal(status$updates[status$index == "LCR"], "none")
+  expect_output(print(status), "Cached climate indices")
+})
+
+test_that("refresh skips indices that cannot change", {
+  local_index_cache()
+
+  expect_message(refresh_climate_index("LCR"), "finished dataset")
 })
 
 test_that("a renamed variable is reported rather than returning nothing", {
@@ -306,7 +415,7 @@ test_that("a renamed variable is reported rather than returning nothing", {
   ncdf4::ncvar_put(nc, other, c(1, 2))
   ncdf4::nc_close(nc)
 
-  expect_error(fetch_rapid_netcdf(paste0("file://", path), "AMOC"),
+  expect_error(read_rapid_netcdf(path, "AMOC"),
                "no longer contains")
 })
 
@@ -339,9 +448,7 @@ test_that("the twelve-hourly RAPID series averages to monthly", {
   values <- as.numeric(format(dates, "%m"))
   path <- write_rapid_nc(tempfile(fileext = ".nc"), dates, values)
 
-  local_mocked_bindings(copernicus_cache = function(...) path)
-
-  series <- fetch_rapid_netcdf("unused", "AMOC")
+  series <- read_rapid_netcdf(path, "AMOC")
 
   expect_setequal(names(series), c("YEAR", "MONTH", "AMOC"))
   expect_equal(series$MONTH, c(4, 5))
@@ -358,8 +465,7 @@ test_that("the time origin is read from the file, not assumed", {
                          rep(17, length(dates)),
                          origin = as.Date("1950-01-01"))
 
-  local_mocked_bindings(copernicus_cache = function(...) path)
-  series <- fetch_rapid_netcdf("unused", "AMOC")
+  series <- read_rapid_netcdf(path, "AMOC")
 
   expect_equal(series$YEAR, 2010)
   expect_equal(series$MONTH, 7)
@@ -375,10 +481,8 @@ test_that("a renamed variable is reported with what the file does hold", {
   path <- write_rapid_nc(tempfile(fileext = ".nc"), dates,
                          rep(17, length(dates)), variable = "moc_renamed")
 
-  local_mocked_bindings(copernicus_cache = function(...) path)
-
-  expect_error(fetch_rapid_netcdf("unused", "AMOC"), "moc_mar_hc10")
-  expect_error(fetch_rapid_netcdf("unused", "AMOC"), "moc_renamed")
+  expect_error(read_rapid_netcdf(path, "AMOC"), "moc_mar_hc10")
+  expect_error(read_rapid_netcdf(path, "AMOC"), "moc_renamed")
 })
 
 test_that("a cached file is not downloaded again", {
@@ -388,15 +492,18 @@ test_that("a cached file is not downloaded again", {
   path <- write_rapid_nc(tempfile(fileext = ".nc"), dates,
                          rep(17, length(dates)))
 
-  local_mocked_bindings(copernicus_cache = function(...) path)
   # The file is over a megabyte and RAPID times out on repeated requests, so a
-  # re-fetch is a real cost rather than a tidiness point.
+  # re-fetch is a real cost rather than a tidiness point. Caching now lives in
+  # cached_index_file(), so that is what is exercised here.
+  local_mocked_bindings(copernicus_cache = function(...) path)
   local_mocked_bindings(
     download.file = function(...) stop("should not be downloaded again"),
     .package = "utils"
   )
 
-  expect_equal(nrow(fetch_rapid_netcdf("unused", "AMOC")), 1)
+  entry <- climate_indices()$AMOC
+  expect_equal(cached_index_file("unused", "AMOC", entry), path)
+  expect_equal(nrow(read_rapid_netcdf(path, "AMOC")), 1)
 })
 
 test_that("fetch_climate_index routes AMOC to the NetCDF reader", {
@@ -406,18 +513,20 @@ test_that("fetch_climate_index routes AMOC to the NetCDF reader", {
   path <- write_rapid_nc(tempfile(fileext = ".nc"), dates,
                          as.numeric(format(dates, "%m")))
 
+  # cached_index_file() looks here, finds a fresh file, and skips downloading.
   local_mocked_bindings(copernicus_cache = function(...) path)
+
   # readLines() is what every other index uses; AMOC must not reach it.
   local_mocked_bindings(
     readLines = function(...) stop("AMOC is NetCDF, not a text table"),
     .package = "base"
   )
 
-  series <- fetch_climate_index("AMOC")
+  series <- suppressMessages(fetch_climate_index("AMOC"))
 
   expect_setequal(names(series), c("YEAR", "MONTH", "AMOC"))
   expect_equal(series$AMOC, c(4, 5))
-  expect_equal(nrow(fetch_climate_index("AMOC", years = 2004)), 2)
+  expect_equal(nrow(suppressMessages(fetch_climate_index("AMOC", years = 2004))), 2)
 })
 
 test_that("the overturning index carries its citation", {

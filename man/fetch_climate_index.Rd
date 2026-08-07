@@ -4,7 +4,13 @@
 \alias{fetch_climate_index}
 \title{Fetch a monthly climate index}
 \usage{
-fetch_climate_index(index, years = NULL, url = NULL)
+fetch_climate_index(
+  index,
+  years = NULL,
+  url = NULL,
+  max_age = NULL,
+  refresh = FALSE
+)
 }
 \arguments{
 \item{index}{an index name from \code{\link[=climate_indices]{climate_indices()}}}
@@ -12,6 +18,11 @@ fetch_climate_index(index, years = NULL, url = NULL)
 \item{years}{years to keep; \code{NULL} keeps the whole record}
 
 \item{url}{override the catalog URL, if a provider has moved the file}
+
+\item{max_age}{how many days a cached copy may be reused for. \code{NULL} uses the
+provider's publishing cadence.}
+
+\item{refresh}{re-download even if a fresh cached copy exists}
 }
 \value{
 a data frame with \code{YEAR}, \code{MONTH}, and a column named after the index
@@ -49,6 +60,25 @@ plots a detrended, smoothed series normalized to \verb{[-1, 1]}, spanning about
 comparable with that figure. Reproducing the plotted variant means applying
 the paper's chain: detrend, 12-month rolling mean, rescale to \verb{[-1, 1]},
 subtract the 1993-2015 mean.
+}
+
+\section{Staying current}{
+
+Downloads are cached, and the cache expires on an interval matched to how
+often each provider actually publishes: weekly for the monthly NOAA indices,
+monthly for RAPID, never for \code{LCR}, which is a finished dataset. So a living
+index re-downloads on its own without being asked, and a finished one is not
+re-fetched pointlessly.
+
+Two things back that up. If the returned series ends further behind the
+present than its provider's usual lag, that is reported: a fresh download of a
+stale file is still stale, so the check is on the data rather than on the
+cache. And if a download fails while a cached copy exists, the cached copy is
+returned with a warning rather than an error, so a provider's outage does not
+become yours.
+
+\code{\link[=climate_index_status]{climate_index_status()}} reports what is cached and what is due;
+\code{\link[=refresh_climate_index]{refresh_climate_index()}} forces the issue.
 }
 
 \examples{

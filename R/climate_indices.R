@@ -23,6 +23,7 @@ climate_indices <- function() {
       source = "NOAA CPC",
       url = "https://www.cpc.ncep.noaa.gov/products/precip/CWlink/pna/norm.nao.monthly.b5001.current.ascii.table",
       format = "cpc_table",
+      updates = "monthly",
       description = paste("Pressure difference between the Icelandic Low and",
                           "Azores High. Sets the strength and track of westerly",
                           "winds, and with them heat flux and mixing over the",
@@ -33,6 +34,7 @@ climate_indices <- function() {
       source = "NOAA CPC",
       url = "https://www.cpc.ncep.noaa.gov/products/precip/CWlink/daily_ao_index/monthly.ao.index.b50.current.ascii.table",
       format = "cpc_table",
+      updates = "monthly",
       description = paste("Strength of the polar vortex. Related to the NAO but",
                           "hemispheric rather than Atlantic-specific.")
     ),
@@ -41,6 +43,7 @@ climate_indices <- function() {
       source = "NOAA PSL",
       url = "https://psl.noaa.gov/data/correlation/amon.us.long.data",
       format = "psl_table",
+      updates = "monthly",
       description = paste("Detrended North Atlantic SST anomaly, varying on a",
                           "multidecadal timescale. A slow background state",
                           "rather than a year-to-year signal.")
@@ -50,6 +53,7 @@ climate_indices <- function() {
       source = "NOAA PSL",
       url = "https://psl.noaa.gov/data/correlation/pdo.data",
       format = "psl_table",
+      updates = "monthly",
       description = paste("Leading mode of North Pacific SST variability.",
                           "Included for completeness; of limited relevance to",
                           "Atlantic shelf systems.")
@@ -61,6 +65,8 @@ climate_indices <- function() {
                    "art%3A10.1038%2Fs41467-023-38321-y/MediaObjects/",
                    "41467_2023_38321_MOESM5_ESM.csv"),
       format = "decimal_year_csv",
+      # Published with a paper and finished at 2014. It will not grow.
+      updates = "none",
       reference = paste("Jutras M, Dufour CO, Mucci A, Talbot LC (2023)",
                         "Large-scale control of the retroflection of the",
                         "Labrador Current. Nature Communications 14:2623.",
@@ -80,6 +86,8 @@ climate_indices <- function() {
       source = "RAPID-MOCHA-WBTS array at 26.5N",
       url = "https://rapid.ac.uk/sites/default/files/rapid_data/moc_transports.nc",
       format = "rapid_netcdf",
+      # RAPID extends the series in versioned releases roughly yearly.
+      updates = "annual",
       reference = paste("Moat BI et al. Atlantic meridional overturning",
                         "circulation observed by the RAPID-MOCHA-WBTS array at",
                         "26N. British Oceanographic Data Centre, NERC, UK.",
@@ -179,9 +187,29 @@ print.datamatch_index_dictionary <- function(x, ...) {
 #' the paper's chain: detrend, 12-month rolling mean, rescale to `[-1, 1]`,
 #' subtract the 1993-2015 mean.
 #'
+#' @section Staying current:
+#' Downloads are cached, and the cache expires on an interval matched to how
+#' often each provider actually publishes: weekly for the monthly NOAA indices,
+#' monthly for RAPID, never for `LCR`, which is a finished dataset. So a living
+#' index re-downloads on its own without being asked, and a finished one is not
+#' re-fetched pointlessly.
+#'
+#' Two things back that up. If the returned series ends further behind the
+#' present than its provider's usual lag, that is reported: a fresh download of a
+#' stale file is still stale, so the check is on the data rather than on the
+#' cache. And if a download fails while a cached copy exists, the cached copy is
+#' returned with a warning rather than an error, so a provider's outage does not
+#' become yours.
+#'
+#' [climate_index_status()] reports what is cached and what is due;
+#' [refresh_climate_index()] forces the issue.
+#'
 #' @param index an index name from [climate_indices()]
 #' @param years years to keep; `NULL` keeps the whole record
 #' @param url override the catalog URL, if a provider has moved the file
+#' @param max_age how many days a cached copy may be reused for. `NULL` uses the
+#'   provider's publishing cadence.
+#' @param refresh re-download even if a fresh cached copy exists
 #' @return a data frame with `YEAR`, `MONTH`, and a column named after the index
 #' @examples
 #' \dontrun{
@@ -189,7 +217,8 @@ print.datamatch_index_dictionary <- function(x, ...) {
 #' head(nao)
 #' }
 #' @export
-fetch_climate_index <- function(index, years = NULL, url = NULL) {
+fetch_climate_index <- function(index, years = NULL, url = NULL,
+                                max_age = NULL, refresh = FALSE) {
   catalog <- climate_indices()
   if (!index %in% names(catalog)) {
     stop("Unknown climate index: ", index,
@@ -198,36 +227,276 @@ fetch_climate_index <- function(index, years = NULL, url = NULL) {
   entry <- catalog[[index]]
   source_url <- url %||% entry$url
 
+  file <- cached_index_file(source_url, index, entry, max_age = max_age,
+                            refresh = refresh)
+
   # Most of these are plain text tables. RAPID publishes only NetCDF at a stable
-  # URL - the ASCII version is behind a signup form - so that one is downloaded
-  # as bytes and read separately rather than through readLines().
-  if (identical(entry$format, "rapid_netcdf")) {
-    series <- fetch_rapid_netcdf(source_url, index)
+  # URL - the ASCII version is behind a signup form - so that one is read as
+  # binary rather than through readLines().
+  series <- if (identical(entry$format, "rapid_netcdf")) {
+    read_rapid_netcdf(file, index)
   } else {
-    lines <- tryCatch(
-      readLines(source_url, warn = FALSE),
-      error = function(e) {
-        stop("Could not download the ", index, " index from ", source_url,
-             "\n", conditionMessage(e),
-             "\nProviders move these files; pass `url` to override.",
-             call. = FALSE)
-      }
-    )
-    series <- parse_index_table(lines, format = entry$format, name = index)
+    parse_index_table(readLines(file, warn = FALSE), format = entry$format,
+                      name = index)
   }
+
+  warn_if_stale(series, index, entry)
+
   if (!is.null(years)) {
+    missing <- setdiff(years, series$YEAR)
     series <- series[series$YEAR %in% years, ]
     rownames(series) <- NULL
+    if (length(missing) > 0) {
+      message("The ", index, " series has no data for ",
+              paste(range(missing), collapse = "-"),
+              ". It covers ", min(series$YEAR, na.rm = TRUE), "-",
+              max(series$YEAR, na.rm = TRUE), ".",
+              if (!identical(entry$updates, "none")) {
+                "\n  If you expected more recent values, refresh = TRUE re-downloads."
+              })
+    }
   }
   series
+}
+
+#' Download an index file, reusing a recent copy
+#'
+#' These files are re-read constantly and change slowly, so they are cached. The
+#' hazard in caching a *living* dataset is that it silently stops being current,
+#' so the cache expires on an interval matched to how often the provider
+#' actually publishes.
+#'
+#' @param url where to download from
+#' @param index the index name, used for the cache path and messages
+#' @param entry the catalog entry, for its `updates` cadence
+#' @param max_age maximum cache age in days; `NULL` uses the cadence default
+#' @param refresh re-download even if a fresh copy exists
+#' @return path to a local file
+#' @keywords internal
+cached_index_file <- function(url, index, entry, max_age = NULL,
+                              refresh = FALSE) {
+  extension <- if (identical(entry$format, "rapid_netcdf")) ".nc" else ".txt"
+  file <- copernicus_cache("indices", paste0(index, extension))
+  max_age <- max_age %||% index_max_age(entry$updates)
+
+  usable <- !refresh && file.exists(file) && file.size(file) > 0 &&
+    index_cache_age(file) <= max_age
+
+  if (usable) return(file)
+
+  # download.file() defaults to 60s, which is not always enough for RAPID.
+  previous <- options(timeout = max(300, getOption("timeout", 60)))
+  on.exit(options(previous), add = TRUE)
+
+  partial <- paste0(file, ".part")
+  downloaded <- tryCatch({
+    utils::download.file(url, destfile = partial, mode = "wb", quiet = TRUE)
+    file.exists(partial) && file.size(partial) > 0
+  }, error = function(e) {
+    unlink(partial)
+    FALSE
+  })
+
+  if (!isTRUE(downloaded)) {
+    unlink(partial)
+    # A stale copy beats no copy. The download may have failed because the
+    # provider is briefly down, and refusing to return data already on disk
+    # would turn their outage into ours - but say so, so it is not mistaken
+    # for current.
+    if (file.exists(file) && file.size(file) > 0) {
+      warning("Could not refresh the ", index, " index from ", url,
+              "\n  Using the cached copy from ",
+              format(file.mtime(file), "%Y-%m-%d"), " instead, which may be ",
+              "out of date.", call. = FALSE)
+      return(file)
+    }
+    stop("Could not download the ", index, " index from ", url,
+         "\nProviders move these files; pass `url` to override.", call. = FALSE)
+  }
+
+  # Rename only once the download is complete, so an interrupted fetch cannot
+  # leave a truncated file in the cache to be trusted later.
+  file.rename(partial, file)
+  file
+}
+
+#' How long a cached index may be reused, in days
+#'
+#' Matched to how often the provider publishes. Re-downloading a monthly index
+#' every day is pointless traffic, and re-downloading a finished one is pointless
+#' full stop.
+#'
+#' @param updates `"monthly"`, `"annual"`, or `"none"`
+#' @return a number of days, possibly `Inf`
+#' @keywords internal
+index_max_age <- function(updates) {
+  switch(updates %||% "monthly",
+         monthly = 7,
+         annual = 30,
+         none = Inf,
+         7)
+}
+
+#' Age of a cached file, in days
+#'
+#' @param file path to a cached file
+#' @return age in days, or `Inf` if it does not exist
+#' @keywords internal
+index_cache_age <- function(file) {
+  if (!file.exists(file)) return(Inf)
+  as.numeric(difftime(Sys.time(), file.mtime(file), units = "days"))
+}
+
+#' Warn when a living index has stopped being current
+#'
+#' A fresh download of a stale file is still stale. This checks the data rather
+#' than the cache: if a series that is supposed to keep growing ends well before
+#' now, that is worth knowing whether the cause is a cache, a provider pause, or
+#' a publication lag.
+#'
+#' @param series the parsed monthly series
+#' @param index the index name
+#' @param entry the catalog entry
+#' @return invisibly `NULL`
+#' @keywords internal
+warn_if_stale <- function(series, index, entry) {
+  updates <- entry$updates %||% "monthly"
+  if (identical(updates, "none") || nrow(series) == 0) return(invisible(NULL))
+
+  last <- max(series$YEAR * 12 + series$MONTH, na.rm = TRUE)
+  now <- as.integer(format(Sys.Date(), "%Y")) * 12 +
+    as.integer(format(Sys.Date(), "%m"))
+  behind <- now - last
+
+  # Publication lag is normal and differs by provider: the NOAA indices appear
+  # within a month or two, RAPID within a year or more. Only flag a gap wider
+  # than the provider's own habit.
+  tolerated <- switch(updates, monthly = 3, annual = 24, 3)
+  if (behind <= tolerated) return(invisible(NULL))
+
+  message("The ", index, " series ends ", behind, " months ago (",
+          max(series$YEAR, na.rm = TRUE), "-",
+          sprintf("%02d", series$MONTH[which.max(series$YEAR * 12 + series$MONTH)]),
+          "), which is longer than this source's usual lag.",
+          "\n  refresh_climate_index(\"", index, "\") re-downloads it. If that ",
+          "changes nothing, the provider has not published either.")
+  invisible(NULL)
+}
+
+#' Re-download cached climate indices
+#'
+#' Forces a fresh copy, ignoring the cache. Use after a provider publishes, or
+#' when a series looks like it has stopped short.
+#'
+#' Indices that will never change are skipped rather than re-fetched. `LCR` was
+#' published with a paper and ends at 2014, so downloading it again cannot
+#' produce anything new.
+#'
+#' @param index one or more index names, or `NULL` for every living index
+#' @return invisibly, a data frame of what was refreshed and where it now ends
+#' @examples
+#' \dontrun{
+#' refresh_climate_index()          # every index that is still growing
+#' refresh_climate_index("AMOC")
+#' }
+#' @seealso [climate_index_status()], [fetch_climate_index()]
+#' @export
+refresh_climate_index <- function(index = NULL) {
+  catalog <- climate_indices()
+  living <- names(catalog)[vapply(catalog, function(e) {
+    !identical(e$updates %||% "monthly", "none")
+  }, logical(1))]
+
+  index <- index %||% living
+  unknown <- setdiff(index, names(catalog))
+  if (length(unknown) > 0) {
+    stop("Unknown climate index: ", paste(unknown, collapse = ", "),
+         "\nAvailable: ", paste(names(catalog), collapse = ", "), call. = FALSE)
+  }
+
+  skipped <- setdiff(index, living)
+  if (length(skipped) > 0) {
+    message("Skipping ", paste(skipped, collapse = ", "),
+            ": finished dataset, refreshing cannot add anything.")
+  }
+
+  result <- do.call(rbind, lapply(intersect(index, living), function(name) {
+    series <- fetch_climate_index(name, refresh = TRUE)
+    data.frame(index = name,
+               ends = paste0(max(series$YEAR, na.rm = TRUE), "-",
+                             sprintf("%02d", series$MONTH[which.max(
+                               series$YEAR * 12 + series$MONTH)])),
+               months = nrow(series), stringsAsFactors = FALSE)
+  }))
+
+  if (!is.null(result)) print(result, row.names = FALSE)
+  invisible(result)
+}
+
+#' What is cached, how old it is, and whether it is due a refresh
+#'
+#' Reports without downloading anything, so it is safe to call offline.
+#'
+#' @return a data frame, one row per index, of class
+#'   `datamatch_index_status`
+#' @examples
+#' climate_index_status()
+#' @seealso [refresh_climate_index()]
+#' @export
+climate_index_status <- function() {
+  catalog <- climate_indices()
+
+  status <- do.call(rbind, lapply(names(catalog), function(name) {
+    entry <- catalog[[name]]
+    updates <- entry$updates %||% "monthly"
+    extension <- if (identical(entry$format, "rapid_netcdf")) ".nc" else ".txt"
+    file <- copernicus_cache("indices", paste0(name, extension))
+    age <- index_cache_age(file)
+    limit <- index_max_age(updates)
+
+    data.frame(
+      index = name,
+      updates = updates,
+      cached = is.finite(age),
+      age_days = if (is.finite(age)) round(age, 1) else NA_real_,
+      refresh_due = is.finite(age) && age > limit,
+      stringsAsFactors = FALSE
+    )
+  }))
+
+  class(status) <- c("datamatch_index_status", "data.frame")
+  status
+}
+
+#' @param x a `datamatch_index_status`
+#' @param ... ignored
+#' @rdname climate_index_status
+#' @export
+print.datamatch_index_status <- function(x, ...) {
+  flat <- as.data.frame(x)
+  cat("Cached climate indices\n")
+  cat(strrep("-", 52), "\n", sep = "")
+  print(flat, row.names = FALSE, right = FALSE)
+
+  due <- flat$index[flat$refresh_due]
+  if (length(due) > 0) {
+    cat("\nDue a refresh: ", paste(due, collapse = ", "),
+        "\n  refresh_climate_index()\n", sep = "")
+  } else {
+    cat("\nNothing is overdue. Living indices re-download on their own once the",
+        "\ncached copy passes its age limit.\n")
+  }
+  cat("\nCache location: ", copernicus_cache("indices"), "\n", sep = "")
+  invisible(x)
 }
 
 #' Read the RAPID overturning series and average it to monthly
 #'
 #' The RAPID array publishes a twelve-hourly NetCDF series at a stable URL,
-#' while the ASCII equivalent sits behind a signup form. So this downloads the
-#' binary, reads the overturning variable, and aggregates to the monthly step the
-#' rest of the indices use.
+#' while the ASCII equivalent sits behind a signup form. So this reads the
+#' overturning variable from the downloaded binary and aggregates it to the
+#' monthly step the rest of the indices use. Downloading and caching happen in
+#' [cached_index_file()], which every index shares.
 #'
 #' Averaging is the honest direction here. The twelve-hourly series is dominated
 #' by Ekman variability that a monthly covariate cannot represent anyway, and a
@@ -236,44 +505,14 @@ fetch_climate_index <- function(index, years = NULL, url = NULL) {
 #' a short month is a gap in the record rather than a partial average, and it is
 #' more useful to see it than to drop it.
 #'
-#' @param url the NetCDF file to read
+#' @param file a local NetCDF file, already downloaded
 #' @param name the index name, for error messages
 #' @return a data frame with `YEAR`, `MONTH`, and a column named for the index
 #' @keywords internal
-fetch_rapid_netcdf <- function(url, name) {
+read_rapid_netcdf <- function(file, name) {
   if (!requireNamespace("ncdf4", quietly = TRUE)) {
     stop("The '", name, "' index is published as NetCDF, which needs the ",
          "'ncdf4' package.\n  install.packages(\"ncdf4\")", call. = FALSE)
-  }
-
-  # Cached like the Copernicus downloads, and for the same reason: this one is
-  # over a megabyte, and RAPID times out on repeated requests, so re-fetching it
-  # for every call fails as well as wasting bandwidth.
-  file <- copernicus_cache("indices", paste0(name, ".nc"))
-
-  if (!file.exists(file) || file.size(file) == 0) {
-    # download.file() defaults to 60s, which is not always enough for this host.
-    previous <- options(timeout = max(300, getOption("timeout", 60)))
-    on.exit(options(previous), add = TRUE)
-
-    partial <- paste0(file, ".part")
-    tryCatch(
-      utils::download.file(url, destfile = partial, mode = "wb", quiet = TRUE),
-      error = function(e) {
-        unlink(partial)
-        stop("Could not download the ", name, " index from ", url, "\n",
-             conditionMessage(e),
-             "\nProviders move these files; pass `url` to override.",
-             call. = FALSE)
-      }
-    )
-    if (!file.exists(partial) || file.size(partial) == 0) {
-      unlink(partial)
-      stop("The ", name, " download from ", url, " was empty.", call. = FALSE)
-    }
-    # Rename only once the download is complete, so an interrupted fetch cannot
-    # leave a truncated file in the cache to be trusted later.
-    file.rename(partial, file)
   }
 
   nc <- ncdf4::nc_open(file)
