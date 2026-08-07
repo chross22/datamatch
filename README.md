@@ -736,7 +736,7 @@ whole basin, so every observation in a month receives the same number:
 ``` r
 observations <- attach_climate_index(observations, c("NAO", "AMO"))
 
-index_dictionary()          # NAO, AO, AMO, PDO, LCR
+index_dictionary()          # NAO, AO, AMO, PDO, LCR, AMOC
 ```
 
 That makes them a different kind of covariate from local temperature. They tell
@@ -806,6 +806,40 @@ a megabyte, so it is cached like the Copernicus downloads.
 > Moat BI et al. Atlantic meridional overturning circulation observed by the
 > RAPID-MOCHA-WBTS array at 26°N. British Oceanographic Data Centre, NERC, UK.
 > <https://doi.org/10.5285/223b34a3-2dc5-c945-e063-6c86abc0f5b3>
+
+#### Staying current
+
+Four of the six indices are still growing. Downloads are cached, and the cache
+expires on an interval matched to how often each provider actually publishes, so
+a living index re-downloads on its own without being asked:
+
+``` r
+climate_index_status()      # what is cached, how old, what is due
+refresh_climate_index()     # force a re-fetch of everything still growing
+refresh_climate_index("AMOC")
+```
+
+| Updates | Cache reused for | Indices |
+|---|---|---|
+| Monthly | 7 days | `NAO`, `AO`, `AMO`, `PDO` |
+| Roughly yearly | 30 days | `AMOC` |
+| Never | forever | `LCR` |
+
+`LCR` finished at 2014, so re-downloading it cannot produce anything new and it
+is skipped rather than fetched again.
+
+Two behaviours are worth knowing, because both are deliberate.
+
+**Staleness is judged from the data, not the cache.** A fresh download of a file
+the provider stopped updating is still stale. If a series ends further behind the
+present than its source's usual publishing lag, you are told, along with the
+command to force a refresh and the note that if refreshing changes nothing then
+the provider has not published either.
+
+**A failed download falls back to the cached copy, with a warning.** A provider
+being briefly unreachable should not become an error here when usable data is
+already on disk. The warning is what keeps the old copy from being mistaken for
+a current one.
 
 #### The Labrador Current retroflection index
 

@@ -166,5 +166,30 @@
   repeated requests, and the time origin is read from the file rather than
   hard-coded — RAPID has re-based it across releases.
 
+* **Cached indices now expire on their provider's publishing cadence**, so a
+  living dataset does not quietly stop being current. Each index records how its
+  source updates — monthly for the NOAA indices, roughly yearly for `AMOC`, never
+  for `LCR`, which was published with a paper and ends at 2014 — and that sets
+  how long a cached copy is reused: a week, a month, or forever. Living indices
+  re-download on their own; finished ones are not re-fetched pointlessly.
+
+  Staleness is judged from the data rather than the cache, because a fresh
+  download of a file the provider stopped updating is still stale. A series
+  ending further behind the present than its source's usual lag is reported, with
+  the command to force a refresh.
+
+  A failed download with a usable cached copy on disk returns that copy and
+  warns, rather than erroring: a provider being briefly unreachable should not
+  become an outage here, and the warning is what stops the old copy being
+  mistaken for a current one.
+
+  `climate_index_status()` reports what is cached and what is due without
+  downloading anything, so it is safe offline. `refresh_climate_index()` forces a
+  re-fetch and skips the indices that cannot change.
+
+  The text indices were previously re-downloaded on every call and are now cached
+  too, since downloading moved out of the NetCDF reader into a step every format
+  shares.
+
 * **A monthly workflow** checks the variable catalog against the live Copernicus
   catalogue and opens an issue when dataset identifiers drift.
