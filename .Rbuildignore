@@ -3,3 +3,5 @@
 ^LICENSE\.md$
 ^\.github$
 ^README\.Rmd$
+^vignettes/.*\.html$
+^vignettes/.*_files$

@@ -54,6 +54,12 @@
   daily dataset was treated as monthly and only day 1 of each month was
   downloaded. The frequency token is now matched as such.
 
+* **matchData() returned rows grouped by period, not in the order they went
+  in.** Rows are processed a period at a time, so a table whose periods were
+  interleaved came back reordered. Anyone aligning the result against the input
+  by position - `cbind()`, or assigning a column straight across - would have
+  got silently mismatched rows. The order is now restored before returning.
+
 * **Sparse daily data could be matched as though it were monthly.**
   `detect_temporal_resolution()` infers daily data from more than one day within
   a month, so a set of survey dates — one per month — was indistinguishable from

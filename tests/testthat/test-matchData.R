@@ -306,3 +306,36 @@ test_that("neither side has to be observations or a covariate grid", {
   expect_true(all(c("SST", "CHL") %in% names(result)))
   expect_false(anyNA(result$CHL))
 })
+
+test_that("rows come back in the order they went in", {
+  # Rows are processed a period at a time, so without restoring the order they
+  # come back grouped by period. Anyone aligning the result against the input by
+  # position - cbind(), or assigning a column straight across - would get
+  # silently mismatched rows, which is the worst kind of wrong.
+  env <- sf::st_as_sf(
+    do.call(rbind, lapply(1:3, function(m) {
+      g <- expand.grid(x = c(-70, -69), y = c(42, 43))
+      g$SST <- m
+      g$YEAR <- 2015L
+      g$MONTH <- as.integer(m)
+      g$DAY <- 1L
+      g
+    })),
+    coords = c("x", "y"), crs = 4326)
+
+  # Deliberately out of period order, and with a period repeated.
+  observations <- sf::st_as_sf(
+    data.frame(lon = rep(-69.5, 4), lat = 42.5, YEAR = 2015L,
+               MONTH = c(3L, 1L, 3L, 2L), id = 1:4),
+    coords = c("lon", "lat"), crs = 4326)
+
+  result <- matchData(observations, env)
+
+  expect_equal(result$id, observations$id)
+  # And the covariate follows its own row, not merely the row count.
+  expect_equal(result$SST, observations$MONTH)
+
+  # The bookkeeping column used to restore the order must not leak out.
+  expect_false(any(grepl("datamatch_row", names(result))))
+  expect_equal(rownames(result), as.character(seq_len(nrow(result))))
+})

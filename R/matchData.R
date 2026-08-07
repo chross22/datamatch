@@ -122,6 +122,16 @@ matchData <- function(dat, source,
     source_vars[match(collisions, source_vars)] <- renamed
   }
 
+  # Rows are processed a period at a time, so they come back grouped by period
+  # rather than in the order they arrived. That is a quiet hazard: anyone
+  # aligning the result against the input by position - cbind(), or assigning a
+  # column straight across - would get silently mismatched rows. The original
+  # position is carried through and used to restore the order at the end.
+  #
+  # The name is deliberately awkward so it cannot collide with a real column.
+  order_key <- ".datamatch_row_order"
+  dat[[order_key]] <- seq_len(nrow(dat))
+
   periods <- unique(sf::st_drop_geometry(dat)[match_keys])
   matched <- vector("list", nrow(periods))
   unmatched_periods <- character()
@@ -163,6 +173,11 @@ matchData <- function(dat, source,
   column_order <- names(matched[[1]])
   matched <- lapply(matched, function(x) x[column_order])
   matched_data <- do.call(rbind, matched)
+
+  # Back into the order the rows arrived in, and drop the bookkeeping column.
+  matched_data <- matched_data[order(matched_data[[order_key]]), ]
+  matched_data[[order_key]] <- NULL
+  rownames(matched_data) <- NULL
 
   matched_data$LON <- sf::st_coordinates(matched_data)[, 1]
   matched_data$LAT <- sf::st_coordinates(matched_data)[, 2]
