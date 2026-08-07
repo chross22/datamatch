@@ -56,15 +56,26 @@ bathymetry_variables <- function() {
 #' The bounding box takes the same shape as `accessEnvDat()`'s, so a single
 #' definition of the study area serves both.
 #'
+#' @section Caching:
 #' `marmap` caches downloads into the working directory by default, which
-#' scatters them wherever R happened to be started. Passing `path` keeps a run's
-#' downloads together.
+#' scatters them wherever R happened to be started. This puts them beside the
+#' Copernicus cache instead, under [tools::R_user_dir()], so a study area
+#' downloaded once stays downloaded across sessions. `path` overrides that.
+#'
+#' A grid already on disk is read with `marmap::read.bathy()` rather than
+#' re-requested through `marmap::getNOAA.bathy()`. Both return the same object,
+#' but the second announces itself — "Querying NOAA database", then "File
+#' already exists ; loading ..." — and there is no reason to narrate a local
+#' file read. Reading directly also skips the NOAA round trip entirely.
 #'
 #' @param bounding_box named list with `xmin`, `xmax`, `ymin`, `ymax`
 #' @param resolution grid resolution in arc-minutes, as `marmap` defines it;
 #'   smaller is finer and slower. 4 is roughly 7 km at mid latitudes.
-#' @param path directory for `marmap`'s download cache; created if absent
-#' @param keep whether `marmap` should cache the downloaded grid for reuse
+#' @param path directory for the download cache; created if absent. Defaults to
+#'   a `bathymetry` folder under [tools::R_user_dir()], so downloads persist
+#'   between sessions.
+#' @param keep whether `marmap` should cache the downloaded grid for reuse. With
+#'   `FALSE` nothing is written, so nothing can be read back later either.
 #' @return a `terra::SpatRaster` with one layer per variable in
 #'   `bathymetry_variables()`, in EPSG:4326
 #' @examples
@@ -75,7 +86,8 @@ bathymetry_variables <- function() {
 #' terra::plot(bathy[["DEPTH"]])
 #' }
 #' @export
-fetch_bathymetry <- function(bounding_box, resolution = 4, path = tempdir(),
+fetch_bathymetry <- function(bounding_box, resolution = 4,
+                             path = copernicus_cache("bathymetry"),
                              keep = TRUE) {
   if (!requireNamespace("marmap", quietly = TRUE)) {
     stop("The 'marmap' package is required for bathymetry. ",
@@ -91,13 +103,54 @@ fetch_bathymetry <- function(bounding_box, resolution = 4, path = tempdir(),
 
   dir.create(path, recursive = TRUE, showWarnings = FALSE)
 
-  bathy <- marmap::getNOAA.bathy(
-    lon1 = bounding_box$xmin, lon2 = bounding_box$xmax,
-    lat1 = bounding_box$ymin, lat2 = bounding_box$ymax,
-    resolution = resolution, keep = keep, path = path
-  )
+  cached <- marmap_cache_file(bounding_box, resolution, path)
+  bathy <- if (!is.null(cached) && file.exists(cached)) {
+    # Same object getNOAA.bathy() would hand back for this file, without the
+    # NOAA round trip or the running commentary.
+    marmap::read.bathy(cached, header = TRUE)
+  } else {
+    marmap::getNOAA.bathy(
+      lon1 = bounding_box$xmin, lon2 = bounding_box$xmax,
+      lat1 = bounding_box$ymin, lat2 = bounding_box$ymax,
+      resolution = resolution, keep = keep, path = path
+    )
+  }
 
   bathymetry_layers(bathy)
+}
+
+#' Where marmap would have cached this grid
+#'
+#' Rebuilds the filename `marmap::getNOAA.bathy()` writes, so an existing
+#' download can be read directly instead of requested again.
+#'
+#' The convention is marmap's, not this package's: `marmap_coord_` then the
+#' bounding box as `x1;y1;x2;y2` with the lower corner first, then `_res_` and
+#' the resolution. Requests that cross the antimeridian get an `_anti` suffix,
+#' and are not claimed here — returning `NULL` for them means falling back to
+#' `getNOAA.bathy()`, which is the correct answer either way.
+#'
+#' Should marmap ever change the convention, this stops matching and every fetch
+#' goes back through `getNOAA.bathy()`. That is slower and chattier, not wrong.
+#'
+#' @param bounding_box named list with `xmin`, `xmax`, `ymin`, `ymax`
+#' @param resolution grid resolution in arc-minutes
+#' @param path the cache directory
+#' @return the path marmap would use, or `NULL` where the convention does not
+#'   apply
+#' @keywords internal
+marmap_cache_file <- function(bounding_box, resolution, path) {
+  x1 <- min(bounding_box$xmin, bounding_box$xmax)
+  x2 <- max(bounding_box$xmin, bounding_box$xmax)
+  y1 <- min(bounding_box$ymin, bounding_box$ymax)
+  y2 <- max(bounding_box$ymin, bounding_box$ymax)
+
+  # marmap writes an "_anti" file for antimeridian-crossing requests, built from
+  # a differently ordered box. Not worth reproducing for the sake of a cache hit.
+  if (x1 < -180 || x2 > 180) return(NULL)
+
+  file.path(path, paste0("marmap_coord_", x1, ";", y1, ";", x2, ";", y2,
+                         "_res_", resolution, ".csv"))
 }
 
 #' Convert a marmap bathy object into terrain layers

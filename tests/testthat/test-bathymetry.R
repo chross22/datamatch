@@ -135,3 +135,53 @@ test_that("a malformed bounding box is reported before any download", {
 
   expect_error(fetch_bathymetry(list(xmin = -70, xmax = -66)), "ymin, ymax")
 })
+
+test_that("an already-downloaded grid is read rather than re-requested", {
+  skip_if_not_installed("marmap")
+
+  # marmap names its cache file from the box and resolution. Reproducing that
+  # is what lets an existing download be read directly, so if the convention
+  # ever moves, this is the test that notices.
+  path <- tempfile()
+  dir.create(path)
+  bb <- list(xmin = -70, xmax = -68, ymin = 42, ymax = 43)
+
+  expect_equal(basename(marmap_cache_file(bb, 10, path)),
+               "marmap_coord_-70;42;-68;43_res_10.csv")
+
+  # The corner order is marmap's, not the caller's: a box written the other way
+  # round must resolve to the same file.
+  flipped <- list(xmin = -68, xmax = -70, ymin = 43, ymax = 42)
+  expect_equal(marmap_cache_file(flipped, 10, path),
+               marmap_cache_file(bb, 10, path))
+
+  # Resolution is part of the name, so two resolutions do not collide.
+  expect_false(identical(marmap_cache_file(bb, 4, path),
+                         marmap_cache_file(bb, 10, path)))
+})
+
+test_that("fetch_bathymetry reads a cached grid without contacting NOAA", {
+  skip_if_not_installed("marmap")
+
+  path <- tempfile()
+  dir.create(path)
+  bb <- list(xmin = -70, xmax = -68, ymin = 42, ymax = 43)
+
+  # A cache file written by hand, so a NOAA request would be visible as a
+  # failure rather than quietly succeeding. Wide enough for terrain(), which
+  # needs a 3x3 neighbourhood and errors on anything thinner.
+  grid <- expand.grid(V1 = seq(-70, -68, by = 0.4), V2 = seq(42, 43, by = 0.2))
+  grid$V3 <- -100 - (grid$V1 + 70) * 20
+  utils::write.table(grid, file.path(path, "marmap_coord_-70;42;-68;43_res_10.csv"),
+                     sep = ",", row.names = FALSE, col.names = TRUE)
+
+  local_mocked_bindings(
+    getNOAA.bathy = function(...) stop("NOAA should not be contacted"),
+    .package = "marmap"
+  )
+
+  layers <- fetch_bathymetry(bb, resolution = 10, path = path)
+
+  expect_s4_class(layers, "SpatRaster")
+  expect_true("DEPTH" %in% names(layers))
+})

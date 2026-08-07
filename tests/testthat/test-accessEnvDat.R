@@ -850,3 +850,20 @@ test_that("dates outside a dataset's coverage are explained, not just reported",
   expect_match(err, "reanalysis")
   expect_match(err, "forecast")
 })
+
+test_that("terra's unknown-calendar warning is muffled, and nothing else is", {
+  # Copernicus files declare "Gregorian", which is not a CF spelling, so terra
+  # warns and assumes standard. That assumption is right, and one warning per
+  # file buries the ones that matter on a long fetch.
+  expect_silent(
+    without_calendar_warning(
+      warning("[rast] unknown calendar (assuming standard): Gregorian"))
+  )
+
+  # A file that is genuinely unreadable must still say so.
+  expect_warning(without_calendar_warning(warning("cannot open this file")),
+                 "cannot open")
+
+  # The value passes through untouched.
+  expect_equal(without_calendar_warning({ warning("unknown calendar"); 42 }), 42)
+})
