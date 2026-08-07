@@ -185,3 +185,60 @@ test_that("fetch_bathymetry reads a cached grid without contacting NOAA", {
   expect_s4_class(layers, "SpatRaster")
   expect_true("DEPTH" %in% names(layers))
 })
+
+test_that("projected observations are reprojected, not read as degrees", {
+  skip_if_not_installed("marmap")
+
+  # st_coordinates() returns whatever CRS the object carries. Handing UTM metres
+  # to terra::extract() puts every point outside a lon/lat grid, so the depths
+  # come back NA for an area that plainly has depth.
+  layers <- bathymetry_layers(mock_bathy())
+  geographic <- sf::st_as_sf(data.frame(lon = c(-69.5, -67.5), lat = c(42.0, 42.5)),
+                             coords = c("lon", "lat"), crs = 4326)
+  projected <- sf::st_transform(geographic, 32619)
+
+  expect_equal(attach_bathymetry(projected, layers, "DEPTH")$DEPTH,
+               attach_bathymetry(geographic, layers, "DEPTH")$DEPTH)
+  expect_false(anyNA(attach_bathymetry(projected, layers, "DEPTH")$DEPTH))
+})
+
+test_that("observations with no CRS are flagged rather than assumed correct", {
+  skip_if_not_installed("marmap")
+
+  layers <- bathymetry_layers(mock_bathy())
+  no_crs <- sf::st_as_sf(data.frame(lon = -69.5, lat = 42.0), coords = c("lon", "lat"))
+
+  expect_warning(attach_bathymetry(no_crs, layers, "DEPTH"), "no CRS")
+})
+
+test_that("a plain data frame of projected coordinates is refused", {
+  skip_if_not_installed("marmap")
+
+  # A data frame carries no CRS to check, so magnitude is the only signal - and
+  # it is a clear one, since a longitude cannot exceed 180.
+  layers <- bathymetry_layers(mock_bathy())
+
+  expect_error(
+    attach_bathymetry(data.frame(lon = 500000, lat = 4649776), layers, "DEPTH"),
+    "look projected rather than geographic")
+})
+
+test_that("points that get no depth are reported, with the reason", {
+  skip_if_not_installed("marmap")
+
+  layers <- bathymetry_layers(mock_bathy())   # spans -70..-66, 41..44, land in the north
+
+  outside <- sf::st_as_sf(data.frame(lon = c(-69, -50), lat = c(42, 42)),
+                          coords = c("lon", "lat"), crs = 4326)
+  expect_warning(attach_bathymetry(outside, layers, "DEPTH"), "outside the grid")
+  expect_warning(attach_bathymetry(outside, layers, "DEPTH"), "Widen")
+
+  on_land <- sf::st_as_sf(data.frame(lon = c(-69, -69), lat = c(42, 43.9)),
+                          coords = c("lon", "lat"), crs = 4326)
+  expect_warning(attach_bathymetry(on_land, layers, "DEPTH"), "ETOPO treats as land")
+
+  # Nothing to say when every point matched.
+  fine <- sf::st_as_sf(data.frame(lon = c(-69, -68), lat = c(42, 42.5)),
+                       coords = c("lon", "lat"), crs = 4326)
+  expect_silent(attach_bathymetry(fine, layers, "DEPTH"))
+})
