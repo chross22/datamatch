@@ -54,6 +54,16 @@
   daily dataset was treated as monthly and only day 1 of each month was
   downloaded. The frequency token is now matched as such.
 
+* **Sparse daily data could be matched as though it were monthly.**
+  `detect_temporal_resolution()` infers daily data from more than one day within
+  a month, so a set of survey dates — one per month — was indistinguishable from
+  monthly data by inspection, and `matchData()` would join by month and ignore
+  the day.
+
+  `accessEnvDat()` knows which dataset it fetched, so it now records the step on
+  the result and `detect_temporal_resolution()` trusts that over the heuristics.
+  Passing `temporal_resolution` explicitly still overrides both.
+
 * **Failed downloads surfaced as an unreadable file.** A run of failures warned
   and returned a status code the caller ignored, so the error appeared later from
   `terra::rast()` on a file that was never written. Failures now raise where they
@@ -95,14 +105,24 @@
   `variable_dataset()` takes `frequency` too, and returns `NA` where no daily
   dataset exists.
 
-  `days` selects which days of each month to fetch — `days = c(1, 15)` over
-  eleven years is 264 downloads rather than 4018 — so a long record can be
-  sampled instead of fetched whole. Passing it implies `frequency = "daily"`,
-  since selecting days of the month means nothing to a monthly mean; passing it
-  alongside an explicit `frequency = "monthly"` is a contradiction and an error.
-  A day a month does not have is dropped from that month, which is the calendar
-  rather than an error; asking only for days no requested month has is an error,
-  since it describes an empty request.
+  `dates` names the exact dates to fetch, which is the argument to use when
+  matching daily data to observations:
+
+  ```r
+  accessEnvDat(vars = "SST", dates = unique(observations$date), bounding_box = bb)
+  ```
+
+  Survey dates differ from month to month, and a day-of-month rule does not
+  describe them. `YYYYMMDD` strings, `YYYY-MM-DD` strings, and `Date` objects
+  are all accepted. Dates are sorted and deduplicated, and a date the calendar
+  does not have is an error naming it rather than a silently dropped request.
+
+  `dates` replaces `years` and `months`, which must not be given alongside it,
+  and implies `frequency = "daily"`. Passing it with an explicit
+  `frequency = "monthly"` is a contradiction and an error.
+
+  Since it fetches only the dates named, it is also how a long record is sampled
+  rather than fetched whole.
 
   **Monthly remains the default.** A call naming neither `frequency` nor `days`
   fetches monthly means exactly as before.

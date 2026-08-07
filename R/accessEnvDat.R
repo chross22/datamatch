@@ -1,4 +1,69 @@
 
+#' Parse the `dates` argument into a sorted, unique vector of dates
+#'
+#' `YYYYMMDD` is what a survey database usually holds, and `YYYY-MM-DD` is what
+#' R prints, so both are accepted, along with `Date` objects and a mixture of
+#' the three. Numbers are taken as `YYYYMMDD` too, since an unquoted `20150402`
+#' is an easy thing to type.
+#'
+#' @section Why invalid dates are an error:
+#' `"20150230"` parses to `NA` rather than to a date. Dropping it would fetch
+#' fewer days than were asked for and say nothing, leaving the gap to be found
+#' much later as a missing row. The offending values are named instead.
+#'
+#' @param dates the `dates` argument as the caller wrote it
+#' @return a sorted, deduplicated `Date` vector
+#' @keywords internal
+parse_dates <- function(dates) {
+  if (length(dates) == 0) {
+    stop("`dates` is empty, so the request names no dates to fetch.",
+         call. = FALSE)
+  }
+
+  parsed <- if (inherits(dates, "Date")) {
+    dates
+  } else if (inherits(dates, "POSIXt")) {
+    as.Date(dates)
+  } else {
+    text <- trimws(as.character(dates))
+    # Eight digits is YYYYMMDD; anything else is tried as ISO, which is what
+    # as.Date() reads by default.
+    compact <- grepl("^[0-9]{8}$", text)
+    out <- rep(as.Date(NA), length(text))
+    out[compact] <- as.Date(text[compact], format = "%Y%m%d")
+    out[!compact] <- as.Date(text[!compact], format = "%Y-%m-%d")
+    out
+  }
+
+  bad <- is.na(parsed)
+  if (any(bad)) {
+    offending <- as.character(dates)[bad]
+
+    # c() on a mixture of strings and Dates turns the Dates into their numeric
+    # form - days since 1970 - before this function ever sees them. The values
+    # that arrive are small integers, which is a confusing thing to be told is
+    # not a date unless the cause is named.
+    coerced <- suppressWarnings(as.numeric(offending))
+    looks_coerced <- !anyNA(coerced) && all(coerced > 0 & coerced < 1e5)
+
+    stop("`dates` could not be read as dates: ",
+         paste(utils::head(offending, 10), collapse = ", "),
+         if (sum(bad) > 10) paste0(" (and ", sum(bad) - 10, " more)"), "\n",
+         if (looks_coerced) {
+           paste0("Those look like Date objects that were turned into numbers. ",
+                  "c() does that\nwhen Dates and strings are combined. Keep ",
+                  "`dates` to one type.\n")
+         },
+         "Use YYYYMMDD, YYYY-MM-DD, or Date objects. A date the calendar does ",
+         "not have,\nsuch as 20150230, cannot be read.",
+         call. = FALSE)
+  }
+
+  # Sorted and deduplicated so the result comes back in date order however the
+  # argument was written, and a date named twice is fetched once.
+  sort(unique(parsed))
+}
+
 #' Put a downloaded raster's layers into the order they were requested
 #'
 #' Copernicus returns layers in the NetCDF's own order, which is alphabetical by
@@ -146,34 +211,41 @@ read_day <- function(item, vars) {
 #' box will not fit in a laptop's RAM as an `sf` object, and is better fetched a
 #' season at a time.
 #'
-#' `days` is the other way to keep that in hand: it takes day-of-month numbers
-#' and applies them to every requested month, so a decade can be sampled rather
-#' than fetched whole. Passing it implies `frequency = "daily"`, since selecting
-#' days of the month means nothing to a monthly mean.
+#' @section Fetching specific dates:
+#' `dates` is the other way to keep that in hand. It names the exact dates to
+#' fetch, so only the days that matter are downloaded:
 #'
 #' ```
-#' # The 1st and 15th of every month, 2005 to 2015: 264 days, not 4018
-#' accessEnvDat(vars = "SST", days = c(1, 15),
-#'              years = 2005:2015, months = 1:12, bounding_box = bb)
-#'
-#' # Roughly weekly through a spring bloom
-#' accessEnvDat(vars = "CHL", days = seq(1, 29, by = 7),
-#'              years = 2015, months = 3:5, bounding_box = bb)
+#' accessEnvDat(vars = "SST", dates = c("20150402", "20150517", "20150623"),
+#'              bounding_box = bb)
 #' ```
 #'
-#' Passing `days` together with an explicit `frequency = "monthly"` is a
-#' contradiction rather than something to resolve by guessing, and is an error.
+#' This is the argument to use when matching daily data to observations. Survey
+#' dates differ from month to month, and a rule such as "the 1st and 15th" does
+#' not describe them. Take the dates from the observations themselves:
 #'
-#' Months are not the same length, so a day that does not exist in a given month
-#' is dropped from it: `days = 30` returns nothing for February and a value for
-#' April. That is the calendar rather than an error. Asking only for days that
-#' exist in none of the requested months — `days = 30, months = 2` — is an error,
-#' since it describes an empty request.
+#' ```
+#' accessEnvDat(vars = "SST", dates = unique(observations$date), bounding_box = bb)
+#' ```
 #'
-#' Sampling days is not the same as averaging them. Two days a month is a sample
-#' of the month, with whatever weather fell on those dates; a monthly mean is the
-#' month. Which you want depends on whether the observations being matched are
-#' themselves instants or aggregates.
+#' `YYYYMMDD` strings, `YYYY-MM-DD` strings, and `Date` objects are all accepted,
+#' and may be mixed. Dates are sorted and deduplicated, so the result comes back
+#' in date order however the argument was written, and a date named twice is
+#' fetched once.
+#'
+#' `dates` says which time steps to fetch, so `years` and `months` are neither
+#' needed nor accepted alongside it. Passing it implies `frequency = "daily"`,
+#' since naming a date means nothing to a monthly mean, and passing it with an
+#' explicit `frequency = "monthly"` is a contradiction rather than something to
+#' resolve by guessing.
+#'
+#' A date that does not exist — `"20150230"` — is an error naming it, rather than
+#' a silently dropped request.
+#'
+#' Fetching dates is not the same as averaging a month. Three dates are a sample
+#' of the month, with whatever weather fell on them; a monthly mean is the month.
+#' Which you want depends on whether the observations being matched are themselves
+#' instants or aggregates.
 #'
 
 #' Not every variable has a daily equivalent. `PH`, `PP`, `DIATO` and `DINO` are
@@ -215,8 +287,10 @@ read_day <- function(item, vars) {
 #'   Marine Data Store. Optional when `vars` are catalog names.
 #' @param vars <char> variables to access: names from [variable_dictionary()],
 #'   raw Copernicus variable codes, or a mixture
-#' @param years <numeric> years of data to access
-#' @param months <numeric> months of data to access
+#' @param years <numeric> years of data to access. Required unless `dates` is
+#'   given, which names the time steps itself.
+#' @param months <numeric> months of data to access. Required unless `dates` is
+#'   given.
 #' @param bounding_box <list> named list of spatial coordinates of bounding box
 #' @param depth <numeric> depth range to access (in meters)
 #' @param overwrite <logical> whether or not to overwrite the data if it exists locally
@@ -227,19 +301,21 @@ read_day <- function(item, vars) {
 #' @param frequency <char> `"monthly"` (the default) for monthly means, or
 #'   `"daily"` for daily ones. See the Monthly and daily data section. Ignored
 #'   when `dataset_id` is given, since the dataset itself fixes the step.
-#' @param days <numeric> which days of the month to fetch, as day numbers
-#'   (`c(1, 15)`, `seq(1, 29, by = 7)`). Applies to every requested month.
-#'   `NULL`, the default, fetches every day of it. Passing `days` implies
-#'   `frequency = "daily"`, since a monthly mean has no days to select between.
+#' @param dates the exact dates to fetch, as `YYYYMMDD` strings,
+#'   `YYYY-MM-DD` strings, or `Date` objects. `NULL`, the default, fetches every
+#'   day of the requested months instead. Passing `dates` implies
+#'   `frequency = "daily"` and replaces `years` and `months`, which must then not
+#'   be given. See the Fetching specific dates section.
 #' @param n_workers <integer> how many days to download at once. See the
 #'   Downloading in parallel section. Use `n_workers = 1` to download one day at
 #'   a time.
 #' @return envDat <sf object> sf object containing requested environmental data from Copernicus Marine Service
 #' @export
-accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars, years, months,
+accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars,
+                         years = NULL, months = NULL,
                          bounding_box, depth = c(0,1),
                          overwrite = FALSE, n_workers = 4,
-                         frequency = c("monthly", "daily"), days = NULL,
+                         frequency = c("monthly", "daily"), dates = NULL,
                          mode = c("reanalysis", "forecast")) {
   mode <- match.arg(mode)
   # Recorded before match.arg(), which assigns to `frequency` and so makes
@@ -247,29 +323,33 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars, years, mont
   frequency_given <- !missing(frequency)
   frequency <- match.arg(frequency)
 
-  # Checked here rather than where the calendar is built, so a typo costs an
-  # error at the call instead of a request for a date that does not exist.
-  if (!is.null(days)) {
-    if (!is.numeric(days) || length(days) == 0 || anyNA(days) ||
-        any(days != trunc(days)) || any(days < 1 | days > 31)) {
-      stop("`days` must be whole numbers between 1 and 31, giving days of the ",
-           "month to fetch.\nGot: ", paste(utils::head(days, 10), collapse = ", "),
-           call. = FALSE)
-    }
-    # Sorted and deduplicated so the result comes back in date order however the
-    # argument was written, and a repeated day is not fetched twice.
-    days <- sort(unique(as.integer(days)))
+  # Parsed here rather than where the calendar is built, so a malformed date
+  # costs an error at the call instead of a request for a day that never was.
+  if (!is.null(dates)) {
+    dates <- parse_dates(dates)
 
-    # Selecting days of the month only means anything in daily data, so asking
-    # for days is asking for daily. Requiring frequency = "daily" alongside
-    # would let `days` be passed to a monthly fetch and do nothing.
+    # `dates` says which time steps to fetch. Taking years and months as well
+    # would leave two answers to one question, and no obvious rule for which
+    # wins when they disagree.
+    if (!is.null(years) || !is.null(months)) {
+      stop("`dates` already names which time steps to fetch, so `years` and ",
+           "`months` are not used with it.\nDrop them, or drop `dates` and ",
+           "select whole months instead.", call. = FALSE)
+    }
+
+    # Naming a date only means anything in daily data, so asking for dates is
+    # asking for daily. Requiring frequency = "daily" alongside would let
+    # `dates` be passed to a monthly fetch and do nothing.
     if (frequency_given && frequency == "monthly") {
-      stop("`days` selects days within daily data, but frequency = \"monthly\" ",
-           "was given.\nA monthly mean has one field per month, so there are no ",
-           "days to select between.\nDrop `days` for monthly means, or drop ",
-           "frequency = \"monthly\" to fetch those days.", call. = FALSE)
+      stop("`dates` names days to fetch, but frequency = \"monthly\" was given.\n",
+           "A monthly mean has one field per month, so a date within it selects ",
+           "nothing.\nDrop `dates` for monthly means, or drop ",
+           "frequency = \"monthly\" to fetch those dates.", call. = FALSE)
     }
     frequency <- "daily"
+  } else if (is.null(years) || is.null(months)) {
+    stop("`years` and `months` are required, unless `dates` names the exact ",
+         "dates to fetch.", call. = FALSE)
   }
 
   # `vars` may be catalog names ("SST") or raw Copernicus codes ("thetao").
@@ -299,43 +379,45 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars, years, mont
             "let frequency choose it.", call. = FALSE)
   }
 
-  # A monthly dataset has one field per month, so there are no days to choose
-  # between. Saying so beats returning a whole month's mean for what was asked
-  # for as three days of it.
-  if (!is.null(days) && !is_daily) {
-    warning("`days` applies to daily data only, and dataset_id '", dataset_id,
-            "' is monthly. Ignoring it - the result has one field per month. ",
-            "Use frequency = \"daily\" to select days.", call. = FALSE)
-    days <- NULL
+  # A monthly dataset has one field per month, so a date within it selects
+  # nothing. Fetching the months those dates fall in is the closest honest
+  # reading of the request, and beats returning a month's mean labelled as a day.
+  if (!is.null(dates) && !is_daily) {
+    warning("`dates` names days, and dataset_id '", dataset_id, "' is monthly. ",
+            "Fetching the month containing each date instead, one field per ",
+            "month. Use a daily dataset_id to fetch the dates themselves.",
+            call. = FALSE)
+    months_wanted <- unique(format(dates, "%Y-%m"))
+    dates <- as.Date(paste0(months_wanted, "-01"))
   }
 
   # Build the full list of (year, month, day) combinations to fetch up front,
-  # so they can be dispatched in parallel instead of three nested serial loops.
-  work_items <- list()
-  for (year in years) {
-    for (month in months) {
-      in_month <- if (is_daily) {
-        seq_len(lubridate::days_in_month(lubridate::ym(paste(year, month, sep = "-"))))
-      } else {
-        1L
-      }
-      # Months are not the same length, so a requested day may not exist in all
-      # of them. Day 30 of February is dropped rather than requested; that is
-      # the calendar, not a mistake worth warning about on every call.
-      selected <- if (is.null(days)) in_month else intersect(days, in_month)
-      for (day in selected) {
-        work_items[[length(work_items) + 1]] <- list(year = year, month = month, day = day)
+  # so they can be dispatched in parallel instead of nested serial loops.
+  work_items <- if (!is.null(dates)) {
+    lapply(dates, function(d) {
+      list(year = as.integer(format(d, "%Y")),
+           month = as.integer(format(d, "%m")),
+           day = as.integer(format(d, "%d")))
+    })
+  } else {
+    items <- list()
+    for (year in years) {
+      for (month in months) {
+        in_month <- if (is_daily) {
+          seq_len(lubridate::days_in_month(lubridate::ym(paste(year, month, sep = "-"))))
+        } else {
+          1L
+        }
+        for (day in in_month) {
+          items[[length(items) + 1]] <- list(year = year, month = month, day = day)
+        }
       }
     }
+    items
   }
 
-  # Dropping every day, though, means the request as written asks for nothing -
-  # days = 30 with months = 2, say - and an empty result would be reported far
-  # downstream as a missing column rather than as this.
   if (length(work_items) == 0) {
-    stop("None of the requested days exist in any of the requested months.\n",
-         "  days:   ", paste(days, collapse = ", "), "\n",
-         "  months: ", paste(months, collapse = ", "), call. = FALSE)
+    stop("The request names no time steps to fetch.", call. = FALSE)
   }
 
   # Each day's date and cache path, resolved once, so the download and read
@@ -419,8 +501,15 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars, years, mont
   names(covars) <- c("x", "y", var_names, "YEAR", "MONTH", "DAY")
 
   # Convert data to sf and return
-  sf::st_as_sf(covars,
-               coords = c("x", "y"),
-               crs = sf::st_crs(4326))
+  out <- sf::st_as_sf(covars,
+                      coords = c("x", "y"),
+                      crs = sf::st_crs(4326))
 
+  # Record the step this was fetched at, because it cannot always be recovered
+  # from the result. detect_temporal_resolution() reads daily data from more
+  # than one day within a month, and a `dates` request of one date per month -
+  # survey dates, typically - looks identical to monthly data. Guessing monthly
+  # there would make matchData() join by month and quietly ignore the day.
+  attr(out, "datamatch_step") <- if (is_daily) "day" else "month"
+  out
 }
