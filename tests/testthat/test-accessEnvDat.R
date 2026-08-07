@@ -579,9 +579,9 @@ test_that("a variable with no daily dataset is refused before downloading", {
   )
 })
 
-# ---- choosing days of the month ---------------------------------------------
+# ---- fetching specific dates -------------------------------------------------
 
-test_that("days selects which days of each month are fetched", {
+test_that("dates fetches exactly the dates named", {
   raster_path <- write_fake_raster("thetao")
 
   local_mocked_bindings(copernicus_cache = function(...) raster_path)
@@ -589,34 +589,39 @@ test_that("days selects which days of each month are fetched", {
 
   result <- accessEnvDat(
     vars = "SST",
-    years = 2020, months = c(1, 3),
     bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
-    frequency = "daily", days = c(1, 15, 28)
+    dates = c("20200103", "20200217", "20200326")
   )
 
-  expect_equal(sort(unique(result$DAY)), c(1, 15, 28))
-  expect_equal(sort(unique(result$MONTH)), c(1, 3))
-  # 3 days x 2 months x 4 cells, and nothing else.
-  expect_equal(nrow(result), 3 * 2 * 4)
+  present <- unique(sf::st_drop_geometry(result)[c("YEAR", "MONTH", "DAY")])
+  present <- present[order(present$MONTH), ]
+
+  # The days differ from month to month, which is the point: survey dates do
+  # not repeat on the same day-of-month, and no day-number rule describes them.
+  expect_equal(present$MONTH, c(1, 2, 3))
+  expect_equal(present$DAY, c(3, 17, 26))
+  expect_equal(nrow(result), 3 * 4)
 })
 
-test_that("days is order-independent and ignores repeats", {
+test_that("YYYYMMDD, YYYY-MM-DD and Date objects all work", {
   raster_path <- write_fake_raster("thetao")
 
   local_mocked_bindings(copernicus_cache = function(...) raster_path)
   local_mocked_bindings(file_exists = function(...) TRUE, .package = "fs")
 
-  result <- accessEnvDat(
-    vars = "SST", years = 2020, months = 1,
-    bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
-    frequency = "daily", days = c(15, 1, 15)
-  )
+  bb <- list(xmin = -70, xmax = -60, ymin = 40, ymax = 45)
+  wanted <- c(3, 17)
 
-  # Two distinct days, in date order, however the argument was written.
-  expect_equal(result$DAY, rep(c(1, 15), each = 4))
+  for (dates in list(c("20200103", "20200217"),
+                     c("2020-01-03", "2020-02-17"),
+                     as.Date(c("2020-01-03", "2020-02-17")),
+                     c(20200103, 20200217))) {
+    result <- accessEnvDat(vars = "SST", bounding_box = bb, dates = dates)
+    expect_equal(sort(unique(result$DAY)), wanted)
+  }
 })
 
-test_that("a day that a month does not have is dropped from that month only", {
+test_that("dates are sorted and deduplicated", {
   raster_path <- write_fake_raster("thetao")
 
   local_mocked_bindings(copernicus_cache = function(...) raster_path)
@@ -624,63 +629,40 @@ test_that("a day that a month does not have is dropped from that month only", {
 
   result <- accessEnvDat(
     vars = "SST",
-    years = 2021, months = c(2, 4, 5),   # 28, 30 and 31 days
     bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
-    frequency = "daily", days = c(1, 31)
+    dates = c("20200217", "20200103", "20200217")
   )
 
-  present <- unique(sf::st_drop_geometry(result)[c("MONTH", "DAY")])
-  present <- present[order(present$MONTH, present$DAY), ]
-
-  # The 31st exists in May alone; February and April keep only the 1st.
-  expect_equal(present$MONTH, c(2, 4, 5, 5))
-  expect_equal(present$DAY, c(1, 1, 1, 31))
+  # Two distinct dates, in date order, however the argument was written.
+  expect_equal(result$DAY, rep(c(3, 17), each = 4))
 })
 
-test_that("a request that selects no day at all is an error", {
-  local_mocked_bindings(
-    download_copernicus_subset = function(...) stop("should not be called")
-  )
-
-  expect_error(
-    accessEnvDat(
-      vars = "SST", years = 2021, months = 2,
-      bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
-      frequency = "daily", days = c(30, 31)   # February 2021 has 28
-    ),
-    "None of the requested days exist"
-  )
-})
-
-test_that("days outside 1:31 are refused before anything is resolved", {
+test_that("a date the calendar does not have is an error naming it", {
+  # Dropping it would fetch fewer days than were asked for and say nothing,
+  # leaving the gap to surface much later as a missing row.
   bb <- list(xmin = -70, xmax = -60, ymin = 40, ymax = 45)
 
+  expect_error(accessEnvDat(vars = "SST", bounding_box = bb, dates = "20200230"),
+               "20200230")
+  expect_error(accessEnvDat(vars = "SST", bounding_box = bb, dates = "banana"),
+               "could not be read as dates")
+  expect_error(accessEnvDat(vars = "SST", bounding_box = bb, dates = character(0)),
+               "names no dates")
+})
+
+test_that("Dates coerced to numbers by c() are diagnosed as such", {
+  # c("2020-01-03", as.Date("2020-02-17")) turns the Date into "18310" before
+  # this ever sees it. Being told a five-digit number is not a date is not
+  # helpful unless the cause is named.
   expect_error(
-    accessEnvDat(vars = "SST", years = 2020, months = 1, bounding_box = bb,
-                 frequency = "daily", days = 0),
-    "whole numbers between 1 and 31"
-  )
-  expect_error(
-    accessEnvDat(vars = "SST", years = 2020, months = 1, bounding_box = bb,
-                 frequency = "daily", days = 32),
-    "whole numbers between 1 and 31"
-  )
-  expect_error(
-    accessEnvDat(vars = "SST", years = 2020, months = 1, bounding_box = bb,
-                 frequency = "daily", days = 1.5),
-    "whole numbers between 1 and 31"
-  )
-  expect_error(
-    accessEnvDat(vars = "SST", years = 2020, months = 1, bounding_box = bb,
-                 frequency = "daily", days = "first"),
-    "whole numbers between 1 and 31"
+    accessEnvDat(vars = "SST",
+                 bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
+                 dates = c("18310", "18311")),
+    "turned into numbers"
   )
 })
 
-test_that("days implies daily, without frequency being given", {
-  # Selecting days of the month means nothing to a monthly mean, so asking for
-  # days is asking for daily. Requiring frequency = "daily" as well would let
-  # `days` be passed to a monthly fetch and quietly do nothing.
+test_that("dates implies daily, without frequency being given", {
   raster_path <- write_fake_raster("thetao")
   used <- NULL
 
@@ -694,34 +676,57 @@ test_that("days implies daily, without frequency being given", {
   )
 
   result <- accessEnvDat(
-    vars = "SST", years = 2020, months = 1,
+    vars = "SST",
     bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
-    days = c(1, 15), n_workers = 1
+    dates = c("20200103", "20200115"), n_workers = 1
   )
 
   expect_equal(used, "cmems_mod_glo_phy_my_0.083deg_P1D-m")
-  expect_equal(sort(unique(result$DAY)), c(1, 15))
+  expect_equal(sort(unique(result$DAY)), c(3, 15))
 })
 
-test_that("days with an explicit frequency = 'monthly' is a contradiction", {
+test_that("dates with an explicit frequency = 'monthly' is a contradiction", {
   local_mocked_bindings(
     download_copernicus_subset = function(...) stop("should not be called")
   )
 
   expect_error(
     accessEnvDat(
-      vars = "SST", years = 2020, months = 1,
+      vars = "SST",
       bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
-      days = c(1, 15), frequency = "monthly"
+      dates = "20200103", frequency = "monthly"
     ),
-    "no ?days to select between|frequency = \"monthly\" was given"
+    "frequency = \"monthly\" was given"
   )
 })
 
-test_that("days on an explicitly monthly dataset_id warns and is ignored", {
-  # Here the frequency is not a request but a property of the dataset, so there
-  # is nothing to resolve - but returning the month's mean for what was asked
-  # for as two days of it should still be said out loud.
+test_that("dates alongside years or months is refused", {
+  # Two answers to one question, with no obvious rule for which wins.
+  bb <- list(xmin = -70, xmax = -60, ymin = 40, ymax = 45)
+
+  expect_error(
+    accessEnvDat(vars = "SST", years = 2020, bounding_box = bb, dates = "20200103"),
+    "already names which time steps"
+  )
+  expect_error(
+    accessEnvDat(vars = "SST", months = 1, bounding_box = bb, dates = "20200103"),
+    "already names which time steps"
+  )
+})
+
+test_that("years and months are still required without dates", {
+  bb <- list(xmin = -70, xmax = -60, ymin = 40, ymax = 45)
+
+  expect_error(accessEnvDat(vars = "SST", months = 1, bounding_box = bb),
+               "are required")
+  expect_error(accessEnvDat(vars = "SST", years = 2020, bounding_box = bb),
+               "are required")
+})
+
+test_that("dates on an explicitly monthly dataset_id fetches those months", {
+  # The frequency here is a property of the dataset, not a request, so there is
+  # nothing to resolve. Fetching the month each date falls in is the closest
+  # honest reading, but it is not what was asked for and is said out loud.
   raster_path <- write_fake_raster("thetao")
 
   local_mocked_bindings(copernicus_cache = function(...) raster_path)
@@ -731,19 +736,46 @@ test_that("days on an explicitly monthly dataset_id warns and is ignored", {
     result <- accessEnvDat(
       product_id = "GLOBAL_TEST",
       dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1M-m",
-      vars = "thetao", years = 2020, months = 1,
+      vars = "thetao",
       bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
-      days = c(1, 15)
+      dates = c("20200103", "20200117", "20200326")
     ),
-    "applies to daily data only"
+    "is monthly"
   )
 
+  # January twice and March once collapse to two months, each stamped day 1.
   expect_equal(unique(result$DAY), 1)
+  expect_equal(sort(unique(result$MONTH)), c(1, 3))
+})
+
+test_that("the step is recorded, so sparse dates are not read as monthly", {
+  # One date per month is indistinguishable from monthly data by inspection.
+  # Guessing monthly would make matchData() join by month and ignore the day,
+  # which is the opposite of why someone passes `dates`.
+  raster_path <- write_fake_raster("thetao")
+
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
+  local_mocked_bindings(file_exists = function(...) TRUE, .package = "fs")
+
+  result <- accessEnvDat(
+    vars = "SST",
+    bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
+    dates = c("20200103", "20200217", "20200326")
+  )
+
+  expect_equal(attr(result, "datamatch_step"), "day")
+  expect_equal(detect_temporal_resolution(result), "day")
+
+  monthly <- accessEnvDat(
+    vars = "SST", years = 2020, months = 1:3,
+    bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45)
+  )
+  expect_equal(attr(monthly, "datamatch_step"), "month")
+  expect_equal(detect_temporal_resolution(monthly), "month")
 })
 
 test_that("the monthly default still needs nothing said about it", {
-  # The point of the change: a call that mentions neither frequency nor days is
-  # untouched by either.
+  # A call that mentions neither frequency nor dates is untouched by either.
   raster_path <- write_fake_raster("thetao")
   used <- NULL
 
@@ -769,7 +801,7 @@ test_that("the monthly default still needs nothing said about it", {
   expect_equal(sort(unique(result$MONTH)), 1:3)
 })
 
-test_that("only the selected days are downloaded", {
+test_that("only the named dates are downloaded", {
   raster_path <- write_fake_raster("thetao")
   requested <- character(0)
 
@@ -783,11 +815,10 @@ test_that("only the selected days are downloaded", {
   )
 
   accessEnvDat(
-    vars = "SST", years = 2020, months = 1:2,
+    vars = "SST",
     bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
-    frequency = "daily", days = c(1, 15), n_workers = 1
+    dates = c("20200115", "20200103", "20200217"), n_workers = 1
   )
 
-  expect_equal(requested,
-               c("2020-01-01", "2020-01-15", "2020-02-01", "2020-02-15"))
+  expect_equal(requested, c("2020-01-03", "2020-01-15", "2020-02-17"))
 })

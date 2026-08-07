@@ -23,7 +23,7 @@ The goal of datamatch is to pull environmental data from Copernicus Marine Servi
 - [Set up](#set-up) — the Copernicus client, sign-in, and where downloads are cached
 - [Quick start](#quick-start)
   - [One call per product](#one-call-per-product) — why `SST` and `CHL` are two fetches
-  - [Monthly or daily](#monthly-or-daily) — monthly by default, and how to fetch particular days
+  - [Monthly or daily](#monthly-or-daily) — monthly by default, and how to fetch particular dates
   - [Downloads run in parallel](#downloads-run-in-parallel) — `n_workers`, and what is already cached
 
 **Choosing what to fetch**
@@ -157,7 +157,7 @@ matches to the nearest cell whatever its size.
 ### Monthly or daily
 
 **Fetches are monthly means by default**, and a call that mentions neither
-`frequency` nor `days` behaves exactly as it always has. `frequency = "daily"`
+`frequency` nor `dates` behaves exactly as it always has. `frequency = "daily"`
 uses the daily datasets instead, expanding each requested month into its days:
 
 
@@ -171,30 +171,37 @@ and 91 grids rather than 3 in memory. A decade of daily data over a large box
 will not fit in a laptop's RAM as an `sf` object, and is better fetched a season
 at a time.
 
-`days` is the other way to keep that in hand. It takes day-of-month numbers and
-applies them to every requested month, so a long record can be sampled rather
-than fetched whole. Passing it implies `frequency = "daily"`, since selecting
-days of the month means nothing to a monthly mean:
+`dates` is the other way to keep that in hand. It names the exact dates to
+fetch, so only the days that matter are downloaded:
 
 
 ``` r
-# The 1st and 15th of every month, 2005-2015: 264 days, not 4018
-accessEnvDat(vars = "SST", days = c(1, 15),
-             years = 2005:2015, months = 1:12, bounding_box = bb)
-
-# Roughly weekly through a spring bloom
-accessEnvDat(vars = "CHL", days = seq(1, 29, by = 7),
-             years = 2015, months = 3:5, bounding_box = bb)
+accessEnvDat(vars = "SST", dates = c("20150402", "20150517"), bounding_box = bb)
 ```
 
-Months are not the same length, so a day a month does not have is dropped from
-it — `days = 30` returns nothing for February and a value for April. That is the
-calendar, not an error. Asking only for days that exist in none of the requested
-months is an error, since it describes an empty request.
+**This is the argument to use when matching daily data to observations.** Survey
+dates differ from month to month, and a rule such as "the 1st and 15th" does not
+describe them. Take the dates from the observations themselves:
 
-Sampling days is not the same as averaging them. Two days a month is a sample of
-the month, carrying whatever weather fell on those dates; a monthly mean is the
-month. Which you want depends on whether the observations you are matching are
+
+``` r
+env <- accessEnvDat(vars = "SST", dates = unique(observations$date),
+                    bounding_box = bb)
+
+matched <- matchData(speciesDat = observations, envDat = env)
+```
+
+`YYYYMMDD` strings, `YYYY-MM-DD` strings, and `Date` objects are all accepted.
+Dates are sorted and deduplicated, so the result comes back in date order however
+the argument was written. A date the calendar does not have — `"20150230"` — is
+an error naming it, not a silently dropped request.
+
+`dates` says which time steps to fetch, so `years` and `months` are neither
+needed nor accepted alongside it, and it implies `frequency = "daily"`.
+
+Fetching dates is not the same as averaging a month. Three dates are a sample of
+the month, carrying whatever weather fell on them; a monthly mean is the month.
+Which you want depends on whether the observations you are matching are
 themselves instants or aggregates.
 
 Not everything is published daily. `PH`, `PP`, `DIATO` and `DINO` are monthly

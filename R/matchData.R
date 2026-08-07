@@ -122,6 +122,16 @@ matchData <- function(speciesDat, envDat,
 #' @return one of "day", "month", or "year"
 #' @keywords internal
 detect_temporal_resolution <- function(envDat) {
+  # accessEnvDat() knows which dataset it fetched, so it records the step rather
+  # than leaving it to be inferred. Worth trusting over the heuristics below: a
+  # `dates` request of one date per month is genuinely indistinguishable from
+  # monthly data by inspection, and guessing monthly would drop the day from the
+  # match.
+  recorded <- attr(envDat, "datamatch_step")
+  if (!is.null(recorded) && recorded %in% c("day", "month", "year")) {
+    return(recorded)
+  }
+
   times <- unique(sf::st_drop_geometry(envDat)[c("YEAR", "MONTH", "DAY")])
 
   days_per_month <- tapply(times$DAY, paste(times$YEAR, times$MONTH), function(d) length(unique(d)))

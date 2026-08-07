@@ -8,14 +8,14 @@ accessEnvDat(
   product_id = NULL,
   dataset_id = NULL,
   vars,
-  years,
-  months,
+  years = NULL,
+  months = NULL,
   bounding_box,
   depth = c(0, 1),
   overwrite = FALSE,
   n_workers = 4,
   frequency = c("monthly", "daily"),
-  days = NULL,
+  dates = NULL,
   mode = c("reanalysis", "forecast")
 )
 }
@@ -29,9 +29,11 @@ Marine Data Store. Optional when \code{vars} are catalog names.}
 \item{vars}{\if{html}{\out{<char>}} variables to access: names from \code{\link[=variable_dictionary]{variable_dictionary()}},
 raw Copernicus variable codes, or a mixture}
 
-\item{years}{\if{html}{\out{<numeric>}} years of data to access}
+\item{years}{\if{html}{\out{<numeric>}} years of data to access. Required unless \code{dates} is
+given, which names the time steps itself.}
 
-\item{months}{\if{html}{\out{<numeric>}} months of data to access}
+\item{months}{\if{html}{\out{<numeric>}} months of data to access. Required unless \code{dates} is
+given.}
 
 \item{bounding_box}{\if{html}{\out{<list>}} named list of spatial coordinates of bounding box}
 
@@ -47,10 +49,11 @@ a time.}
 \code{"daily"} for daily ones. See the Monthly and daily data section. Ignored
 when \code{dataset_id} is given, since the dataset itself fixes the step.}
 
-\item{days}{\if{html}{\out{<numeric>}} which days of the month to fetch, as day numbers
-(\code{c(1, 15)}, \code{seq(1, 29, by = 7)}). Applies to every requested month.
-\code{NULL}, the default, fetches every day of it. Passing \code{days} implies
-\code{frequency = "daily"}, since a monthly mean has no days to select between.}
+\item{dates}{the exact dates to fetch, as \code{YYYYMMDD} strings,
+\code{YYYY-MM-DD} strings, or \code{Date} objects. \code{NULL}, the default, fetches every
+day of the requested months instead. Passing \code{dates} implies
+\code{frequency = "daily"} and replaces \code{years} and \code{months}, which must then not
+be given. See the Fetching specific dates section.}
 
 \item{mode}{\if{html}{\out{<char>}} \code{"reanalysis"} (the default) for the multi-year hindcast,
 or \code{"forecast"} for the analysis-and-forecast products, which run to about
@@ -108,34 +111,42 @@ Note what that costs: three months of daily data is 91 downloads rather than
 3, and 91 grids rather than 3 in memory. A decade of daily data over a large
 box will not fit in a laptop's RAM as an \code{sf} object, and is better fetched a
 season at a time.
+}
 
-\code{days} is the other way to keep that in hand: it takes day-of-month numbers
-and applies them to every requested month, so a decade can be sampled rather
-than fetched whole. Passing it implies \code{frequency = "daily"}, since selecting
-days of the month means nothing to a monthly mean.
+\section{Fetching specific dates}{
 
-\if{html}{\out{<div class="sourceCode">}}\preformatted{# The 1st and 15th of every month, 2005 to 2015: 264 days, not 4018
-accessEnvDat(vars = "SST", days = c(1, 15),
-             years = 2005:2015, months = 1:12, bounding_box = bb)
+\code{dates} is the other way to keep that in hand. It names the exact dates to
+fetch, so only the days that matter are downloaded:
 
-# Roughly weekly through a spring bloom
-accessEnvDat(vars = "CHL", days = seq(1, 29, by = 7),
-             years = 2015, months = 3:5, bounding_box = bb)
+\if{html}{\out{<div class="sourceCode">}}\preformatted{accessEnvDat(vars = "SST", dates = c("20150402", "20150517", "20150623"),
+             bounding_box = bb)
 }\if{html}{\out{</div>}}
 
-Passing \code{days} together with an explicit \code{frequency = "monthly"} is a
-contradiction rather than something to resolve by guessing, and is an error.
+This is the argument to use when matching daily data to observations. Survey
+dates differ from month to month, and a rule such as "the 1st and 15th" does
+not describe them. Take the dates from the observations themselves:
 
-Months are not the same length, so a day that does not exist in a given month
-is dropped from it: \code{days = 30} returns nothing for February and a value for
-April. That is the calendar rather than an error. Asking only for days that
-exist in none of the requested months — \verb{days = 30, months = 2} — is an error,
-since it describes an empty request.
+\if{html}{\out{<div class="sourceCode">}}\preformatted{accessEnvDat(vars = "SST", dates = unique(observations$date), bounding_box = bb)
+}\if{html}{\out{</div>}}
 
-Sampling days is not the same as averaging them. Two days a month is a sample
-of the month, with whatever weather fell on those dates; a monthly mean is the
-month. Which you want depends on whether the observations being matched are
-themselves instants or aggregates.
+\code{YYYYMMDD} strings, \code{YYYY-MM-DD} strings, and \code{Date} objects are all accepted,
+and may be mixed. Dates are sorted and deduplicated, so the result comes back
+in date order however the argument was written, and a date named twice is
+fetched once.
+
+\code{dates} says which time steps to fetch, so \code{years} and \code{months} are neither
+needed nor accepted alongside it. Passing it implies \code{frequency = "daily"},
+since naming a date means nothing to a monthly mean, and passing it with an
+explicit \code{frequency = "monthly"} is a contradiction rather than something to
+resolve by guessing.
+
+A date that does not exist — \code{"20150230"} — is an error naming it, rather than
+a silently dropped request.
+
+Fetching dates is not the same as averaging a month. Three dates are a sample
+of the month, with whatever weather fell on them; a monthly mean is the month.
+Which you want depends on whether the observations being matched are themselves
+instants or aggregates.
 
 Not every variable has a daily equivalent. \code{PH}, \code{PP}, \code{DIATO} and \code{DINO} are
 published as monthly composites only, and asking for them daily is refused
