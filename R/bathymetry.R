@@ -213,18 +213,115 @@ attach_bathymetry <- function(dat, bathy, vars = NULL, coords = c("lon", "lat"))
          "\nAvailable: ", paste(names(bathy), collapse = ", "), call. = FALSE)
   }
 
-  positions <- if (inherits(dat, "sf")) {
-    sf::st_coordinates(dat)
-  } else {
-    missing_coords <- setdiff(coords, names(dat))
-    if (length(missing_coords) > 0) {
-      stop("Coordinate column(s) not found: ", paste(missing_coords, collapse = ", "),
-           "\nPass `coords` if they are named differently.", call. = FALSE)
-    }
-    as.matrix(dat[coords])
-  }
+  positions <- positions_in_crs(dat, bathy, coords)
 
   extracted <- terra::extract(bathy[[vars]], positions)
   for (v in vars) dat[[v]] <- extracted[[v]]
+
+  report_unmatched(positions, extracted[[vars[1]]], bathy)
   dat
+}
+
+#' Put a table's coordinates into a raster's coordinate system
+#'
+#' @section Why this is not just `st_coordinates()`:
+#' `st_coordinates()` returns coordinates in whatever system the object carries.
+#' Handing those to [terra::extract()] treats them as the raster's own, so a set
+#' of observations in a projected CRS is read as though its metres were degrees.
+#' Every point then lands outside the grid and comes back `NA` — observations
+#' with no depth, in an area that plainly has depth, with nothing said about it.
+#'
+#' The CRS is reconciled here instead, so the caller does not have to know that
+#' bathymetry arrives in EPSG:4326 while their stations might be in a UTM zone.
+#'
+#' @param dat a data frame with coordinate columns, or an `sf` object
+#' @param target a `SpatRaster` whose CRS the coordinates should end up in
+#' @param coords names of the longitude and latitude columns, for data frames
+#' @return a two-column matrix in `target`'s coordinate system
+#' @keywords internal
+positions_in_crs <- function(dat, target, coords) {
+  target_crs <- sf::st_crs(terra::crs(target))
+
+  if (inherits(dat, "sf")) {
+    dat_crs <- sf::st_crs(dat)
+
+    if (is.na(dat_crs)) {
+      warning("The observations carry no CRS, so they are assumed to be in the ",
+              "same system as the raster (", format(target_crs$input), "). Set ",
+              "one with sf::st_crs() if they are not.", call. = FALSE)
+    } else if (!is.na(target_crs) && dat_crs != target_crs) {
+      dat <- sf::st_transform(dat, target_crs)
+    }
+    return(sf::st_coordinates(dat))
+  }
+
+  missing_coords <- setdiff(coords, names(dat))
+  if (length(missing_coords) > 0) {
+    stop("Coordinate column(s) not found: ", paste(missing_coords, collapse = ", "),
+         "\nPass `coords` if they are named differently.", call. = FALSE)
+  }
+  positions <- as.matrix(dat[coords])
+
+  # A plain data frame carries no CRS to check, so the only thing that can be
+  # checked is whether the numbers could be degrees at all. Projected
+  # coordinates are the common mistake and are obvious by magnitude.
+  if (!is.na(target_crs) && isTRUE(sf::st_is_longlat(target_crs))) {
+    looks_projected <- any(abs(positions[, 1]) > 180, na.rm = TRUE) ||
+      any(abs(positions[, 2]) > 90, na.rm = TRUE)
+    if (looks_projected) {
+      stop("Coordinates in '", coords[1], "'/'", coords[2], "' are outside the ",
+           "range of longitude and latitude,\nso they look projected rather ",
+           "than geographic. The raster is in ", format(target_crs$input), ".\n",
+           "Convert them first, e.g. with sf::st_as_sf(dat, coords = c(\"",
+           coords[1], "\", \"", coords[2], "\"), crs = <their EPSG>),\nand pass ",
+           "the sf object, which is reprojected for you.", call. = FALSE)
+    }
+  }
+  positions
+}
+
+#' Say how many points got nothing, and why
+#'
+#' A point can come back `NA` for two quite different reasons, and the remedy
+#' differs. Outside the grid means the bounding box was drawn too small. Inside
+#' it means the cell holds no depth — ETOPO calls it land, which at 4 arc-minutes
+#' happens readily to inshore stations, since a cell roughly 7 km across is land
+#' if most of it is.
+#'
+#' Reported rather than left to be discovered, because a covariate that is `NA`
+#' for a subset of observations quietly drops those rows from a model fit.
+#'
+#' @param positions the coordinate matrix that was extracted at
+#' @param values the extracted values of one layer
+#' @param bathy the raster they came from
+#' @return `NULL`, invisibly; called for the warning
+#' @keywords internal
+report_unmatched <- function(positions, values, bathy) {
+  missing <- is.na(values)
+  if (!any(missing)) return(invisible(NULL))
+
+  box <- terra::ext(bathy)
+  outside <- positions[, 1] < box$xmin | positions[, 1] > box$xmax |
+    positions[, 2] < box$ymin | positions[, 2] > box$ymax
+  outside[is.na(outside)] <- TRUE
+
+  n_outside <- sum(missing & outside)
+  n_inside <- sum(missing & !outside)
+
+  warning(sum(missing), " of ", length(values), " point(s) got no bathymetry.\n",
+          if (n_outside > 0) {
+            paste0("  ", n_outside, " fall outside the grid, which spans ",
+                   signif(box$xmin, 6), " to ", signif(box$xmax, 6), " lon and ",
+                   signif(box$ymin, 6), " to ", signif(box$ymax, 6), " lat.\n",
+                   "    Widen `bounding_box` in fetch_bathymetry() to cover them.\n")
+          },
+          if (n_inside > 0) {
+            paste0("  ", n_inside, " fall inside the grid on cells with no ",
+                   "depth, which ETOPO treats as land.\n",
+                   "    Inshore stations do this: a cell is land if most of it ",
+                   "is, so a station in\n    a narrow bay can sit in one. A ",
+                   "finer `resolution` in fetch_bathymetry() reduces it.\n")
+          },
+          call. = FALSE)
+  invisible(NULL)
 }

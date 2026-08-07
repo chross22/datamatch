@@ -211,3 +211,38 @@ test_that("matchData does not depend on the order periods appear in speciesDat",
   expect_equal(nrow(result), nrow(speciesDat))
   expect_equal(result$thetao[result$id == 2], 115)
 })
+
+test_that("a missing CRS is named, on whichever side it is missing", {
+  env <- sf::st_as_sf(
+    data.frame(x = rep(seq(-70, -68, by = 1), 2), y = rep(c(42, 43), each = 3),
+               SST = 1:6, YEAR = 2010L, MONTH = 1L, DAY = 1L),
+    coords = c("x", "y"), crs = 4326)
+  obs <- data.frame(lon = -69.5, lat = 42.2, YEAR = 2010L, MONTH = 1L)
+
+  # sf's own message - "crs not found: is it missing?" - is true but says
+  # neither which object nor what to do about it.
+  expect_error(
+    matchData(sf::st_as_sf(obs, coords = c("lon", "lat")), env),
+    "speciesDat has no coordinate reference system")
+
+  env_no_crs <- env
+  sf::st_crs(env_no_crs) <- NA
+  expect_error(
+    matchData(sf::st_as_sf(obs, coords = c("lon", "lat"), crs = 4326), env_no_crs),
+    "envDat has no coordinate reference system")
+})
+
+test_that("projected observations match the same cells as geographic ones", {
+  env <- sf::st_as_sf(
+    data.frame(x = rep(seq(-70, -68, by = 0.5), 3), y = rep(c(42, 42.5, 43), each = 5),
+               SST = 1:15, YEAR = 2010L, MONTH = 1L, DAY = 1L),
+    coords = c("x", "y"), crs = 4326)
+  obs <- data.frame(lon = c(-69.5, -68.5), lat = c(42.2, 42.7),
+                    YEAR = 2010L, MONTH = 1L)
+
+  geographic <- sf::st_as_sf(obs, coords = c("lon", "lat"), crs = 4326)
+  projected <- sf::st_transform(geographic, 32619)
+
+  expect_equal(suppressWarnings(matchData(projected, env))$SST,
+               suppressWarnings(matchData(geographic, env))$SST)
+})

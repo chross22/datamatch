@@ -42,6 +42,23 @@ matchData <- function(speciesDat, envDat,
 
   env_geom <- attr(envDat, "sf_column")
   env_vars <- setdiff(names(envDat), c("YEAR", "MONTH", "DAY", env_geom))
+
+  # Both sides need a CRS before they can be reconciled. Without one,
+  # st_transform() fails with "crs not found: is it missing?", which is true but
+  # does not say which object or what to do. Silently assuming a CRS would be
+  # worse: coordinates would be matched as though they were degrees, and every
+  # observation would join to whichever cell happened to be nearest in a
+  # meaningless space.
+  for (side in list(list(x = speciesDat, name = "speciesDat"),
+                    list(x = envDat, name = "envDat"))) {
+    if (is.na(sf::st_crs(side$x))) {
+      stop(side$name, " has no coordinate reference system, so it cannot be ",
+           "matched.\nSet one with sf::st_crs(", side$name,
+           ") <- 4326 for longitude/latitude,\nor the EPSG code the ",
+           "coordinates are actually in.", call. = FALSE)
+    }
+  }
+
   envDat <- sf::st_transform(envDat, sf::st_crs(speciesDat))
 
   # Give environmental variables that share a name with a species column an
