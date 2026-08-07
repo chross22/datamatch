@@ -5,3 +5,5 @@
 ^README\.Rmd$
 ^vignettes/.*\.html$
 ^vignettes/.*_files$
+^setup\.R$
+^.*\.pdf$
