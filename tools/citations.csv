@@ -1,0 +1,26 @@
+key,doi,url,first_author,year,title,container,volume,pages,checks,note
+noaanationalcentersforenvironmentalinformation2022,10.25921/fd45-gt74,,NOAA National Centers for Environmental Information,2022,ETOPO 2022 15 Arc-Second Global Relief Model,NOAA National Centers for Environmental Information,,,crossref,
+pante2013,10.32614/CRAN.package.marmap,,Pante,2013,"marmap: Import, Plot and Analyze Bathymetric and Topographic Data",CRAN: Contributed Packages,,,crossref,
+jutras2023,10.1038/s41467-023-38321-y,,Jutras,2023,Large-scale control of the retroflection of the Labrador Current,Nature Communications,14,,crossref,
+benimoat2026,10.5285/48d0bf43-0598-ceb2-e063-7086abc062f1,,Ben I Moat,2026,Atlantic meridional overturning circulation observed by the RAPID-MOCHA-WBTS (RAPID-Meridional Overturning Circulation and Heatflux Array-Western Boundary Time Series) array at 26N from 2004 to 2024 (v2024.1a).,NERC EDS British Oceanographic Data Centre NOC,,,crossref,
+europeanunioncopernicusmarineservice2018,10.48670/moi-00021,,European Union-Copernicus Marine Service,2018,Global Ocean Physics Reanalysis,Mercator Ocean International,,,crossref,
+europeanunioncopernicusmarineservice2018b,10.48670/moi-00019,,European Union-Copernicus Marine Service,2018,Global ocean biogeochemistry hindcast,Mercator Ocean International,,,crossref,
+europeanunioncopernicusmarineservice2022,10.48670/moi-00281,,European Union-Copernicus Marine Service,2022,"Global Ocean Colour (Copernicus-GlobColour), Bio-Geo-Chemical, L4 (monthly and interpolated) from Satellite Observations (1997-ongoing)",Mercator Ocean International,,,crossref,
+europeanunioncopernicusmarineservice2016,10.48670/moi-00016,,European Union-Copernicus Marine Service,2016,Global Ocean 1/12° Physics Analysis and Forecast updated Daily,Mercator Ocean International,,,crossref,
+europeanunioncopernicusmarineservice2019,10.48670/moi-00015,,European Union-Copernicus Marine Service,2019,Global Ocean Biogeochemistry Analysis and Forecast,Mercator Ocean International,,,crossref,
+pebesma2023,10.1201/9780429459016,,Pebesma,2023,Spatial Data Science,,,,crossref,
+hijmans2020,10.32614/CRAN.package.terra,,Hijmans,2020,terra: Spatial Data Analysis,CRAN: Contributed Packages,,,crossref,
+pierce2010,10.32614/CRAN.package.ncdf4,,Pierce,2010,ncdf4: Interface to Unidata netCDF (Version 4 or Earlier) Format Data Files,CRAN: Contributed Packages,,,crossref,
+wwwcpcncepnoaagov,,https://www.cpc.ncep.noaa.gov/products/precip/CWlink/pna/norm.nao.monthly.b5001.current.ascii.table,,,,,,,url,Generated from a scanned URL - fill in the fields by hand
+wwwcpcncepnoaagovb,,https://www.cpc.ncep.noaa.gov/products/precip/CWlink/daily_ao_index/monthly.ao.index.b50.current.ascii.table,,,,,,,url,Generated from a scanned URL - fill in the fields by hand
+pslnoaagov,,https://psl.noaa.gov/data/correlation/amon.us.long.data,,,,,,,url,Generated from a scanned URL - fill in the fields by hand
+pslnoaagovb,,https://psl.noaa.gov/data/correlation/pdo.data,,,,,,,url,Generated from a scanned URL - fill in the fields by hand
+datamarinecopernicuseub,,https://data.marine.copernicus.eu/register,,,,,,,url,Generated from a scanned URL - fill in the fields by hand
+datamarinecopernicuseuc,,https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/description,,,,,,,url,Generated from a scanned URL - fill in the fields by hand
+datamarinecopernicuseud,,https://data.marine.copernicus.eu/product/OCEANCOLOUR_GLO_BGC_L4_MY_009_104/description,,,,,,,url,Generated from a scanned URL - fill in the fields by hand
+datamarinecopernicuseue,,https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/description,,,,,,,url,Generated from a scanned URL - fill in the fields by hand
+helpmarinecopernicuseu,,https://help.marine.copernicus.eu/en/articles/4444611-how-to-cite-copernicus-marine-products-and-services,,,,,,,url,Generated from a scanned URL - fill in the fields by hand
+toolboxdocsmarinecopernicuseu,,https://toolbox-docs.marine.copernicus.eu/,,,,,,,url,Generated from a scanned URL - fill in the fields by hand
+wwwcpcncepnoaagovc,,https://www.cpc.ncep.noaa.gov/,,,,,,,url,Generated from a scanned URL - fill in the fields by hand
+pslnoaagovc,,https://psl.noaa.gov/data/climateindices/,,,,,,,url,Generated from a scanned URL - fill in the fields by hand
+marinecopernicuseu,,https://marine.copernicus.eu/access-data/,,,,,,,url,Generated from a scanned URL - fill in the fields by hand
