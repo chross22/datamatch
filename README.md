@@ -85,7 +85,7 @@ terrain, and basin-scale climate indices.
 ## Installation
 
 You can install the development version of datamatch from
-[GitHub](https://github.com/) with:
+[GitHub](https://github.com/chross22/datamatch) with:
 
 ``` r
 # install.packages("devtools")
