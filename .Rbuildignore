@@ -7,3 +7,6 @@
 ^vignettes/.*_files$
 ^setup\.R$
 ^.*\.pdf$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$

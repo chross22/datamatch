@@ -1,0 +1,73 @@
+url: https://chross22.github.io/datamatch/
+
+template:
+  bootstrap: 5
+
+reference:
+- title: Fetching Copernicus data
+  desc: >
+    Download environmental data by variable name, and fill the gaps satellite
+    products leave behind.
+  contents:
+  - accessEnvDat
+  - fill_satellite_gaps
+  - forecast_variables
+
+- title: Matching
+  desc: >
+    The spatiotemporal nearest-feature join, and the columns it adds.
+  contents:
+  - matchData
+  - covariate_columns
+
+- title: Resampling
+  desc: >
+    Moving between grids and time steps. Aggregating loses detail, which is the
+    safe direction; interpolating adds cells, not information.
+  contents:
+  - upscale_grid
+  - downscale_grid
+  - upscale_time
+  - downscale_time
+  - grid_resolution
+
+- title: Seafloor terrain
+  desc: >
+    Depth, slope, aspect, and TPI from NOAA ETOPO.
+  contents:
+  - fetch_bathymetry
+  - attach_bathymetry
+  - bathymetry_variables
+
+- title: Climate indices
+  desc: >
+    Basin-scale indices, their units, and the cache that expires on each
+    provider's publishing cadence.
+  contents:
+  - fetch_climate_index
+  - attach_climate_index
+  - climate_indices
+  - index_dictionary
+  - climate_index_status
+  - refresh_climate_index
+
+- title: Plotting
+  desc: >
+    Base-graphics views of what was downloaded and what it matched to. Each
+    returns the data it drew.
+  contents:
+  - plot_env
+  - plot_coverage
+  - plot_series
+  - plot_matched
+
+- title: Catalogs and lookup
+  desc: >
+    What is available, which dataset a variable comes from, and where it is
+    documented.
+  contents:
+  - variable_dictionary
+  - variable_dataset
+  - copernicus_variables
+  - product_url
+  - as_markdown
