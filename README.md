@@ -950,7 +950,7 @@ The series is fetched from the paper’s published source data, not
 recomputed. The authors derived it by seeding 966 virtual particles per
 week across a line at (53°N, 56.7°W)–(54.3°N, 52.0°W). Each was tracked
 for three years through GLORYS12V1 velocities with
-[OceanParcels](https://oceanparcels.org/). The index is the difference
+[OceanParcels](https://parcels-code.org/). The index is the difference
 between the counts crossing hydrographic sections on the Labrador and
 Scotian Shelves.
 
