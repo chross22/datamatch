@@ -1,6 +1,6 @@
 Package: datamatch
 Title: Fetch Copernicus Marine Data and Match It in Space and Time
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R: 
     person("Camille", "Ross", email = "camille.ross@maine.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-1428-2294"))
