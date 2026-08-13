@@ -4,7 +4,7 @@
 \alias{expected_steps}
 \title{How many source steps a target period should contain}
 \usage{
-expected_steps(keys, from, to)
+expected_steps(keys, from, to, per_day = 24)
 }
 \arguments{
 \item{keys}{output of \code{\link[=period_keys]{period_keys()}}}
@@ -12,6 +12,9 @@ expected_steps(keys, from, to)
 \item{from}{source resolution}
 
 \item{to}{target period}
+
+\item{per_day}{how many sub-daily steps a whole day holds, from
+\code{\link[=sub_daily_steps]{sub_daily_steps()}}. 24 for an hourly series, 8 for a three-hourly one.}
 }
 \value{
 numeric vector, one per row

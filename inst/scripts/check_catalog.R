@@ -41,12 +41,13 @@ suppressMessages(pkgload::load_all(quiet = TRUE))
 
 claims <- function() {
   rows <- list()
-  claim <- function(name, mode, frequency, entry, dataset_id) {
+  claim <- function(name, mode, frequency, entry, dataset_id,
+                    product_id = entry$product_id) {
     rows[[length(rows) + 1]] <<- data.frame(
       name = name,
       mode = mode,
       frequency = frequency,
-      product_id = entry$product_id,
+      product_id = product_id,
       dataset_id = dataset_id,
       variable = entry$variable,
       stringsAsFactors = FALSE
@@ -56,12 +57,21 @@ claims <- function() {
     for (name in names(catalog)) {
       entry <- catalog[[name]]
       claim(name, mode, "monthly", entry, entry$dataset_id)
-      # Daily identifiers are as load-bearing as monthly ones and drift the same
-      # way. NA is a deliberate "Copernicus publishes no daily version of this",
-      # not an omission, so there is nothing to check against the catalogue.
+      # Daily and hourly identifiers are as load-bearing as monthly ones and
+      # drift the same way. NA is a deliberate "Copernicus publishes no version
+      # of this at that step", not an omission, so there is nothing to check
+      # against the catalogue.
       daily <- entry$daily_dataset_id
       if (!is.null(daily) && !is.na(daily)) {
         claim(name, mode, "daily", entry, daily)
+      }
+      hourly <- entry$hourly_dataset_id
+      if (!is.null(hourly) && !is.na(hourly)) {
+        # The hourly wind lives in a different product from the monthly wind, so
+        # looking it up under the entry's own product would report it missing
+        # from a product that never held it.
+        claim(name, mode, "hourly", entry, hourly,
+              product_id = entry$hourly_product_id %||% entry$product_id)
       }
     }
   }

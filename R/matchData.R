@@ -11,9 +11,15 @@
 #' satellite retrievals, or one gridded product against another.
 #'
 #' @section Matching in time:
-#' The time period is `source`'s own resolution: daily data matches on
-#' year/month/day, monthly data (Copernicus `...P1M-m` means, say) on
-#' year/month, and annual data on year alone.
+#' The time period is `source`'s own resolution: hourly data matches on
+#' year/month/day/hour, daily data on year/month/day, monthly data (Copernicus
+#' `...P1M-m` means, say) on year/month, and annual data on year alone.
+#'
+#' Matching hourly needs `dat` to say which hour each row belongs to, in a column
+#' recognised the same way as the others — `HOUR`, `hour`, `hour_utc`, but not
+#' `obs_hour`, which does not begin with the word. On UTC, as the environmental
+#' data is: an observation timestamped in local time will match the wrong hour,
+#' and nothing in the join can detect that.
 #'
 #' That matters because a day-exact join against monthly data matches nothing. A
 #' monthly product carries one time step per month, while observations fall on
@@ -32,18 +38,20 @@
 #'
 #' @param dat <sf object> the points to add columns to: observations, stations,
 #'   tag positions, anything with coordinates and time. Needs year and month
-#'   columns, plus a day column when matching at daily resolution. Columns whose
-#'   names *begin* with those words are recognised, whatever their case, so
-#'   `Year` and `month_utc` work but `obs_month` does not — rename it, or pass it
-#'   as `MONTH`. Day-of-year names (`yearday`, `dayofyear`, `jday`, `doy` and the
-#'   like) are never used, even though some of them do begin with `year` or
-#'   `day`: they hold an ordinal day rather than a year or a day of the month. An
-#'   unrecognised name is named in the error, so nothing has to be guessed at.
+#'   columns, plus a day column when matching at daily resolution and an hour
+#'   column at hourly. Columns whose names *begin* with those words are
+#'   recognised, whatever their case, so `Year` and `month_utc` work but
+#'   `obs_month` does not — rename it, or pass it as `MONTH`. Day-of-year names
+#'   (`yearday`, `dayofyear`, `jday`, `doy` and the like) are never used, even
+#'   though some of them do begin with `year` or `day`: they hold an ordinal day
+#'   rather than a year or a day of the month. An unrecognised name is named in
+#'   the error, so nothing has to be guessed at.
 #' @param source <sf object> the points to take values from, typically a grid
-#'   from [accessEnvDat()]. Must carry `YEAR`/`MONTH`/`DAY`.
-#' @param temporal_resolution <char> one of `"auto"` (default), `"day"`,
-#'   `"month"`, or `"year"`. `"auto"` uses the step `accessEnvDat()` recorded on
-#'   `source`, or infers it from `source`'s time steps.
+#'   from [accessEnvDat()]. Must carry `YEAR`/`MONTH`/`DAY`, and `HOUR` as well
+#'   when matching hourly.
+#' @param temporal_resolution <char> one of `"auto"` (default), `"hour"`,
+#'   `"day"`, `"month"`, or `"year"`. `"auto"` uses the step `accessEnvDat()`
+#'   recorded on `source`, or infers it from `source`'s time steps.
 #' @param speciesDat,envDat deprecated names for `dat` and `source`. Still
 #'   accepted, with a warning.
 #' @return <sf object> `dat` with `source`'s columns joined on, one row per input
@@ -61,7 +69,8 @@
 #'   [attach_climate_index()] for covariates that are not matched this way
 #' @export
 matchData <- function(dat, source,
-                      temporal_resolution = c("auto", "day", "month", "year"),
+                      temporal_resolution = c("auto", "hour", "day", "month",
+                                              "year"),
                       speciesDat = NULL, envDat = NULL) {
 
   # The old names were specific to one use of a function that was never specific
@@ -89,14 +98,24 @@ matchData <- function(dat, source,
     temporal_resolution <- detect_temporal_resolution(source)
   }
   match_keys <- switch(temporal_resolution,
+                       hour = c("YEAR", "MONTH", "DAY", "HOUR"),
                        day = c("YEAR", "MONTH", "DAY"),
                        month = c("YEAR", "MONTH"),
                        year = "YEAR")
 
+  # Matching on the hour needs `source` to be stamped with one. Asking for it
+  # against data that has none would otherwise fail inside the period loop, on a
+  # column that is missing rather than empty.
+  if (temporal_resolution == "hour" && !"HOUR" %in% names(source)) {
+    stop("temporal_resolution = \"hour\" was given, but `source` has no HOUR ",
+         "column.\nOnly an hourly fetch - accessEnvDat(frequency = \"hourly\") ",
+         "- carries one. Match at\n\"day\" or coarser instead.", call. = FALSE)
+  }
+
   dat <- standardize_time_columns(dat, match_keys)
 
   source_geom <- attr(source, "sf_column")
-  source_vars <- setdiff(names(source), c("YEAR", "MONTH", "DAY", source_geom))
+  source_vars <- setdiff(names(source), c(time_columns(), source_geom))
 
   # Both sides need a CRS before they can be reconciled. Without one,
   # st_transform() fails with "crs not found: is it missing?", which is true but
@@ -205,9 +224,9 @@ matchData <- function(dat, source,
 #' fine leaves them unmatched and warns. Pass `temporal_resolution` explicitly to
 #' override.
 #'
-#' @param x <sf object> an object with YEAR/MONTH/DAY columns, typically the
-#'   `source` side of a match
-#' @return one of "day", "month", or "year"
+#' @param x <sf object> an object with YEAR/MONTH/DAY columns, and HOUR when the
+#'   data is hourly; typically the `source` side of a match
+#' @return one of "hour", "day", "month", or "year"
 #' @keywords internal
 detect_temporal_resolution <- function(x) {
   # accessEnvDat() knows which dataset it fetched, so it records the step rather
@@ -216,8 +235,19 @@ detect_temporal_resolution <- function(x) {
   # monthly data by inspection, and guessing monthly would drop the day from the
   # match.
   recorded <- attr(x, "datamatch_step")
-  if (!is.null(recorded) && recorded %in% c("day", "month", "year")) {
+  if (!is.null(recorded) && recorded %in% c("hour", "day", "month", "year")) {
     return(recorded)
+  }
+
+  # An HOUR column exists only on an hourly fetch, and nothing else in the
+  # package produces one, so its presence is evidence rather than a guess.
+  # Checked before the day heuristic, which hourly data would otherwise satisfy
+  # on its way past.
+  if ("HOUR" %in% names(x)) {
+    hours <- sf::st_drop_geometry(x)[c("YEAR", "MONTH", "DAY", "HOUR")]
+    hours_per_day <- tapply(hours$HOUR, paste(hours$YEAR, hours$MONTH, hours$DAY),
+                            function(h) length(unique(h)))
+    if (any(hours_per_day > 1)) return("hour")
   }
 
   times <- unique(sf::st_drop_geometry(x)[c("YEAR", "MONTH", "DAY")])

@@ -1,6 +1,6 @@
 Package: datamatch
 Title: Fetch Copernicus Marine Data and Match It in Space and Time
-Version: 0.1.0
+Version: 0.2.0
 Authors@R: 
     person("Camille", "Ross", email = "camille.ross@maine.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-1428-2294"))
@@ -10,12 +10,13 @@ Description: Downloads environmental data from the Copernicus Marine Service
     either side may be species observations, survey stations, tag positions, or
     another gridded product. Variables are requested by familiar names such as
     'SST' rather than product-specific codes; monthly means, whole daily
-    periods, or named dates can be fetched, in parallel and cached; and
-    reanalysis or analysis-and-forecast products can be used interchangeably.
-    Also provides spatial and temporal resampling for combining products of
-    different resolution, gap filling for satellite ocean colour, seafloor
-    terrain from NOAA ETOPO, basin-scale climate indices, and plots for
-    inspecting what was downloaded. Available products and variables are listed
+    periods, named dates, or hourly fields can be fetched, in parallel and
+    cached; and reanalysis or analysis-and-forecast products can be used
+    interchangeably. Physical, biogeochemical, satellite ocean colour and
+    surface wind products are covered. Also provides spatial and temporal
+    resampling for combining products of different resolution, gap filling for
+    satellite ocean colour, seafloor terrain from NOAA ETOPO, basin-scale
+    climate indices, and plots for inspecting what was downloaded. Available products and variables are listed
     under the Access Data tab on the Copernicus Marine Service website
     (<https://marine.copernicus.eu/access-data/>).
 License: MIT + file LICENSE

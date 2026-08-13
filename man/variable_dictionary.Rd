@@ -6,13 +6,14 @@
 \title{Printable dictionary of variable names}
 \usage{
 variable_dictionary(
-  product = c("all", "physical", "biogeochemical", "satellite")
+  product = c("all", "physical", "biogeochemical", "satellite", "wind")
 )
 
 \method{print}{datamatch_dictionary}(x, ...)
 }
 \arguments{
-\item{product}{filter to \code{"physical"}, \code{"biogeochemical"}, or \code{"all"}}
+\item{product}{filter to \code{"physical"}, \code{"biogeochemical"}, \code{"satellite"},
+\code{"wind"}, or \code{"all"}}
 
 \item{x}{a \code{datamatch_dictionary}}
 
@@ -30,6 +31,7 @@ without leaving the console.
 \examples{
 variable_dictionary()
 variable_dictionary("biogeochemical")
+variable_dictionary("wind")
 
 # As a plain data frame, for programmatic use
 as.data.frame(variable_dictionary())

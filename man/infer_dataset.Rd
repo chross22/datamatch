@@ -7,7 +7,7 @@
 infer_dataset(
   vars,
   mode = c("reanalysis", "forecast"),
-  frequency = c("monthly", "daily")
+  frequency = c("monthly", "daily", "hourly")
 )
 }
 \arguments{
@@ -15,7 +15,7 @@ infer_dataset(
 
 \item{mode}{\code{"reanalysis"} or \code{"forecast"}}
 
-\item{frequency}{\code{"monthly"} or \code{"daily"}}
+\item{frequency}{\code{"monthly"}, \code{"daily"}, or \code{"hourly"}}
 }
 \value{
 \code{list(product_id =, dataset_id =)}

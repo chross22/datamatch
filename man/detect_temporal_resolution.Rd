@@ -7,11 +7,11 @@
 detect_temporal_resolution(x)
 }
 \arguments{
-\item{x}{\if{html}{\out{<sf object>}} an object with YEAR/MONTH/DAY columns, typically the
-\code{source} side of a match}
+\item{x}{\if{html}{\out{<sf object>}} an object with YEAR/MONTH/DAY columns, and HOUR when the
+data is hourly; typically the \code{source} side of a match}
 }
 \value{
-one of "day", "month", or "year"
+one of "hour", "day", "month", or "year"
 }
 \description{
 Reads the resolution off the time steps actually present: more than one day

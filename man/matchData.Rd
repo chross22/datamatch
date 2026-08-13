@@ -7,7 +7,7 @@
 matchData(
   dat,
   source,
-  temporal_resolution = c("auto", "day", "month", "year"),
+  temporal_resolution = c("auto", "hour", "day", "month", "year"),
   speciesDat = NULL,
   envDat = NULL
 )
@@ -15,20 +15,22 @@ matchData(
 \arguments{
 \item{dat}{\if{html}{\out{<sf object>}} the points to add columns to: observations, stations,
 tag positions, anything with coordinates and time. Needs year and month
-columns, plus a day column when matching at daily resolution. Columns whose
-names \emph{begin} with those words are recognised, whatever their case, so
-\code{Year} and \code{month_utc} work but \code{obs_month} does not — rename it, or pass it
-as \code{MONTH}. Day-of-year names (\code{yearday}, \code{dayofyear}, \code{jday}, \code{doy} and the
-like) are never used, even though some of them do begin with \code{year} or
-\code{day}: they hold an ordinal day rather than a year or a day of the month. An
-unrecognised name is named in the error, so nothing has to be guessed at.}
+columns, plus a day column when matching at daily resolution and an hour
+column at hourly. Columns whose names \emph{begin} with those words are
+recognised, whatever their case, so \code{Year} and \code{month_utc} work but
+\code{obs_month} does not — rename it, or pass it as \code{MONTH}. Day-of-year names
+(\code{yearday}, \code{dayofyear}, \code{jday}, \code{doy} and the like) are never used, even
+though some of them do begin with \code{year} or \code{day}: they hold an ordinal day
+rather than a year or a day of the month. An unrecognised name is named in
+the error, so nothing has to be guessed at.}
 
 \item{source}{\if{html}{\out{<sf object>}} the points to take values from, typically a grid
-from \code{\link[=accessEnvDat]{accessEnvDat()}}. Must carry \code{YEAR}/\code{MONTH}/\code{DAY}.}
+from \code{\link[=accessEnvDat]{accessEnvDat()}}. Must carry \code{YEAR}/\code{MONTH}/\code{DAY}, and \code{HOUR} as well
+when matching hourly.}
 
-\item{temporal_resolution}{\if{html}{\out{<char>}} one of \code{"auto"} (default), \code{"day"},
-\code{"month"}, or \code{"year"}. \code{"auto"} uses the step \code{accessEnvDat()} recorded on
-\code{source}, or infers it from \code{source}'s time steps.}
+\item{temporal_resolution}{\if{html}{\out{<char>}} one of \code{"auto"} (default), \code{"hour"},
+\code{"day"}, \code{"month"}, or \code{"year"}. \code{"auto"} uses the step \code{accessEnvDat()}
+recorded on \code{source}, or infers it from \code{source}'s time steps.}
 
 \item{speciesDat, envDat}{deprecated names for \code{dat} and \code{source}. Still
 accepted, with a warning.}
@@ -50,9 +52,15 @@ satellite retrievals, or one gridded product against another.
 }
 \section{Matching in time}{
 
-The time period is \code{source}'s own resolution: daily data matches on
-year/month/day, monthly data (Copernicus \code{...P1M-m} means, say) on
-year/month, and annual data on year alone.
+The time period is \code{source}'s own resolution: hourly data matches on
+year/month/day/hour, daily data on year/month/day, monthly data (Copernicus
+\code{...P1M-m} means, say) on year/month, and annual data on year alone.
+
+Matching hourly needs \code{dat} to say which hour each row belongs to, in a column
+recognised the same way as the others — \code{HOUR}, \code{hour}, \code{hour_utc}, but not
+\code{obs_hour}, which does not begin with the word. On UTC, as the environmental
+data is: an observation timestamped in local time will match the wrong hour,
+and nothing in the join can detect that.
 
 That matters because a day-exact join against monthly data matches nothing. A
 monthly product carries one time step per month, while observations fall on

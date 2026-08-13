@@ -867,3 +867,73 @@ test_that("terra's unknown-calendar warning is muffled, and nothing else is", {
   # The value passes through untouched.
   expect_equal(without_calendar_warning({ warning("unknown calendar"); 42 }), 42)
 })
+
+# ---- layer names ------------------------------------------------------------
+
+test_that("layer_codes strips terra's decorations", {
+  fake <- function(names) {
+    r <- terra::rast(nrows = 2, ncols = 2, nlyrs = length(names))
+    names(r) <- names
+    r
+  }
+
+  # A plain 2-D variable in a single-step file.
+  expect_equal(layer_codes(fake("mlotst")), "mlotst")
+  # A depth suffix, which carries its own trailing time index.
+  expect_equal(layer_codes(fake(c("so_depth=0.494025_1", "so_depth=1.541375_1"))),
+               c("so", "so"))
+  # An hourly file: one code, 24 time indices.
+  expect_equal(layer_codes(fake(c("eastward_wind_1", "eastward_wind_14"))),
+               c("eastward_wind", "eastward_wind"))
+})
+
+test_that("layer_depths reads the depth back off the layer name", {
+  fake <- function(names) {
+    r <- terra::rast(nrows = 2, ncols = 2, nlyrs = length(names))
+    names(r) <- names
+    r
+  }
+
+  expect_equal(layer_depths(fake(c("so_depth=0.494025_1", "so_depth=5727.916992_1"))),
+               c(0.494025, 5727.916992))
+  # A two-dimensional variable has no depth at all.
+  expect_true(all(is.na(layer_depths(fake(c("mlotst", "zos"))))))
+})
+
+test_that("read_day_deepest keeps the deepest wet level in each cell", {
+  # Three depth levels over four cells, with the sea floor at a different level
+  # in each: one wet to the bottom, one to the middle, one surface-only, one dry.
+  r <- terra::rast(nrows = 2, ncols = 2, nlyrs = 3, xmin = 0, xmax = 2,
+                   ymin = 0, ymax = 2, crs = "EPSG:4326")
+  terra::values(r) <- cbind(c(30, 31, 32, NA),
+                            c(33, 34, NA, NA),
+                            c(35, NA, NA, NA))
+  names(r) <- c("so_depth=1_1", "so_depth=10_1", "so_depth=100_1")
+
+  path <- file.path(tempdir(), "deepest.tif")
+  terra::writeRaster(r, path, overwrite = TRUE)
+  on.exit(unlink(path), add = TRUE)
+
+  out <- read_day_deepest(list(ofile = path, year = 2015L, month = 6L, day = 1L),
+                          code = "so", name = "BOTS")
+
+  # The dry cell is dropped; the other three take their own deepest wet value,
+  # and the depth it came from travels with it.
+  expect_equal(nrow(out), 3)
+  expect_equal(out$BOTS, c(35, 34, 32))
+  expect_equal(out$BOTS_depth, c(100, 10, 1))
+  expect_equal(unique(out$YEAR), 2015L)
+})
+
+test_that("read_day_deepest refuses a file with no depth column to search", {
+  r <- terra::rast(nrows = 2, ncols = 2, nlyrs = 1)
+  terra::values(r) <- 1:4
+  names(r) <- "so"
+  path <- file.path(tempdir(), "flat.tif")
+  terra::writeRaster(r, path, overwrite = TRUE)
+  on.exit(unlink(path), add = TRUE)
+
+  item <- list(ofile = path, year = 2015L, month = 6L, day = 1L)
+  expect_error(read_day_deepest(item, code = "so", name = "BOTS"),
+               "no depth axis")
+})

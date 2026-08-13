@@ -27,11 +27,19 @@ of SST and SSS is two requests where the reanalysis is one.
 \item \strong{Some codes differ.} Bottom temperature is \code{bottomT} in the
 reanalysis and \code{tob} in the forecast. Reusing the reanalysis code would
 produce a failed download.
+\item \strong{\code{BOTS} stops being derived.} The forecast publishes sea-floor
+salinity as \code{sob}, so what the reanalysis has to compute from the
+three-dimensional field is a plain variable request here.
 }
 
 Satellite variables have no forecast: ocean colour is observation, and an
 observation of the future does not exist. \code{CHL}, \code{PP}, \code{DIATO}, and \code{DINO} are
 therefore absent here, and asking for them in forecast mode says so.
+
+Neither do the wind variables, for a different reason. Copernicus publishes a
+near-real-time wind analysis, but it is hourly only and reaches the present
+rather than past it, so there is no monthly forecast field to map onto. It is
+an analysis of what the wind has just done, not a prediction.
 }
 \examples{
 names(forecast_variables())

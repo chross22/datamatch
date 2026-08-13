@@ -10,7 +10,7 @@
 #' }
 #' @export
 covariate_columns <- function(env_dat) {
-  setdiff(names(env_dat), c("YEAR", "MONTH", "DAY", attr(env_dat, "sf_column")))
+  setdiff(names(env_dat), c(time_columns(), attr(env_dat, "sf_column")))
 }
 
 #' Fill satellite gaps with the model equivalent

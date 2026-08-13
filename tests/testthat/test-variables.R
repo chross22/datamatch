@@ -15,11 +15,20 @@ test_that("every catalog entry is fully specified", {
 test_that("catalog names and Copernicus codes are each unique", {
   catalog <- copernicus_variables()
   codes <- vapply(catalog, function(entry) entry$variable, character(1))
+  derived <- vapply(catalog, function(entry) !is.null(entry$derived), logical(1))
 
-  # A duplicated name would shadow an entry; a duplicated code would make two
-  # names resolve to the same column and collide on rename.
+  # A duplicated name would shadow an entry; a duplicated code among the
+  # variables that are requested outright would make two names resolve to the
+  # same column and collide on rename.
   expect_equal(anyDuplicated(names(catalog)), 0)
-  expect_equal(anyDuplicated(codes), 0)
+  expect_equal(anyDuplicated(codes[!derived]), 0)
+
+  # A derived entry is the exception, and deliberately so: it names the code it
+  # is computed *from*, which some other entry publishes under. BOTS reads `so`,
+  # which is SSS. Resolving a raw code has to ignore the derived entry for that
+  # reason, which is what catalog_entry() does.
+  expect_true(all(codes[derived] %in% codes[!derived]))
+  expect_equal(catalog_entry("so")$label, "Sea surface salinity")
 })
 
 test_that("variable_dictionary tabulates the catalog", {
@@ -36,14 +45,22 @@ test_that("the dictionary can be filtered by product family", {
   physical <- variable_dictionary("physical")
   biogeochemical <- variable_dictionary("biogeochemical")
   satellite <- variable_dictionary("satellite")
+  wind <- variable_dictionary("wind")
 
   expect_true("SST" %in% physical$name)
   expect_true("CHL_MODEL" %in% biogeochemical$name)
   expect_true("CHL" %in% satellite$name)
   expect_false("SST" %in% satellite$name)
+  expect_true("UWND" %in% wind$name)
 
-  # The three families must partition the catalog.
-  expect_equal(nrow(physical) + nrow(biogeochemical) + nrow(satellite),
+  # Wind's dataset id contains "_phy_" as well - it is physics, of the
+  # atmosphere - so it must not fall in with the GLORYS variables.
+  expect_false("UWND" %in% physical$name)
+  expect_false("SST" %in% wind$name)
+
+  # The four families must partition the catalog.
+  expect_equal(nrow(physical) + nrow(biogeochemical) + nrow(satellite) +
+                 nrow(wind),
                nrow(variable_dictionary("all")))
 })
 
@@ -371,4 +388,95 @@ test_that("daily variables from different datasets are still refused together", 
     suppressMessages(infer_dataset(c("CHL", "CHL_MODEL"), frequency = "daily")),
     "different Copernicus datasets"
   )
+})
+
+# ---- wind -------------------------------------------------------------------
+
+test_that("the wind variables come from the wind product", {
+  for (name in wind_variables()) {
+    entry <- catalog_entry(name)
+    expect_equal(entry$product_id, "WIND_GLO_PHY_CLIMATE_L4_MY_012_003")
+    expect_equal(entry$dataset_id, "cmems_obs-wind_glo_phy_my_l4_P1M")
+  }
+  expect_setequal(wind_variables(),
+                  c("WSPD", "UWND", "VWND", "TAUX", "TAUY", "TAU"))
+})
+
+test_that("wind has no daily dataset, and the error says what to do instead", {
+  # The gap is in the middle of the range rather than below it: Copernicus
+  # publishes this wind hourly and monthly and nothing between. So "fetch it
+  # monthly" is the wrong advice, and the message must not give it.
+  expect_error(infer_dataset("UWND", frequency = "daily"), "no daily dataset")
+  expect_error(infer_dataset("UWND", frequency = "daily"), "hourly or monthly")
+  expect_error(infer_dataset("UWND", frequency = "daily"), "upscale_time")
+
+  expect_true(is.na(variable_dataset("UWND", frequency = "daily")[["UWND"]]))
+})
+
+test_that("the hourly wind product carries components but not magnitudes", {
+  hourly <- variable_dataset(c("UWND", "VWND", "TAUX", "TAUY"),
+                             frequency = "hourly")
+  expect_true(all(grepl("PT1H", hourly)))
+
+  # WSPD and TAU are magnitudes the hourly product leaves to be computed.
+  expect_true(all(is.na(variable_dataset(c("WSPD", "TAU"), frequency = "hourly"))))
+  expect_error(infer_dataset("WSPD", frequency = "hourly"), "no hourly dataset")
+  expect_error(infer_dataset("WSPD", frequency = "hourly"), "components")
+})
+
+test_that("only wind is hourly, and the ocean reanalyses say so", {
+  expect_true(all(is.na(variable_dataset(c("SST", "CHL", "NO3"),
+                                         frequency = "hourly"))))
+  expect_error(infer_dataset("SST", frequency = "hourly"),
+               "ocean reanalyses are daily at")
+})
+
+test_that("wind has no forecast, and the error distinguishes it from satellite", {
+  expect_error(infer_dataset("UWND", mode = "forecast"), "No forecast exists")
+  expect_error(infer_dataset("UWND", mode = "forecast"), "hourly only")
+  # Not the satellite explanation, which is a different reason.
+  expect_error(infer_dataset("UWND", mode = "forecast"),
+               "reaches the\npresent rather than past it")
+})
+
+# ---- bottom salinity --------------------------------------------------------
+
+test_that("BOTS is derived in the reanalysis and published in the forecast", {
+  reanalysis <- catalog_entry("BOTS")
+  expect_equal(reanalysis$variable, "so")
+  expect_equal(reanalysis$derived, list(from = "so", how = "deepest_level"))
+
+  # The forecast publishes sea-floor salinity outright, so the derivation must
+  # not survive the merge - it would fetch a whole depth column for nothing.
+  forecast <- catalog_entry("BOTS", mode = "forecast")
+  expect_equal(forecast$variable, "sob")
+  expect_null(forecast$derived)
+})
+
+test_that("a derived variable must be fetched on its own", {
+  expect_null(derived_request(c("SST", "SSS")))
+  expect_equal(derived_request("BOTS")$code, "so")
+
+  # Its depth range is the whole column, which no surface variable wants.
+  expect_error(derived_request(c("SST", "BOTS")), "must be fetched on its own")
+  expect_error(derived_request(c("SST", "BOTS")), "full depth column")
+
+  # In forecast mode there is nothing to derive, so no such restriction.
+  expect_null(derived_request(c("BOTT", "BOTS"), mode = "forecast"))
+})
+
+test_that("the hourly wind reports its own product, not the monthly one", {
+  # Two separate Copernicus products with separate DOIs, so an hourly fetch that
+  # named the monthly product would send a reader to the wrong thing to cite.
+  monthly <- infer_dataset("UWND")
+  hourly <- infer_dataset("UWND", frequency = "hourly")
+
+  expect_equal(monthly$product_id, "WIND_GLO_PHY_CLIMATE_L4_MY_012_003")
+  expect_equal(hourly$product_id, "WIND_GLO_PHY_L4_MY_012_006")
+  expect_false(monthly$dataset_id == hourly$dataset_id)
+
+  # Everything else is served by one product at every step, so the entry's own
+  # product stands and nothing changes with frequency.
+  expect_equal(infer_dataset("SST")$product_id,
+               infer_dataset("SST", frequency = "daily")$product_id)
 })

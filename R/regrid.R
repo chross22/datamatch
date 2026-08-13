@@ -198,7 +198,7 @@ regrid <- function(env_dat, to, vars = NULL, method, direction,
   target <- target_template(env_dat, to, source_res, direction)
 
   crs <- sf::st_crs(env_dat)
-  time_cols <- intersect(c("YEAR", "MONTH", "DAY"), names(env_dat))
+  time_cols <- intersect(time_columns(), names(env_dat))
   times <- sf::st_drop_geometry(env_dat)[time_cols]
   steps <- unique(times)
 

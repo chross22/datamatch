@@ -18,4 +18,14 @@ the catalog entry, or \code{NULL} if the variable is not in the catalog
 Either identifier resolves, so a call that passes raw codes gets the same
 dataset inference as one using catalog names.
 }
+\section{Codes shared by two names}{
+
+A derived entry names the code it is computed \emph{from}, so that code belongs to
+two entries: \code{so} is both \code{SSS}, which is what Copernicus publishes under it,
+and the input to \code{BOTS}, which is not. Resolving a raw code therefore
+considers only the entries that request it directly. Asking for \code{"so"} gets
+surface salinity, which is what the code means; bottom salinity is reachable
+by its catalog name, which is the only thing that distinguishes it.
+}
+
 \keyword{internal}

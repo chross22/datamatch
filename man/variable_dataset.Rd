@@ -7,7 +7,7 @@
 variable_dataset(
   vars,
   mode = c("reanalysis", "forecast"),
-  frequency = c("monthly", "daily")
+  frequency = c("monthly", "daily", "hourly")
 )
 }
 \arguments{
@@ -15,12 +15,12 @@ variable_dataset(
 
 \item{mode}{\code{"reanalysis"} (the default) or \code{"forecast"}}
 
-\item{frequency}{\code{"monthly"} (the default) or \code{"daily"}}
+\item{frequency}{\code{"monthly"} (the default), \code{"daily"}, or \code{"hourly"}}
 }
 \value{
 a named character vector of dataset identifiers, \code{NA} for names not in
-the catalog and, when \code{frequency = "daily"}, for catalog variables that have
-no daily dataset
+the catalog and, when \code{frequency} is \code{"daily"} or \code{"hourly"}, for catalog
+variables that have no dataset at that step
 }
 \description{
 Variables in one Copernicus dataset can be fetched together; variables from
@@ -32,4 +32,7 @@ variable_dataset(c("SST", "SSS", "CHL"))
 
 # PP and the phytoplankton types are monthly composites only
 variable_dataset(c("SST", "CHL", "PP"), frequency = "daily")
+
+# Wind is the other way round: hourly or monthly, never daily
+variable_dataset(c("UWND", "TAU"), frequency = "hourly")
 }

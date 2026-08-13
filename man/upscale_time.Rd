@@ -6,7 +6,7 @@
 \usage{
 upscale_time(
   env_dat,
-  to = c("month", "year"),
+  to = c("month", "year", "day"),
   vars = NULL,
   method = "mean",
   min_coverage = 0.5,
@@ -16,7 +16,8 @@ upscale_time(
 \arguments{
 \item{env_dat}{an \code{sf} POINT object from \code{\link[=accessEnvDat]{accessEnvDat()}}}
 
-\item{to}{the target period: \code{"month"} or \code{"year"}}
+\item{to}{the target period: \code{"day"}, \code{"month"}, or \code{"year"}. \code{"day"} requires
+hourly input, which only the wind variables have.}
 
 \item{vars}{columns to aggregate; \code{NULL} uses all covariate columns}
 
@@ -30,16 +31,36 @@ value, from 0 to 1}
 steps behind each value}
 }
 \value{
-an \code{sf} POINT object with one row per cell per target period. Monthly
-output is stamped \code{DAY = 1}; annual output \verb{MONTH = 1, DAY = 1}, matching what
+an \code{sf} POINT object with one row per cell per target period. Daily
+output keeps its \code{YEAR}/\code{MONTH}/\code{DAY} and drops \code{HOUR}; monthly output is
+stamped \code{DAY = 1}; annual output \verb{MONTH = 1, DAY = 1}, matching what
 \code{\link[=accessEnvDat]{accessEnvDat()}} returns for non-daily products so that
 \code{\link[=matchData]{matchData()}} reads the resolution back correctly.
 }
 \description{
-Combines the time steps falling inside each target period into one value, so a
-daily product becomes monthly means, or a monthly one becomes annual. The grid
-is untouched — every cell keeps its own series, aggregated in place.
+Combines the time steps falling inside each target period into one value, so an
+hourly product becomes daily means, a daily one monthly, or a monthly one
+annual. The grid is untouched — every cell keeps its own series, aggregated in
+place.
 }
+\section{Hourly to daily}{
+
+This is the route to a daily wind field. Copernicus publishes its L4 wind
+hourly and monthly and nothing between, so \code{frequency = "daily"} is refused
+for the wind variables; aggregating the hourly field is how a daily mean is
+produced, and doing it here rather than inside \code{\link[=accessEnvDat]{accessEnvDat()}} keeps the
+choice of summary — mean wind, or the day's maximum gust — with the caller.
+
+The \code{HOUR} column is consumed rather than carried through: it is the axis
+being aggregated away. The result is stamped \code{YEAR}/\code{MONTH}/\code{DAY} like any
+daily product, so \code{\link[=matchData]{matchData()}} reads it back as daily.
+
+Note that a daily mean of wind \emph{components} is not the same as a daily mean
+\emph{speed}. Averaging \code{UWND} and \code{VWND} over a day and taking the magnitude gives
+the net displacement of air; averaging the speed gives how hard it blew. On a
+day the wind reversed, the first is near zero and the second is not.
+}
+
 \section{Choosing a method}{
 
 As with \code{\link[=upscale_grid]{upscale_grid()}}, the summary that belongs in a period depends on the

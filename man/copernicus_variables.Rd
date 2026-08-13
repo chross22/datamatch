@@ -19,14 +19,16 @@ produces a failed download rather than an obvious mistake.
 }
 \details{
 Entries come from the global reanalyses: physical variables from
-\code{GLOBAL_MULTIYEAR_PHY_001_030} (GLORYS12V1) and biogeochemical ones from
-\code{GLOBAL_MULTIYEAR_BGC_001_029}.
+\code{GLOBAL_MULTIYEAR_PHY_001_030} (GLORYS12V1), biogeochemical ones from
+\code{GLOBAL_MULTIYEAR_BGC_001_029}, and surface wind from
+\code{WIND_GLO_PHY_CLIMATE_L4_MY_012_003}.
 }
-\section{Monthly and daily}{
+\section{Monthly, daily and hourly}{
 
 \code{dataset_id} is the monthly mean; \code{daily_dataset_id} is the daily one, which
-\code{\link[=accessEnvDat]{accessEnvDat()}} uses when given \code{frequency = "daily"}. It is \code{NA} where no
-daily equivalent exists, and those gaps are not incidental:
+\code{\link[=accessEnvDat]{accessEnvDat()}} uses when given \code{frequency = "daily"}, and
+\code{hourly_dataset_id} the hourly one. Either is \code{NA} where no such equivalent
+exists, and those gaps are not incidental:
 
 \itemize{
 \item \strong{\code{PH}} — the daily biogeochemical reanalysis carries \code{chl}, \code{no3},
@@ -35,7 +37,32 @@ daily equivalent exists, and those gaps are not incidental:
 monthly composite only.
 \item \strong{\code{DIATO}, \code{DINO}} — the daily ocean colour dataset carries total
 chlorophyll alone. The phytoplankton functional types are monthly.
+\item \strong{The wind variables} — have no daily dataset at all. Copernicus
+publishes this wind monthly or hourly and nothing between, so
+\code{frequency = "daily"} is refused for them. Aggregate the hourly field
+with \code{\link[=upscale_time]{upscale_time()}} if a daily mean is what you need.
+\item \strong{\code{WSPD}, \code{TAU}} — the hourly wind product carries the vector
+components but not the two magnitudes, which it leaves to be computed
+from them. Both are monthly only.
 }
+
+Only the wind variables are hourly, so \code{hourly_dataset_id} is \code{NA} throughout
+the ocean catalog. The ocean reanalyses are published no finer than daily.
+}
+
+\section{Bottom salinity}{
+
+\code{BOTS} is the one entry that is not a straight variable request. GLORYS12V1
+publishes potential temperature at the sea floor (\code{bottomT}) but no salinity
+counterpart, so in reanalysis mode \code{BOTS} is \emph{derived}: the salinity field is
+fetched over the full depth range and the deepest wet level in each cell is
+kept. Its \code{derived} element records that. In forecast mode no derivation is
+needed — the analysis-and-forecast product publishes \code{sob} directly — so
+\code{\link[=forecast_variables]{forecast_variables()}} overrides it with the real variable.
+
+The two are the same quantity by construction but not the same number: one is
+the deepest wet level of a 50-level grid, the other Copernicus's own sea-floor
+diagnostic. \code{\link[=accessEnvDat]{accessEnvDat()}} says which it used.
 
 \code{CHL} is the case worth reading twice. Daily ocean colour is not the monthly
 product at a finer step: it is \code{l4-gapfree}, the space-time interpolated

@@ -9,7 +9,7 @@ period_keys(flat, to)
 \arguments{
 \item{flat}{a data frame with YEAR/MONTH/DAY columns}
 
-\item{to}{\code{"month"} or \code{"year"}}
+\item{to}{\code{"day"}, \code{"month"}, or \code{"year"}}
 }
 \value{
 a list with \code{YEAR}, \code{MONTH}, \code{DAY}, and a \code{label} identifying the period

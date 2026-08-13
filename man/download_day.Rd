@@ -4,7 +4,7 @@
 \alias{download_day}
 \title{Download one day's subset, returning any failure rather than raising it}
 \usage{
-download_day(item, dataset_id, vars, bounding_box, depth)
+download_day(item, dataset_id, vars, bounding_box, depth, hourly = FALSE)
 }
 \arguments{
 \item{item}{\if{html}{\out{<list>}} one work item: \code{ofile}, \code{time}, and the calendar fields}
@@ -16,6 +16,11 @@ download_day(item, dataset_id, vars, bounding_box, depth)
 \item{bounding_box}{passed to \code{bb}}
 
 \item{depth}{\if{html}{\out{<numeric>}} length-2 depth range in metres}
+
+\item{hourly}{\if{html}{\out{<logical>}} whether the dataset is hourly, in which case the
+request covers the whole day rather than one instant. A bare date means
+midnight to midnight, which on an hourly dataset selects the first hour and
+silently discards the other 23.}
 }
 \value{
 \code{NULL} on success, or a one-line description of the failure

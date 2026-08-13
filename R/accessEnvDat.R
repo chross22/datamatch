@@ -90,7 +90,7 @@ parse_dates <- function(dates) {
 #' @return `x`, with one layer per requested code, in that order
 #' @keywords internal
 order_layers <- function(x, vars) {
-  codes <- sub("_depth=.*$", "", names(x))
+  codes <- layer_codes(x)
 
   missing <- setdiff(vars, codes)
   if (length(missing) > 0) {
@@ -112,6 +112,40 @@ order_layers <- function(x, vars) {
   x[[match(vars, codes)]]
 }
 
+#' Strip terra's layer-name decorations back to the Copernicus variable code
+#'
+#' terra names a NetCDF layer after its variable and then decorates it: a depth
+#' suffix on three-dimensional variables (`so_depth=0.494025`) and a trailing
+#' index when the file holds more than one layer of the same variable
+#' (`eastward_wind_14`, and `so_depth=0.494025_1` with both at once). Matching
+#' names against requested codes means removing both.
+#'
+#' @param x a `SpatRaster` read from a Copernicus download
+#' @return <char> one variable code per layer
+#' @keywords internal
+layer_codes <- function(x) {
+  # Order matters: the depth suffix carries its own trailing index, so removing
+  # it first would leave nothing for the index rule to match, and removing the
+  # index first would strip a digit off the depth.
+  sub("_[0-9]+$", "", sub("_depth=.*$", "", names(x)))
+}
+
+#' Depth of each layer of a three-dimensional download
+#'
+#' Read back off the layer names, which is where the only per-layer record of it
+#' survives `terra::rast()`. Layers of a two-dimensional variable have no depth
+#' and come back `NA`.
+#'
+#' @param x a `SpatRaster` read from a Copernicus download
+#' @return <numeric> one depth in metres per layer
+#' @keywords internal
+layer_depths <- function(x) {
+  suffix <- sub("^.*_depth=", "", names(x))
+  suffix[!grepl("_depth=", names(x), fixed = TRUE)] <- NA_character_
+  # The trailing time index, where the file holds more than one time step.
+  as.numeric(sub("_[0-9]+$", "", suffix))
+}
+
 #' Download one day's subset, returning any failure rather than raising it
 #'
 #' Defined at the top level rather than as a closure inside [accessEnvDat()] so
@@ -128,15 +162,26 @@ order_layers <- function(x, vars) {
 #' @param item <list> one work item: `ofile`, `time`, and the calendar fields
 #' @inheritParams build_copernicus_args
 #' @param bounding_box passed to `bb`
+#' @param hourly <logical> whether the dataset is hourly, in which case the
+#'   request covers the whole day rather than one instant. A bare date means
+#'   midnight to midnight, which on an hourly dataset selects the first hour and
+#'   silently discards the other 23.
 #' @return `NULL` on success, or a one-line description of the failure
 #' @keywords internal
-download_day <- function(item, dataset_id, vars, bounding_box, depth) {
+download_day <- function(item, dataset_id, vars, bounding_box, depth,
+                         hourly = FALSE) {
+  window <- if (hourly) {
+    as.POSIXct(paste(format(item$time), c("00:00:00", "23:59:59")), tz = "UTC")
+  } else {
+    item$time
+  }
+
   tryCatch({
     download_copernicus_subset(dataset_id = dataset_id,
                                vars = vars,
                                depth = depth,
                                bb = bounding_box,
-                               time = item$time,
+                               time = window,
                                ofile = item$ofile)
     NULL
   }, error = function(e) paste0("  ", format(item$time), ": ", conditionMessage(e)))
@@ -198,6 +243,143 @@ read_day <- function(item, vars) {
 
   as.data.frame(x, xy = TRUE) |>
     dplyr::mutate(YEAR = item$year, MONTH = item$month, DAY = item$day)
+}
+
+#' Read one day's cached hourly file into a data frame
+#'
+#' An hourly download covers a whole day, so its file holds 24 fields per
+#' variable rather than one. Each becomes its own block of rows, stamped with the
+#' hour it belongs to, so the result is one row per grid cell per hour.
+#'
+#' @section Which hour a layer belongs to:
+#' Taken from the file's own time axis rather than from layer order. The layers
+#' arrive grouped by variable — all 24 hours of `eastward_wind`, then all 24 of
+#' `northward_wind` — so position within the file says nothing about the hour on
+#' its own, and a variable that happened to be served at fewer steps would shift
+#' every one that followed it.
+#'
+#' Times are formatted in UTC explicitly. Copernicus publishes on UTC and terra
+#' tags the axis as such, but `format()` would otherwise render in the session's
+#' local zone, which silently relabels every hour by the local offset and moves
+#' some of them onto the neighbouring day.
+#'
+#' @param item <list> one work item, as built by [accessEnvDat()]
+#' @param vars <char> variable codes, in the order they were requested
+#' @return a data frame of 24 grids, with `YEAR`, `MONTH`, `DAY` and `HOUR`
+#' @keywords internal
+read_day_hourly <- function(item, vars) {
+  x <- without_calendar_warning(terra::rast(item$ofile))
+  codes <- layer_codes(x)
+
+  missing <- setdiff(vars, codes)
+  if (length(missing) > 0) {
+    stop("The download did not return: ", paste(missing, collapse = ", "),
+         "\nIt contains: ", paste(unique(codes), collapse = ", "),
+         "\nThat variable may not exist in this dataset at an hourly step.",
+         call. = FALSE)
+  }
+
+  stamps <- terra::time(x)
+  if (length(stamps) == 0 || all(is.na(stamps))) {
+    stop("The hourly download for ", format(item$time), " carries no time axis, ",
+         "so its layers cannot be\nassigned to hours. The file may be truncated; ",
+         "delete it from the cache and retry.", call. = FALSE)
+  }
+  hours <- as.integer(format(stamps, "%H", tz = "UTC"))
+
+  frames <- lapply(sort(unique(hours)), function(hour) {
+    in_hour <- which(hours == hour)
+    # One layer per variable within the hour, in the order they were requested.
+    slice <- x[[in_hour[match(vars, codes[in_hour])]]]
+    # terra carries the hour index in the layer name, so each hour's frame would
+    # otherwise arrive with column names of its own - eastward_wind_1 for the
+    # first, eastward_wind_2 for the second - and binding them would union 24
+    # sets of names into one very wide, very empty table rather than stacking
+    # them. Stripped back to the bare codes, which every hour shares.
+    names(slice) <- vars
+    as.data.frame(slice, xy = TRUE) |>
+      dplyr::mutate(YEAR = item$year, MONTH = item$month, DAY = item$day,
+                    HOUR = hour)
+  })
+
+  dplyr::bind_rows(frames)
+}
+
+#' Read one time step's full depth column, keeping the deepest wet level
+#'
+#' The reanalysis publishes temperature at the sea floor but not salinity, so a
+#' sea-floor salinity has to be taken from the three-dimensional field: fetch the
+#' whole column and keep, in each cell, the deepest level that holds a value.
+#'
+#' @section What "deepest wet level" means:
+#' A model cell is `NA` below the sea floor, so the last level carrying a value
+#' is the bottom-most one the model resolves there. That is the same convention
+#' Copernicus's own `bottomT` follows, which is why the two pair.
+#'
+#' It is not the sea floor itself. Level spacing coarsens with depth — from a
+#' metre near the surface to several hundred at abyssal depths — so in deep water
+#' the value can sit a long way above the real bottom. The depth actually used is
+#' returned alongside the value rather than left to be assumed, in a
+#' `<name>_depth` column.
+#'
+#' @param item <list> one work item, as built by [accessEnvDat()]
+#' @param code <char> the Copernicus code fetched, e.g. `so`
+#' @param name <char> what to call the result column, e.g. `BOTS`
+#' @return a data frame with the value, the depth it came from, `YEAR`, `MONTH`
+#'   and `DAY`
+#' @keywords internal
+read_day_deepest <- function(item, code, name) {
+  x <- without_calendar_warning(terra::rast(item$ofile))
+  codes <- layer_codes(x)
+
+  if (!all(codes == code)) {
+    stop("Expected only '", code, "' in the download for ", name, ", but it ",
+         "contains: ", paste(unique(codes), collapse = ", "), call. = FALSE)
+  }
+
+  depths <- layer_depths(x)
+  if (anyNA(depths)) {
+    stop("The download for ", name, " carries no depth axis, so there is no ",
+         "column to take a\nbottom value from. The dataset may serve '", code,
+         "' as a surface field only.", call. = FALSE)
+  }
+  if (length(depths) < 2) {
+    stop("The download for ", name, " returned a single depth level (",
+         signif(depths, 6), " m), so it holds no\ndepth column to search. ",
+         "`depth` was probably narrowed to one level; leave it unset to fetch ",
+         "the\nwhole column.", call. = FALSE)
+  }
+
+  # Shallowest first, so "deepest wet level" is the last column carrying a value.
+  x <- x[[order(depths)]]
+  sorted <- sort(depths)
+
+  values <- as.data.frame(x, xy = TRUE, na.rm = FALSE)
+  grid <- as.matrix(values[, -(1:2), drop = FALSE])
+
+  present <- !is.na(grid)
+  wet <- rowSums(present) > 0
+  # The largest column index holding a value, per row. Multiplying by the column
+  # index turns "is present" into "how deep", so the row maximum is the deepest
+  # wet level; absent cells contribute 0 and so never win.
+  deepest <- max.col(present * col(present), ties.method = "last")
+
+  out <- data.frame(
+    x = values$x, y = values$y,
+    value = grid[cbind(seq_len(nrow(grid)), deepest)],
+    depth = sorted[deepest]
+  )
+  # Land, and cells the subset clipped: no wet level at all, so no bottom value.
+  # Dropped rather than returned as NA, to match what a surface fetch returns
+  # for the same cells.
+  out <- out[wet, , drop = FALSE]
+  rownames(out) <- NULL
+
+  names(out) <- c("x", "y", name, paste0(name, "_depth"))
+  out$YEAR <- item$year
+  out$MONTH <- item$month
+  out$DAY <- item$day
+  out
 }
 
 #' Access environmental data from Copernicus Marine Service
@@ -298,6 +480,57 @@ read_day <- function(item, vars) {
 #' interpolated ocean colour dataset rather than the monthly composite, which
 #' [accessEnvDat()] reports when it happens — see [copernicus_variables()].
 #'
+#' @section Hourly wind:
+#' `frequency = "hourly"` fetches the hourly wind product. It is the only step
+#' below daily this package reaches, and only the wind variables have one — the
+#' ocean reanalyses are daily at finest.
+#'
+#' The result carries an `HOUR` column alongside `YEAR`/`MONTH`/`DAY`, so a day
+#' is 24 rows per cell rather than one, and [matchData()] joins on the hour.
+#' Observations must then carry an hour of their own, on UTC.
+#'
+#' ```
+#' wind <- accessEnvDat(vars = c("UWND", "VWND"), frequency = "hourly",
+#'                      dates = unique(observations$date), bounding_box = bb)
+#' ```
+#'
+#' A day is one download whichever step is used, so hourly costs no more requests
+#' than daily — but 24 times the rows, which is what makes a large box expensive.
+#'
+#' **There is no daily wind.** Copernicus publishes this wind hourly and monthly
+#' and nothing between, so `frequency = "daily"` is refused for it. Aggregate the
+#' hourly field instead, which also leaves the choice of summary with you:
+#'
+#' ```
+#' daily_wind <- upscale_time(wind, to = "day")               # the day's mean
+#' peak       <- upscale_time(wind, to = "day", method = "max")  # its strongest hour
+#' ```
+#'
+#' `WSPD` and `TAU` are magnitudes the hourly product does not carry, so they are
+#' monthly only.
+#'
+#' @section Bottom salinity:
+#' `BOTS` is the one variable that is computed rather than downloaded. GLORYS12V1
+#' publishes temperature at the sea floor but no salinity counterpart, so in
+#' reanalysis mode the full salinity column is fetched and the deepest wet level
+#' in each cell kept. The depth that value came from is returned alongside it, as
+#' `BOTS_depth`, rather than left to be assumed.
+#'
+#' Two consequences follow, and both are said out loud when it happens:
+#'
+#' \itemize{
+#'   \item **It must be fetched on its own.** The whole depth column is a
+#'     different request from the single level a surface variable wants, so
+#'     mixing `BOTS` with `SST` is an error rather than a quiet second download.
+#'   \item **It costs far more than a surface variable.** Roughly fifty levels
+#'     are downloaded over the same box to keep one, so `depth` is widened to the
+#'     full column unless you set it yourself.
+#' }
+#'
+#' In forecast mode none of this applies: the analysis-and-forecast product
+#' publishes `sob` outright, so `BOTS` is an ordinary variable there, fetches
+#' alongside `BOTT`, and returns no `BOTS_depth`.
+#'
 #' Passing `dataset_id` explicitly overrides all of this: that dataset's own
 #' frequency decides, since a Copernicus dataset is published at one step.
 #'
@@ -336,15 +569,18 @@ read_day <- function(item, vars) {
 #' @param months <numeric> months of data to access. Required unless `dates` is
 #'   given.
 #' @param bounding_box <list> named list of spatial coordinates of bounding box
-#' @param depth <numeric> depth range to access (in meters)
+#' @param depth <numeric> depth range to access (in meters). Widened to the whole
+#'   water column for a derived variable such as `BOTS`, which needs it, unless
+#'   given explicitly.
 #' @param overwrite <logical> whether or not to overwrite the data if it exists locally
 #' @param mode <char> `"reanalysis"` (the default) for the multi-year hindcast,
 #'   or `"forecast"` for the analysis-and-forecast products, which run to about
 #'   ten days ahead. See [forecast_variables()] for which variables have a
 #'   forecast equivalent and how the identifiers differ.
-#' @param frequency <char> `"monthly"` (the default) for monthly means, or
-#'   `"daily"` for daily ones. See the Monthly and daily data section. Ignored
-#'   when `dataset_id` is given, since the dataset itself fixes the step.
+#' @param frequency <char> `"monthly"` (the default) for monthly means,
+#'   `"daily"` for daily ones, or `"hourly"`, which only the wind variables have.
+#'   See the Monthly and daily data and Hourly wind sections. Ignored when
+#'   `dataset_id` is given, since the dataset itself fixes the step.
 #' @param dates the exact dates to fetch, as `YYYYMMDD` strings,
 #'   `YYYY-MM-DD` strings, or `Date` objects. `NULL`, the default, fetches every
 #'   day of the requested months instead. Passing `dates` implies
@@ -353,19 +589,26 @@ read_day <- function(item, vars) {
 #' @param n_workers <integer> how many days to download at once. See the
 #'   Downloading in parallel section. Use `n_workers = 1` to download one day at
 #'   a time.
-#' @return <sf object> sf object containing requested environmental data from Copernicus Marine Service
+#' @return <sf object> sf object containing requested environmental data from
+#'   Copernicus Marine Service, with `YEAR`/`MONTH`/`DAY` columns, an `HOUR`
+#'   column when the fetch was hourly, and a `<var>_depth` column for a derived
+#'   bottom variable
 #' @export
 accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars,
                          years = NULL, months = NULL,
                          bounding_box, depth = c(0,1),
                          overwrite = FALSE, n_workers = 4,
-                         frequency = c("monthly", "daily"), dates = NULL,
+                         frequency = c("monthly", "daily", "hourly"),
+                         dates = NULL,
                          mode = c("reanalysis", "forecast")) {
   mode <- match.arg(mode)
   # Recorded before match.arg(), which assigns to `frequency` and so makes
   # missing(frequency) FALSE from that point on.
   frequency_given <- !missing(frequency)
   frequency <- match.arg(frequency)
+  # A derived variable needs the whole depth column, so it overrides the surface
+  # default - but not a range the caller asked for by name.
+  depth_given <- !missing(depth)
 
   # Parsed here rather than where the calendar is built, so a malformed date
   # costs an error at the call instead of a request for a day that never was.
@@ -381,8 +624,8 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars,
            "select whole months instead.", call. = FALSE)
     }
 
-    # Naming a date only means anything in daily data, so asking for dates is
-    # asking for daily. Requiring frequency = "daily" alongside would let
+    # Naming a date only means anything in sub-monthly data, so asking for dates
+    # is asking for daily. Requiring frequency = "daily" alongside would let
     # `dates` be passed to a monthly fetch and do nothing.
     if (frequency_given && frequency == "monthly") {
       stop("`dates` names days to fetch, but frequency = \"monthly\" was given.\n",
@@ -390,7 +633,10 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars,
            "nothing.\nDrop `dates` for monthly means, or drop ",
            "frequency = \"monthly\" to fetch those dates.", call. = FALSE)
     }
-    frequency <- "daily"
+    # Hourly is already finer than the dates being named, and an hourly fetch is
+    # organised a day at a time, so `dates` selects which days without saying
+    # anything about the step within them. Only an unstated step becomes daily.
+    if (frequency != "hourly") frequency <- "daily"
   } else if (is.null(years) || is.null(months)) {
     stop("`years` and `months` are required, unless `dates` names the exact ",
          "dates to fetch.", call. = FALSE)
@@ -402,6 +648,19 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars,
   resolved <- resolve_variables(vars, mode = mode)
   var_codes <- resolved$codes
   var_names <- resolved$names
+
+  # Most variables are a straight request for a code. A derived one is not: it
+  # is computed from a field the dataset does serve, over a depth range no
+  # surface variable wants, so it cannot share a download with them.
+  derived <- derived_request(vars, mode = mode)
+  if (!is.null(derived)) {
+    if (!depth_given) depth <- c(0, 6000)
+    message(derived$name, " is not published by this product. Deriving it from ",
+            "the full '", derived$code, "' column\nand keeping the deepest wet ",
+            "level in each cell; the depth used comes back as ", derived$name,
+            "_depth.\nThis fetches every model level, so it downloads and holds ",
+            "far more than a surface\nvariable does over the same box.")
+  }
 
   # With every variable in the catalog, the product and dataset are implied and
   # need not be repeated at the call site.
@@ -415,12 +674,18 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars,
   # is a specific Copernicus dataset published at one frequency, and honouring
   # `frequency` over it would either request the same monthly field 31 times or
   # take one day as a whole month. Where the two disagree, say so.
-  is_daily <- grepl("_P1D(-|$)", dataset_id)
-  if (frequency_given && is_daily != (frequency == "daily")) {
-    warning("dataset_id '", dataset_id, "' is ",
-            if (is_daily) "daily" else "monthly", ", but frequency = \"",
-            frequency, "\" was given. Following the dataset. Omit dataset_id to ",
-            "let frequency choose it.", call. = FALSE)
+  is_hourly <- grepl("_PT1H", dataset_id)
+  # An hourly dataset is fetched a day at a time, so it shares the daily
+  # calendar: one download and one file per day, holding 24 fields rather than 1.
+  is_daily <- is_hourly || grepl("_P1D(-|$)", dataset_id)
+  step <- if (is_hourly) "hour" else if (is_daily) "day" else "month"
+
+  dataset_frequency <- switch(step, hour = "hourly", day = "daily", "monthly")
+  if (frequency_given && dataset_frequency != frequency) {
+    warning("dataset_id '", dataset_id, "' is ", dataset_frequency,
+            ", but frequency = \"", frequency, "\" was given. Following the ",
+            "dataset. Omit dataset_id to let frequency choose it.",
+            call. = FALSE)
   }
 
   # A monthly dataset has one field per month, so a date within it selects
@@ -511,11 +776,13 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars,
       # hard the API is working, so a fixed split leaves workers idle.
       parallel::parLapplyLB(cl, needed, download_day,
                             dataset_id = dataset_id, vars = var_codes,
-                            bounding_box = bounding_box, depth = depth)
+                            bounding_box = bounding_box, depth = depth,
+                            hourly = is_hourly)
     } else {
       lapply(needed, download_day,
              dataset_id = dataset_id, vars = var_codes,
-             bounding_box = bounding_box, depth = depth)
+             bounding_box = bounding_box, depth = depth,
+             hourly = is_hourly)
     }
 
     failures <- unlist(failures)
@@ -541,22 +808,38 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars,
     }
   }
 
-  covars <- dplyr::bind_rows(lapply(work_items, read_day, vars = var_codes))
+  if (!is.null(derived)) {
+    # Already named, and carrying the depth each value was taken from, so the
+    # positional naming below has nothing to do.
+    covars <- dplyr::bind_rows(lapply(work_items, read_day_deepest,
+                                      code = derived$code, name = derived$name))
+  } else if (is_hourly) {
+    covars <- dplyr::bind_rows(lapply(work_items, read_day_hourly,
+                                      vars = var_codes))
+    # x, y, vars..., YEAR, MONTH, DAY, HOUR
+    if (ncol(covars) != length(var_names) + 6) {
+      stop("Expected ", length(var_names), " variable column(s) but the hourly ",
+           "download returned ", ncol(covars) - 6, ".", call. = FALSE)
+    }
+    names(covars) <- c("x", "y", var_names, "YEAR", "MONTH", "DAY", "HOUR")
+  } else {
+    covars <- dplyr::bind_rows(lapply(work_items, read_day, vars = var_codes))
 
-  # Names are assigned positionally, so the raster must have exactly one layer
-  # per requested variable. A depth range spanning several model levels returns
-  # more, and silently mislabelling those columns would be worse than stopping.
-  expected <- length(var_names) + 5  # x, y, vars..., YEAR, MONTH, DAY
-  if (ncol(covars) != expected) {
-    stop("Expected ", length(var_names), " variable column(s) but the download ",
-         "returned ", ncol(covars) - 5, ". This usually means the depth range ",
-         "spans several model levels; request a single level, or one variable ",
-         "at a time.", call. = FALSE)
+    # Names are assigned positionally, so the raster must have exactly one layer
+    # per requested variable. A depth range spanning several model levels returns
+    # more, and silently mislabelling those columns would be worse than stopping.
+    expected <- length(var_names) + 5  # x, y, vars..., YEAR, MONTH, DAY
+    if (ncol(covars) != expected) {
+      stop("Expected ", length(var_names), " variable column(s) but the download ",
+           "returned ", ncol(covars) - 5, ". This usually means the depth range ",
+           "spans several model levels; request a single level, or one variable ",
+           "at a time.", call. = FALSE)
+    }
+
+    # Columns take the names the caller asked for, so requesting "SST" yields a
+    # column called SST rather than thetao.
+    names(covars) <- c("x", "y", var_names, "YEAR", "MONTH", "DAY")
   }
-
-  # Columns take the names the caller asked for, so requesting "SST" yields a
-  # column called SST rather than thetao.
-  names(covars) <- c("x", "y", var_names, "YEAR", "MONTH", "DAY")
 
   # Convert data to sf and return
   out <- sf::st_as_sf(covars,
@@ -568,6 +851,6 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars,
   # than one day within a month, and a `dates` request of one date per month -
   # survey dates, typically - looks identical to monthly data. Guessing monthly
   # there would make matchData() join by month and quietly ignore the day.
-  attr(out, "datamatch_step") <- if (is_daily) "day" else "month"
+  attr(out, "datamatch_step") <- step
   out
 }

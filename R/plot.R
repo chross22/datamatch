@@ -272,7 +272,7 @@ plot_matched <- function(matched, var = NULL, palette = "viridis", main = NULL,
 #'   `labels`
 #' @keywords internal
 time_steps <- function(env_dat) {
-  time_cols <- intersect(c("YEAR", "MONTH", "DAY"), names(env_dat))
+  time_cols <- intersect(time_columns(), names(env_dat))
   times <- sf::st_drop_geometry(env_dat)[time_cols]
   steps <- unique(times)
   steps <- steps[do.call(order, steps), , drop = FALSE]

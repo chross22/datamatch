@@ -14,7 +14,7 @@ accessEnvDat(
   depth = c(0, 1),
   overwrite = FALSE,
   n_workers = 4,
-  frequency = c("monthly", "daily"),
+  frequency = c("monthly", "daily", "hourly"),
   dates = NULL,
   mode = c("reanalysis", "forecast")
 )
@@ -37,7 +37,9 @@ given.}
 
 \item{bounding_box}{\if{html}{\out{<list>}} named list of spatial coordinates of bounding box}
 
-\item{depth}{\if{html}{\out{<numeric>}} depth range to access (in meters)}
+\item{depth}{\if{html}{\out{<numeric>}} depth range to access (in meters). Widened to the whole
+water column for a derived variable such as \code{BOTS}, which needs it, unless
+given explicitly.}
 
 \item{overwrite}{\if{html}{\out{<logical>}} whether or not to overwrite the data if it exists locally}
 
@@ -45,9 +47,10 @@ given.}
 Downloading in parallel section. Use \code{n_workers = 1} to download one day at
 a time.}
 
-\item{frequency}{\if{html}{\out{<char>}} \code{"monthly"} (the default) for monthly means, or
-\code{"daily"} for daily ones. See the Monthly and daily data section. Ignored
-when \code{dataset_id} is given, since the dataset itself fixes the step.}
+\item{frequency}{\if{html}{\out{<char>}} \code{"monthly"} (the default) for monthly means,
+\code{"daily"} for daily ones, or \code{"hourly"}, which only the wind variables have.
+See the Monthly and daily data and Hourly wind sections. Ignored when
+\code{dataset_id} is given, since the dataset itself fixes the step.}
 
 \item{dates}{the exact dates to fetch, as \code{YYYYMMDD} strings,
 \code{YYYY-MM-DD} strings, or \code{Date} objects. \code{NULL}, the default, fetches every
@@ -61,7 +64,10 @@ ten days ahead. See \code{\link[=forecast_variables]{forecast_variables()}} for 
 forecast equivalent and how the identifiers differ.}
 }
 \value{
-\if{html}{\out{<sf object>}} sf object containing requested environmental data from Copernicus Marine Service
+\if{html}{\out{<sf object>}} sf object containing requested environmental data from
+Copernicus Marine Service, with \code{YEAR}/\code{MONTH}/\code{DAY} columns, an \code{HOUR}
+column when the fetch was hourly, and a \verb{<var>_depth} column for a derived
+bottom variable
 }
 \description{
 Downloads a Copernicus dataset over a bounding box and time range, and returns
@@ -161,6 +167,59 @@ published as monthly composites only, and asking for them daily is refused
 before anything is downloaded. Daily \code{CHL} comes from the gap-free
 interpolated ocean colour dataset rather than the monthly composite, which
 \code{\link[=accessEnvDat]{accessEnvDat()}} reports when it happens — see \code{\link[=copernicus_variables]{copernicus_variables()}}.
+}
+
+\section{Hourly wind}{
+
+\code{frequency = "hourly"} fetches the hourly wind product. It is the only step
+below daily this package reaches, and only the wind variables have one — the
+ocean reanalyses are daily at finest.
+
+The result carries an \code{HOUR} column alongside \code{YEAR}/\code{MONTH}/\code{DAY}, so a day
+is 24 rows per cell rather than one, and \code{\link[=matchData]{matchData()}} joins on the hour.
+Observations must then carry an hour of their own, on UTC.
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{wind <- accessEnvDat(vars = c("UWND", "VWND"), frequency = "hourly",
+                     dates = unique(observations$date), bounding_box = bb)
+}\if{html}{\out{</div>}}
+
+A day is one download whichever step is used, so hourly costs no more requests
+than daily — but 24 times the rows, which is what makes a large box expensive.
+
+\strong{There is no daily wind.} Copernicus publishes this wind hourly and monthly
+and nothing between, so \code{frequency = "daily"} is refused for it. Aggregate the
+hourly field instead, which also leaves the choice of summary with you:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{daily_wind <- upscale_time(wind, to = "day")               # the day's mean
+peak       <- upscale_time(wind, to = "day", method = "max")  # its strongest hour
+}\if{html}{\out{</div>}}
+
+\code{WSPD} and \code{TAU} are magnitudes the hourly product does not carry, so they are
+monthly only.
+}
+
+\section{Bottom salinity}{
+
+\code{BOTS} is the one variable that is computed rather than downloaded. GLORYS12V1
+publishes temperature at the sea floor but no salinity counterpart, so in
+reanalysis mode the full salinity column is fetched and the deepest wet level
+in each cell kept. The depth that value came from is returned alongside it, as
+\code{BOTS_depth}, rather than left to be assumed.
+
+Two consequences follow, and both are said out loud when it happens:
+
+\itemize{
+\item \strong{It must be fetched on its own.} The whole depth column is a
+different request from the single level a surface variable wants, so
+mixing \code{BOTS} with \code{SST} is an error rather than a quiet second download.
+\item \strong{It costs far more than a surface variable.} Roughly fifty levels
+are downloaded over the same box to keep one, so \code{depth} is widened to the
+full column unless you set it yourself.
+}
+
+In forecast mode none of this applies: the analysis-and-forecast product
+publishes \code{sob} outright, so \code{BOTS} is an ordinary variable there, fetches
+alongside \code{BOTT}, and returns no \code{BOTS_depth}.
 
 Passing \code{dataset_id} explicitly overrides all of this: that dataset's own
 frequency decides, since a Copernicus dataset is published at one step.

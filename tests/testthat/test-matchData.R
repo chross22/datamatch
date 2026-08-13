@@ -407,3 +407,68 @@ test_that("rows come back in the order they went in", {
   expect_false(any(grepl("datamatch_row", names(result))))
   expect_equal(rownames(result), as.character(seq_len(nrow(result))))
 })
+
+# ---- hourly matching --------------------------------------------------------
+
+test_that("hourly source matches on the hour", {
+  hours <- expand.grid(x = c(-70, -69.5), y = c(42, 42.5), HOUR = c(3L, 14L))
+  hours$V <- ifelse(hours$HOUR == 3, 1, 99)
+  hours$YEAR <- 2015L; hours$MONTH <- 6L; hours$DAY <- 15L
+  source <- sf::st_as_sf(hours, coords = c("x", "y"), crs = 4326)
+  attr(source, "datamatch_step") <- "hour"
+
+  obs <- sf::st_as_sf(
+    data.frame(x = c(-70, -70), y = c(42, 42),
+               YEAR = 2015L, MONTH = 6L, DAY = 15L, HOUR = c(3L, 14L)),
+    coords = c("x", "y"), crs = 4326)
+
+  matched <- matchData(obs, source)
+
+  # Two observations at one place, an hour apart, must not receive the same
+  # value - which is exactly what matching at daily resolution would do.
+  expect_equal(matched$V, c(1, 99))
+})
+
+test_that("an hour column is found however it is spelled", {
+  hours <- expand.grid(x = -70, y = 42, HOUR = c(3L, 14L))
+  hours$V <- c(1, 99)
+  hours$YEAR <- 2015L; hours$MONTH <- 6L; hours$DAY <- 15L
+  source <- sf::st_as_sf(hours, coords = c("x", "y"), crs = 4326)
+  attr(source, "datamatch_step") <- "hour"
+
+  obs <- sf::st_as_sf(
+    data.frame(x = -70, y = 42, year = 2015L, month = 6L, day = 15L,
+               Hour_utc = 14L),
+    coords = c("x", "y"), crs = 4326)
+
+  expect_equal(matchData(obs, source)$V, 99)
+})
+
+test_that("matching hourly against data with no hour says so", {
+  source <- sf::st_as_sf(
+    data.frame(x = -70, y = 42, V = 1, YEAR = 2015L, MONTH = 6L, DAY = 15L),
+    coords = c("x", "y"), crs = 4326)
+  obs <- sf::st_as_sf(
+    data.frame(x = -70, y = 42, YEAR = 2015L, MONTH = 6L, DAY = 15L, HOUR = 3L),
+    coords = c("x", "y"), crs = 4326)
+
+  expect_error(matchData(obs, source, temporal_resolution = "hour"),
+               "no HOUR column")
+})
+
+test_that("HOUR is not treated as a covariate to be joined on", {
+  hours <- expand.grid(x = -70, y = 42, HOUR = c(3L, 14L))
+  hours$V <- c(1, 99)
+  hours$YEAR <- 2015L; hours$MONTH <- 6L; hours$DAY <- 15L
+  source <- sf::st_as_sf(hours, coords = c("x", "y"), crs = 4326)
+  attr(source, "datamatch_step") <- "hour"
+
+  obs <- sf::st_as_sf(
+    data.frame(x = -70, y = 42, YEAR = 2015L, MONTH = 6L, DAY = 15L, HOUR = 3L),
+    coords = c("x", "y"), crs = 4326)
+
+  matched <- matchData(obs, source)
+  # The observation's own HOUR survives, and does not gain a .matched twin.
+  expect_equal(matched$HOUR, 3L)
+  expect_false("HOUR.matched" %in% names(matched))
+})

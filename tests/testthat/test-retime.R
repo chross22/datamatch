@@ -262,3 +262,74 @@ test_that("missing values are skipped rather than poisoning the aggregate", {
 
   expect_equal(unique(out$V), mean(6:31))
 })
+
+# ---- hourly to daily --------------------------------------------------------
+
+# Hourly data in the shape accessEnvDat(frequency = "hourly") returns: the daily
+# calendar plus an HOUR column.
+hourly_series <- function(days = 1:2, month = 6L, year = 2015L,
+                          value = function(h) h,
+                          cells = expand.grid(x = c(-70, -69.5), y = c(42, 42.5))) {
+  out <- do.call(rbind, lapply(days, function(d) {
+    do.call(rbind, lapply(0:23, function(h) {
+      g <- cells
+      g$V <- value(h)
+      g$YEAR <- year
+      g$MONTH <- month
+      g$DAY <- as.integer(d)
+      g$HOUR <- as.integer(h)
+      g
+    }))
+  }))
+  sf::st_as_sf(out, coords = c("x", "y"), crs = 4326)
+}
+
+test_that("hourly data is recognised as hourly", {
+  hourly <- hourly_series()
+
+  expect_equal(detect_temporal_resolution(hourly), "hour")
+  # HOUR is a time stamp, not a covariate. Averaged across a day it would give
+  # 11.5 in a column that looks like a measurement.
+  expect_equal(covariate_columns(hourly), "V")
+})
+
+test_that("hourly aggregates to daily means", {
+  daily <- upscale_time(hourly_series(), to = "day")
+
+  # Four cells over two days, and the mean of 0:23.
+  expect_equal(nrow(daily), 8)
+  expect_equal(unique(daily$V), mean(0:23))
+
+  # HOUR is consumed rather than carried through - it is the axis being
+  # aggregated away - and the result reads back as daily.
+  expect_false("HOUR" %in% names(daily))
+  expect_setequal(names(daily), c("YEAR", "MONTH", "DAY", "V", "geometry"))
+  expect_equal(detect_temporal_resolution(daily), "day")
+})
+
+test_that("a partly-fetched day fails the coverage check", {
+  # Six hours of a 24-hour day is not a daily mean, and nothing in the number
+  # says so. The denominator is the 24 hours the day *has*.
+  partial <- hourly_series()
+  partial <- partial[partial$HOUR < 6, ]
+
+  expect_true(all(is.na(upscale_time(partial, to = "day")$V)))
+  expect_equal(unique(upscale_time(partial, to = "day", min_coverage = 0)$V),
+               mean(0:5))
+})
+
+test_that("hourly can be aggregated past daily", {
+  monthly <- upscale_time(hourly_series(days = 1:30), to = "month",
+                          min_coverage = 0)
+
+  expect_equal(nrow(monthly), 4)
+  expect_equal(unique(monthly$V), mean(0:23))
+})
+
+test_that("aggregating to a step at or below the source is refused", {
+  expect_error(upscale_time(hourly_series(), to = "day", vars = "V") |>
+                 upscale_time(to = "day"),
+               "finer than|same as")
+  # And monthly data cannot be aggregated to days.
+  expect_error(upscale_time(monthly_series(), to = "day"), "finer than")
+})

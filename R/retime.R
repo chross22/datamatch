@@ -1,8 +1,25 @@
 #' Aggregate environmental data onto a coarser time step
 #'
-#' Combines the time steps falling inside each target period into one value, so a
-#' daily product becomes monthly means, or a monthly one becomes annual. The grid
-#' is untouched — every cell keeps its own series, aggregated in place.
+#' Combines the time steps falling inside each target period into one value, so an
+#' hourly product becomes daily means, a daily one monthly, or a monthly one
+#' annual. The grid is untouched — every cell keeps its own series, aggregated in
+#' place.
+#'
+#' @section Hourly to daily:
+#' This is the route to a daily wind field. Copernicus publishes its L4 wind
+#' hourly and monthly and nothing between, so `frequency = "daily"` is refused
+#' for the wind variables; aggregating the hourly field is how a daily mean is
+#' produced, and doing it here rather than inside [accessEnvDat()] keeps the
+#' choice of summary — mean wind, or the day's maximum gust — with the caller.
+#'
+#' The `HOUR` column is consumed rather than carried through: it is the axis
+#' being aggregated away. The result is stamped `YEAR`/`MONTH`/`DAY` like any
+#' daily product, so [matchData()] reads it back as daily.
+#'
+#' Note that a daily mean of wind *components* is not the same as a daily mean
+#' *speed*. Averaging `UWND` and `VWND` over a day and taking the magnitude gives
+#' the net displacement of air; averaging the speed gives how hard it blew. On a
+#' day the wind reversed, the first is near zero and the second is not.
 #'
 #' @section Choosing a method:
 #' As with [upscale_grid()], the summary that belongs in a period depends on the
@@ -36,7 +53,8 @@
 #' present, and `keep_counts = TRUE` to see how many steps were behind each value.
 #'
 #' @param env_dat an `sf` POINT object from [accessEnvDat()]
-#' @param to the target period: `"month"` or `"year"`
+#' @param to the target period: `"day"`, `"month"`, or `"year"`. `"day"` requires
+#'   hourly input, which only the wind variables have.
 #' @param vars columns to aggregate; `NULL` uses all covariate columns
 #' @param method one of `"mean"`, `"median"`, `"min"`, `"max"`, `"sum"`, `"sd"`,
 #'   `"mode"`; length one for all variables, or a named vector per variable
@@ -44,8 +62,9 @@
 #'   value, from 0 to 1
 #' @param keep_counts add a `<var>_n` column per variable, giving the number of
 #'   steps behind each value
-#' @return an `sf` POINT object with one row per cell per target period. Monthly
-#'   output is stamped `DAY = 1`; annual output `MONTH = 1, DAY = 1`, matching what
+#' @return an `sf` POINT object with one row per cell per target period. Daily
+#'   output keeps its `YEAR`/`MONTH`/`DAY` and drops `HOUR`; monthly output is
+#'   stamped `DAY = 1`; annual output `MONTH = 1, DAY = 1`, matching what
 #'   [accessEnvDat()] returns for non-daily products so that
 #'   [matchData()] reads the resolution back correctly.
 #' @examples
@@ -62,7 +81,7 @@
 #' @seealso [downscale_time()] for the other direction, [upscale_grid()] for the
 #'   spatial equivalent
 #' @export
-upscale_time <- function(env_dat, to = c("month", "year"), vars = NULL,
+upscale_time <- function(env_dat, to = c("month", "year", "day"), vars = NULL,
                          method = "mean", min_coverage = 0.5,
                          keep_counts = FALSE) {
   to <- match.arg(to)
@@ -90,7 +109,8 @@ upscale_time <- function(env_dat, to = c("month", "year"), vars = NULL,
   out$MONTH <- keys$MONTH[first]
   out$DAY <- keys$DAY[first]
 
-  expected <- expected_steps(keys, from, to)[first]
+  per_day <- if (from == "hour") sub_daily_steps(flat) else 24
+  expected <- expected_steps(keys, from, to, per_day)[first]
 
   for (v in vars) {
     values <- flat[[v]]
@@ -119,7 +139,15 @@ upscale_time <- function(env_dat, to = c("month", "year"), vars = NULL,
     if (keep_counts) out[[paste0(v, "_n")]] <- unname(counted)
   }
 
-  sf::st_as_sf(out, coords = c("x", "y"), crs = sf::st_crs(env_dat))
+  out <- sf::st_as_sf(out, coords = c("x", "y"), crs = sf::st_crs(env_dat))
+  # Record the step, as accessEnvDat() does. Inferring it back from the result
+  # fails on a single period: one day of hourly data aggregated to daily is one
+  # day in one month, which is indistinguishable by inspection from monthly, and
+  # detect_temporal_resolution() falls back to "month". matchData() would then
+  # join by month and quietly ignore the day. Nothing has to be inferred here,
+  # because `to` says exactly what was produced.
+  attr(out, "datamatch_step") <- to
+  out
 }
 
 #' Interpolate environmental data onto a finer time step
@@ -243,7 +271,11 @@ downscale_time <- function(env_dat, to = c("day", "month"), vars = NULL,
     }
   }
 
-  sf::st_as_sf(out, coords = c("x", "y"), crs = sf::st_crs(env_dat))
+  out <- sf::st_as_sf(out, coords = c("x", "y"), crs = sf::st_crs(env_dat))
+  # As in upscale_time(): `to` states the step, so nothing has to be inferred
+  # from a result that may cover too few periods to say.
+  attr(out, "datamatch_step") <- to
+  out
 }
 
 #' Interpolate one cell's series onto the target time steps
@@ -287,17 +319,49 @@ interpolate_series <- function(x, y, xout, method, extrapolate) {
 #' result to [matchData()] only works if the two agree on the convention.
 #'
 #' @param flat a data frame with YEAR/MONTH/DAY columns
-#' @param to `"month"` or `"year"`
+#' @param to `"day"`, `"month"`, or `"year"`
 #' @return a list with `YEAR`, `MONTH`, `DAY`, and a `label` identifying the period
 #' @keywords internal
 period_keys <- function(flat, to) {
-  if (to == "month") {
+  if (to == "day") {
+    # The day the hours belong to, which the rows already carry. HOUR itself is
+    # not part of the result: it is the axis being aggregated away, and keeping
+    # it would leave every row stamped with whichever hour happened to be first.
+    list(YEAR = flat$YEAR, MONTH = flat$MONTH, DAY = flat$DAY,
+         label = paste(flat$YEAR, flat$MONTH, flat$DAY, sep = "-"))
+  } else if (to == "month") {
     list(YEAR = flat$YEAR, MONTH = flat$MONTH, DAY = rep(1L, nrow(flat)),
          label = paste(flat$YEAR, flat$MONTH, sep = "-"))
   } else {
     list(YEAR = flat$YEAR, MONTH = rep(1L, nrow(flat)), DAY = rep(1L, nrow(flat)),
          label = as.character(flat$YEAR))
   }
+}
+
+#' How many sub-daily steps a whole day of this series holds
+#'
+#' The denominator for `min_coverage` when aggregating sub-daily data. Not every
+#' sub-daily product is hourly: the Copernicus wind is, at 24 steps a day, but
+#' HYCOM is three-hourly, at 8. Assuming 24 would score a complete HYCOM day at
+#' a third of its coverage and return `NA` for every one of them.
+#'
+#' Read from the spacing of the hours actually present rather than from a
+#' recorded step, so it is right for any regular sub-daily series without each
+#' source having to declare itself. The smallest gap between distinct hours is
+#' the step; a series carrying one hour only cannot say, and falls back to
+#' hourly, which is the conservative reading — it under-counts coverage rather
+#' than over-counting it.
+#'
+#' @param flat a data frame with an `HOUR` column
+#' @return <integer> steps per day
+#' @keywords internal
+sub_daily_steps <- function(flat) {
+  hours <- sort(unique(flat$HOUR))
+  if (length(hours) < 2) return(24L)
+
+  spacing <- min(diff(hours))
+  if (is.na(spacing) || spacing <= 0) return(24L)
+  max(1L, as.integer(round(24 / spacing)))
 }
 
 #' How many source steps a target period should contain
@@ -309,10 +373,19 @@ period_keys <- function(flat, to) {
 #' @param keys output of [period_keys()]
 #' @param from source resolution
 #' @param to target period
+#' @param per_day how many sub-daily steps a whole day holds, from
+#'   [sub_daily_steps()]. 24 for an hourly series, 8 for a three-hourly one.
 #' @return numeric vector, one per row
 #' @keywords internal
-expected_steps <- function(keys, from, to) {
-  if (from == "day" && to == "month") {
+expected_steps <- function(keys, from, to, per_day = 24) {
+  if (from == "hour" && to == "day") {
+    rep(per_day, length(keys$YEAR))
+  } else if (from == "hour" && to == "month") {
+    per_day * as.numeric(lubridate::days_in_month(
+      lubridate::ymd(paste(keys$YEAR, keys$MONTH, 1, sep = "-"))))
+  } else if (from == "hour" && to == "year") {
+    per_day * ifelse(lubridate::leap_year(keys$YEAR), 366, 365)
+  } else if (from == "day" && to == "month") {
     as.numeric(lubridate::days_in_month(
       lubridate::ymd(paste(keys$YEAR, keys$MONTH, 1, sep = "-"))))
   } else if (from == "day" && to == "year") {
@@ -393,7 +466,7 @@ target_time_steps <- function(flat, from, to) {
 #' @return `NULL`, invisibly; called for the error
 #' @keywords internal
 check_time_direction <- function(from, to, direction) {
-  rank <- c(day = 1, month = 2, year = 3)
+  rank <- c(hour = 1, day = 2, month = 3, year = 4)
   wrong_way <- if (direction == "up") rank[[to]] <= rank[[from]] else rank[[to]] >= rank[[from]]
   if (!wrong_way) return(invisible(NULL))
 
