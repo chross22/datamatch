@@ -2,6 +2,35 @@
 
 ## New features
 
+* **HYCOM now reaches 2024, and FVCOM 2025.** Both had stopped short — HYCOM at
+  2015 and FVCOM at 2013 — because each shipped a single archive. Neither was a
+  limit of the data.
+
+  `hycom_archives()` now carries the 1994–2015 reanalysis plus the seven
+  operational experiments that follow it, to September 2024, and
+  `hycom_covering(date)` says which span a given day. They overlap, so where two
+  cover a date the choice between them is a judgement — the reanalysis is more
+  internally consistent, the operational run more recent — and nothing picks for
+  you. One archive is read per call, and a request falling outside the one named
+  is told which others hold it rather than being stitched to them silently.
+
+  The seam that matters is the run, not the grid: `GLBv0.08` and `GLBy0.08` hold
+  the same 126 latitudes between 40 and 45 °N identically, so on a mid-latitude
+  shelf the cells line up across it. `GLBy0.08` stores longitude 0–360 where
+  `GLBv0.08` stores −180…180; the convention is read off the coordinates rather
+  than recorded, so a box given negative west works against either.
+
+  `fvcom_archives()` gains `GOM7`, the archived operational forecast: hourly on
+  a 207,081-node mesh from 2025. It is deliberately **not** presented as a
+  continuation of the `GOM3` hindcast — the mesh, the step and whether the output
+  is retrospective all change at once, and `GOM7` saves no wind stress. Between
+  2014 and 2024 NECOFS publishes neither, which is a gap in the source.
+
+  `accessFVCOM()` gains `frequency` and `hour` for sub-daily archives, defaulting
+  to one snapshot a day because a month of hourly `GOM7` is 720 reads of a
+  207,081-node field. A snapshot is an instant, not a daily mean; `upscale_time()`
+  makes a real one.
+
 * **CCMP winds, through `accessCCMP()`.** The Cross-Calibrated Multi-Platform
   ocean surface wind analysis from Remote Sensing Systems: `WSPD`, `UWND`,
   `VWND` and `NOBS`, six-hourly from January 1993 to within days of the present.

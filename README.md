@@ -690,6 +690,7 @@ fvcom_dictionary()                           # the FVCOM catalog, for accessFVCO
 fvcom_archives()                             # which FVCOM archives are built in
 hycom_dictionary()                           # the HYCOM catalog, for accessHYCOM()
 hycom_archives()                             # which HYCOM archives can be read
+hycom_covering("2019-06-15")                 # which of them span a given date
 ccmp_dictionary()                            # the CCMP catalog, for accessCCMP()
 ccmp_versions()                              # which CCMP versions can be read
 variable_dataset(c("SST", "CHL"))            # which dataset each comes from
@@ -1046,10 +1047,43 @@ Sub-monthly FVCOM is therefore not a matter of passing a different
 argument. It would mean reading the per-file datasets behind the
 aggregation, a month at a time.
 
-`fvcom_archives()` names what is built in: currently the 30-year GOM3
-hindcast, 1978–2013, monthly. Reading it needs the `ncdf4` package, a
-`Suggests`, and a network route to a plain-HTTP service on port 8080,
-which some institutional networks block.
+### Hindcast and forecast archive are two products
+
+`fvcom_archives()` ships two NECOFS archives, and the second is **not**
+a continuation of the first:
+
+|             | `GOM3` (default) | `GOM7`                        |
+|-------------|------------------|-------------------------------|
+| Kind        | hindcast         | archived operational forecast |
+| Mesh        | 48,451 nodes     | 207,081 nodes                 |
+| Step        | monthly means    | hourly                        |
+| Covers      | 1978–2013        | 2025–                         |
+| Wind stress | yes              | **no**                        |
+
+Three things change at once — the mesh, the step, and whether the output
+is retrospective — so they are separate archives rather than one
+stitched series. Between 2014 and 2024 this server publishes neither,
+which is a gap in NECOFS rather than in this package.
+
+`GOM7` is hourly, so `frequency` chooses what to take:
+
+``` r
+# One snapshot a day at 12 UTC - the default, because a month of hourly GOM7 is
+# 720 reads of a 207,081-node field
+daily <- accessFVCOM(vars = c("SST", "BOTS"), years = 2025, months = 6,
+                     bounding_box = bb, archive = "GOM7")
+
+# Every hour, when a real daily mean is wanted
+steps <- accessFVCOM(vars = "SST", years = 2025, months = 6,
+                     bounding_box = bb, archive = "GOM7", frequency = "hourly")
+mean_sst <- upscale_time(steps, to = "day")
+```
+
+A snapshot is an instant, not a daily mean.
+
+`fvcom_archives()` names what is built in. Reading it needs the `ncdf4`
+package, a `Suggests`, and a network route to a plain-HTTP service on
+port 8080, which some institutional networks block.
 
 ### Reading FVCOM from anywhere else
 
@@ -1138,6 +1172,36 @@ steps <- accessHYCOM(vars = "SST", frequency = "3hourly",
 
 daily <- upscale_time(steps, to = "day")     # a genuine daily mean
 ```
+
+### Reaching past 2015
+
+The default archive is the **reanalysis** (`GLBv53X`, 1994–2015): one
+internally consistent run, which is why it is the default. HYCOM
+continues to the present, but as a chain of shorter **operational**
+experiments — the model as it was running at the time:
+
+``` r
+hycom_covering("2019-06-15")
+#> [1] "GLBv930" "GLBy930"
+
+recent <- accessHYCOM(vars = c("BOTT", "BOTS"), dates = "2019-06-15",
+                      bounding_box = bb, archive = "GLBy930")
+```
+
+Together they run 1994 → September 2024. One archive is read per call,
+and a request falling outside the one named is told which others hold it
+rather than being stitched to them silently — because the archives
+overlap, so where two cover a date there is a real choice between the
+more consistent run and the more recent one.
+
+The seam that matters is the **run**, not the grid. Crossing from the
+reanalysis into an operational archive changes how the values were
+produced. The grids mostly agree: `GLBv0.08` and `GLBy0.08` hold the
+same 126 latitudes between 40 and 45 °N, identically, so on a
+mid-latitude shelf the cells line up across the seam. They diverge
+toward the poles, where `GLBv0.08` stretches and `GLBy0.08` stays
+uniform. (`GLBy0.08` also stores longitude 0–360 rather than −180…180 —
+handled internally, so pass the box negative west either way.)
 
 Two practical notes. **The archive has gaps** — some three-hourly steps
 are simply absent, so a `"daily"` request at an hour that is missing

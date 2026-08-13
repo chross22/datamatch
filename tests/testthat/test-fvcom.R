@@ -242,3 +242,33 @@ test_that("fvcom_archive describes a real endpoint and rejects a non-FVCOM one",
   expect_match(conditionMessage(attr(hycom, "condition")),
                "does not look like FVCOM")
 })
+
+# ---- hindcast and forecast archive ------------------------------------------
+
+test_that("GOM3 and GOM7 are different products, not one series", {
+  archives <- fvcom_archives()
+  expect_true(all(c("GOM3", "GOM7") %in% names(archives)))
+
+  expect_equal(archives$GOM3$kind, "hindcast")
+  expect_equal(archives$GOM7$kind, "forecast archive")
+
+  # Mesh, step and layout all change between them, which is why they are two
+  # archives rather than one stitched record.
+  expect_equal(archives$GOM3$mesh, "GOM3")
+  expect_equal(archives$GOM7$mesh, "GOM7")
+  expect_gt(archives$GOM7$nodes, archives$GOM3$nodes)
+  expect_equal(archives$GOM3$frequency, "monthly")
+  expect_equal(archives$GOM7$frequency, "hourly")
+  expect_equal(archives$GOM3$layout, "aggregation")
+  expect_equal(archives$GOM7$layout, "per_month")
+  expect_true(grepl("%04d", archives$GOM7$url))
+})
+
+test_that("frequency is refused on a monthly archive rather than ignored", {
+  bb <- list(xmin = -69, xmax = -68.7, ymin = 43, ymax = 43.3)
+
+  expect_warning(
+    try(accessFVCOM(vars = "SST", years = 2010, months = 6, bounding_box = bb,
+                    frequency = "hourly"), silent = TRUE),
+    "applies only to sub-daily archives")
+})

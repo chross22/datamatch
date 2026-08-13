@@ -67,42 +67,161 @@ hycom_variables <- function() {
 #' dataset per year** rather than one aggregation, so a request spanning years
 #' opens several.
 #'
-#' @section Coverage and the gap after 2015:
-#' Only the GOFS 3.1 reanalysis, `GLBv0.08/expt_53.X`, is listed. It runs
-#' 1994–2015, which overlaps GLORYS well. HYCOM's later record is split across
-#' several short experiments with differing grids and variable sets, and picking
-#' between them is a judgement about which to track rather than a lookup — so
-#' this offers the one long consistent record and says nothing about the rest.
+#' @section One reanalysis, then a chain of operational experiments:
+#' `GLBv53X` is the GOFS 3.1 **reanalysis**: one internally consistent run over
+#' 1994–2015, which is what makes it the default. Everything after it is
+#' **operational** output — the model as it was running at the time, reassigned
+#' an experiment number whenever it changed — so the later archives are short,
+#' they overlap each other, and they are not a reanalysis.
 #'
-#' @return a named list, one entry per archive, each with `url` (a template
-#'   taking the year), `years`, `step_hours`, `label`, and `reference`
+#' Together they reach the present:
+#'
+#' \tabular{lll}{
+#'   `GLBv53X`  \tab 1994-01-01 to 2015-12-31 \tab reanalysis \cr
+#'   `GLBv563`  \tab 2014-07-01 to 2016-09-30 \tab operational \cr
+#'   `GLBv572`  \tab 2016-05-01 to 2017-02-01 \tab operational \cr
+#'   `GLBv928`  \tab 2017-02-01 to 2017-06-01 \tab operational \cr
+#'   `GLBv577`  \tab 2017-06-01 to 2017-10-01 \tab operational \cr
+#'   `GLBv929`  \tab 2017-10-01 to 2018-03-20 \tab operational \cr
+#'   `GLBv930`  \tab 2018-01-01 to 2020-02-19 \tab operational \cr
+#'   `GLBy930`  \tab 2018-12-04 to 2024-09-05 \tab operational, finer grid
+#' }
+#'
+#' @section Two seams to know about:
+#' **They overlap.** `GLBv563` starts eighteen months before `GLBv53X` ends, and
+#' several of the 2017 experiments abut or overlap. Nothing here picks between
+#' them, because which one to prefer where they overlap is a judgement: the
+#' reanalysis is the more consistent, the operational run the more recent.
+#'
+#' **The seam that matters is the run, not the grid.** Crossing from `GLBv53X`
+#' into an operational archive means changing from a reanalysis to the model as
+#' it was running at the time, which is a genuine discontinuity in how the
+#' values were produced.
+#'
+#' The grid difference is smaller than it looks. `GLBv0.08` carries 3251
+#' latitudes and `GLBy0.08` carries 4251, but both span -80 to 90 and both are
+#' spaced 0.04 degrees through the middle latitudes — `GLBv0.08` stretches
+#' toward the poles where `GLBy0.08` stays uniform. Between 40 and 45 N the two
+#' hold the same 126 latitudes, identically, so on a mid-latitude shelf the cells
+#' *do* correspond and a series spanning the seam is on one grid. They diverge
+#' at high latitude, where a polar study would be comparing different cells.
+#'
+#' The longitude convention differs too — `GLBv0.08` runs -180 to 180 and
+#' `GLBy0.08` runs 0 to 360 — but that is handled internally. Give
+#' `bounding_box` negative west for either.
+#'
+#' [accessHYCOM()] reads one archive per call and names the others when a
+#' request falls outside the one asked for, rather than stitching them silently.
+#'
+#' @return a named list, one entry per archive, each with `url`, `layout`,
+#'   `start`, `end`, `step_hours`, `kind`, `label`, and `reference`
 #' @examples
 #' names(hycom_archives())
-#' hycom_archives()$GLBv53X$years
-#' @seealso [accessHYCOM()]
+#' hycom_archives()$GLBv53X$end
+#'
+#' # Which archives cover a given day
+#' hycom_covering(as.Date("2019-06-15"))
+#' @seealso [accessHYCOM()], [hycom_covering()]
 #' @export
 hycom_archives <- function() {
+  # The GOFS reference is the same paper for every experiment; only the run
+  # differs.
+  gofs <- paste(
+    "Chassignet EP, Hurlburt HE, Smedstad OM, Halliwell GR, Hogan PJ,",
+    "Wallcraft AJ, Baraille R, Bleck R (2007). The HYCOM (HYbrid Coordinate",
+    "Ocean Model) data assimilative system.",
+    "Journal of Marine Systems 65:60-83. doi:10.1016/j.jmarsys.2005.09.016"
+  )
+
+  # `layout` is how the experiment is published. The reanalysis is split into one
+  # dataset per year, so its url is a template; the operational runs are each a
+  # single aggregation.
+  archive <- function(url, layout, start, end, kind, label,
+                      resolution = "0.08 deg longitude, 0.04 deg latitude") {
+    list(url = url, layout = layout, start = as.Date(start), end = as.Date(end),
+         step_hours = 3L, kind = kind, resolution = resolution, label = label,
+         reference = gofs)
+  }
+
   list(
-    GLBv53X = list(
-      url = "https://tds.hycom.org/thredds/dodsC/GLBv0.08/expt_53.X/data/%d",
-      years = 1994:2015,
-      step_hours = 3L,
-      resolution = "0.08 degrees longitude, 0.04 degrees latitude",
-      label = "HYCOM + NCODA GOFS 3.1 reanalysis (GLBv0.08 expt_53.X)",
-      reference = paste(
-        "Chassignet EP, Hurlburt HE, Smedstad OM, Halliwell GR, Hogan PJ,",
-        "Wallcraft AJ, Baraille R, Bleck R (2007). The HYCOM (HYbrid Coordinate",
-        "Ocean Model) data assimilative system.",
-        "Journal of Marine Systems 65:60-83. doi:10.1016/j.jmarsys.2005.09.016"
-      )
-    )
+    GLBv53X = archive(
+      "https://tds.hycom.org/thredds/dodsC/GLBv0.08/expt_53.X/data/%d",
+      "per_year", "1994-01-01", "2015-12-31", "reanalysis",
+      "HYCOM + NCODA GOFS 3.1 reanalysis (GLBv0.08 expt_53.X)"),
+
+    GLBv563 = archive(
+      "https://tds.hycom.org/thredds/dodsC/GLBv0.08/expt_56.3",
+      "single", "2014-07-01", "2016-09-30", "operational",
+      "HYCOM GOFS 3.1 operational (GLBv0.08 expt_56.3)"),
+
+    GLBv572 = archive(
+      "https://tds.hycom.org/thredds/dodsC/GLBv0.08/expt_57.2",
+      "single", "2016-05-01", "2017-02-01", "operational",
+      "HYCOM GOFS 3.1 operational (GLBv0.08 expt_57.2)"),
+
+    GLBv928 = archive(
+      "https://tds.hycom.org/thredds/dodsC/GLBv0.08/expt_92.8",
+      "single", "2017-02-01", "2017-06-01", "operational",
+      "HYCOM GOFS 3.1 operational (GLBv0.08 expt_92.8)"),
+
+    GLBv577 = archive(
+      "https://tds.hycom.org/thredds/dodsC/GLBv0.08/expt_57.7",
+      "single", "2017-06-01", "2017-10-01", "operational",
+      "HYCOM GOFS 3.1 operational (GLBv0.08 expt_57.7)"),
+
+    GLBv929 = archive(
+      "https://tds.hycom.org/thredds/dodsC/GLBv0.08/expt_92.9",
+      "single", "2017-10-01", "2018-03-20", "operational",
+      "HYCOM GOFS 3.1 operational (GLBv0.08 expt_92.9)"),
+
+    GLBv930 = archive(
+      "https://tds.hycom.org/thredds/dodsC/GLBv0.08/expt_93.0",
+      "single", "2018-01-01", "2020-02-19", "operational",
+      "HYCOM GOFS 3.1 operational (GLBv0.08 expt_93.0)"),
+
+    # A different grid from every entry above: 4251 latitudes rather than 3251.
+    GLBy930 = archive(
+      "https://tds.hycom.org/thredds/dodsC/GLBy0.08/expt_93.0",
+      "single", "2018-12-04", "2024-09-05", "operational",
+      "HYCOM GOFS 3.1 operational (GLBy0.08 expt_93.0)",
+      resolution = "0.08 deg longitude, 0.04 deg latitude, GLBy grid")
   )
 }
 
-#' Open one year of a HYCOM archive
+#' Which HYCOM archives cover a given date
+#'
+#' The archives overlap, so a date can fall in more than one, and after 2015 the
+#' choice between them is a judgement rather than a lookup — the reanalysis is
+#' the more internally consistent, the operational run the more recent. This
+#' reports the candidates instead of picking one.
+#'
+#' @param dates one or more `Date` values, or anything [parse_dates()] accepts
+#' @return <char> the names of the archives spanning every date given, in
+#'   catalog order; empty if none does
+#' @examples
+#' hycom_covering("2010-06-15")     # the reanalysis alone
+#' hycom_covering("2015-06-15")     # reanalysis and an operational run
+#' hycom_covering("2025-06-15")     # none: past the end of the record
+#' @seealso [hycom_archives()], [accessHYCOM()]
+#' @export
+hycom_covering <- function(dates) {
+  dates <- parse_dates(dates)
+  archives <- hycom_archives()
+
+  names(archives)[vapply(archives, function(spec) {
+    all(dates >= spec$start & dates <= spec$end)
+  }, logical(1))]
+}
+
+#' Open a HYCOM archive, or one year of it
+#'
+#' The reanalysis is published one dataset per year and the operational runs
+#' each as a single aggregation, so `layout` decides whether the year is part of
+#' the address or ignored.
 #'
 #' @param spec one entry of [hycom_archives()]
-#' @param year <integer> the year to open
+#' @param year <integer> the year to open, used only when `layout` is
+#'   `"per_year"`
 #' @return an open `ncdf4` handle; the caller closes it
 #' @keywords internal
 hycom_open <- function(spec, year) {
@@ -112,7 +231,7 @@ hycom_open <- function(spec, year) {
          call. = FALSE)
   }
 
-  url <- sprintf(spec$url, year)
+  url <- if (identical(spec$layout, "per_year")) sprintf(spec$url, year) else spec$url
   handle <- tryCatch(ncdf4::nc_open(url), error = function(e) e)
   if (inherits(handle, "error")) {
     stop("Could not open the HYCOM archive for ", year, " over OPeNDAP:\n  ",
@@ -177,10 +296,62 @@ hycom_window <- function(values, lower, upper, axis) {
     stop("The bounding box selects no ", axis, " on the HYCOM grid.\nIts ",
          axis, " runs ", round(min(values), 2), " to ", round(max(values), 2),
          "; the request asked for ", round(lower, 2), " to ", round(upper, 2),
-         ".\nLongitudes here are negative west.", call. = FALSE)
+         ".", call. = FALSE)
   }
   list(start = min(inside), count = length(inside),
-       values = values[min(inside):max(inside)])
+       values = values[min(inside):max(inside)],
+       keep = seq_len(length(inside)))
+}
+
+#' The longitude window, in whichever convention the archive uses
+#'
+#' HYCOM is not consistent with itself here. The `GLBv0.08` experiments run
+#' -180 to 180 and `GLBy0.08` runs 0 to 360, so a Northwest Atlantic box that
+#' works against the reanalysis selects nothing against the later grid — which
+#' is how this was found.
+#'
+#' The convention is read off the coordinates rather than recorded per archive,
+#' so a grid this package has not seen is handled by inspection instead of by a
+#' table that can go stale. `bounding_box` is negative west throughout, as with
+#' every other source, and the returned longitudes are converted back.
+#'
+#' @section Boxes that wrap:
+#' In the 0-360 convention a box straddling the prime meridian is two runs of
+#' indices rather than one, and OPeNDAP wants a contiguous slice. Such a box is
+#' read as the span between its extremes and filtered locally — correct, but it
+#' transfers most of a latitude row to keep two edges of it. `keep` carries the
+#' positions to retain within the slice.
+#'
+#' @param lon <numeric> the archive's longitude axis
+#' @param xmin,xmax the requested range, negative west
+#' @return `list(start =, count =, values =, keep =)`, one-based, with `values`
+#'   negative west
+#' @keywords internal
+hycom_lon_window <- function(lon, xmin, xmax) {
+  if (max(lon) > 180) {
+    wanted <- to_360(c(xmin, xmax))
+    inside <- if (wanted[1] <= wanted[2]) {
+      which(lon >= wanted[1] & lon <= wanted[2])
+    } else {
+      which(lon >= wanted[1] | lon <= wanted[2])
+    }
+  } else {
+    inside <- which(lon >= xmin & lon <= xmax)
+  }
+
+  if (length(inside) == 0) {
+    stop("The bounding box selects no longitude on the HYCOM grid.\nIts ",
+         "longitude runs ", round(min(lon), 2), " to ", round(max(lon), 2),
+         "; the request asked for ", round(xmin, 2), " to ", round(xmax, 2),
+         " negative west.\nGive the box negative west whichever archive is ",
+         "being read; it is converted here.", call. = FALSE)
+  }
+
+  start <- min(inside)
+  count <- max(inside) - start + 1
+  list(start = start, count = count,
+       values = to_180(lon[inside]),
+       keep = inside - start + 1)
 }
 
 #' Read one HYCOM variable over a window at one time step
@@ -208,8 +379,11 @@ hycom_read_variable <- function(handle, entry, step, lon_window, lat_window) {
     count <- c(lon_window$count, lat_window$count, 1)
   }
 
-  ncdf4::ncvar_get(handle, entry$variable, start = start, count = count,
-                   collapse_degen = TRUE)
+  values <- ncdf4::ncvar_get(handle, entry$variable, start = start,
+                             count = count, collapse_degen = TRUE)
+  # A wrapped longitude box is read as one contiguous span and trimmed here, so
+  # only the cells actually asked for survive.
+  values[lon_window$keep, , drop = FALSE]
 }
 
 #' Access HYCOM output from the GOFS 3.1 reanalysis
@@ -252,10 +426,34 @@ hycom_read_variable <- function(handle, entry, step, lon_window, lat_window) {
 #' Fetching a month of three-hourly data is 248 downloads over a slow protocol.
 #' Prefer `dates` and a small box unless the whole series is genuinely wanted.
 #'
-#' @section One dataset per year:
-#' HYCOM splits its record by year, so a request spanning years opens one
-#' connection per year rather than one aggregation. Years outside the archive
-#' are warned about and skipped rather than failing the call.
+#' @section Reaching past 2015:
+#' The default archive is the **reanalysis**, `GLBv53X`, which is one
+#' internally consistent run over 1994–2015. HYCOM continues to the present, but
+#' as a chain of shorter **operational** experiments — the model as it was
+#' running at the time. [hycom_archives()] lists them and [hycom_covering()]
+#' says which span a given date:
+#'
+#' ```
+#' hycom_covering("2019-06-15")
+#' #> [1] "GLBv930" "GLBy930"
+#'
+#' recent <- accessHYCOM(vars = "BOTS", dates = "2019-06-15",
+#'                       bounding_box = bb, archive = "GLBy930")
+#' ```
+#'
+#' One archive is read per call, and a request falling outside the one named is
+#' told which others hold it rather than being stitched to them silently. The
+#' archives overlap, so where two cover a date there is a real choice between
+#' the more consistent run and the more recent one, and crossing from the
+#' reanalysis into an operational run is a discontinuity in how the values were
+#' made. The grids themselves agree through the middle latitudes, so on a shelf
+#' the cells line up across the seam even though the runs do not — see
+#' [hycom_archives()].
+#'
+#' @section One dataset per year, sometimes:
+#' The reanalysis is published one dataset per year, so a request spanning years
+#' opens one connection per year. The operational archives are each a single
+#' aggregation and open once.
 #'
 #' @param vars <char> variables to read, from [hycom_variables()]
 #' @param years <numeric> years to read. Required unless `dates` is given.
@@ -269,7 +467,9 @@ hycom_read_variable <- function(handle, entry, step, lon_window, lat_window) {
 #'   `"3hourly"` for every step. Neither is a mean; see the Three-hourly section.
 #' @param hour <integer> which UTC hour to take when `frequency = "daily"`. Must
 #'   be a multiple of 3, since that is the model's step.
-#' @param archive <char> which archive to read, from [hycom_archives()]
+#' @param archive <char> which archive to read, from [hycom_archives()]. The
+#'   default is the 1994–2015 reanalysis; later years live in the operational
+#'   archives, which [hycom_covering()] will name for a given date.
 #' @param overwrite <logical> re-read time steps already cached
 #' @return <sf object> one row per grid cell per time step, with `YEAR`, `MONTH`
 #'   and `DAY`, an `HOUR` column when `frequency = "3hourly"`, and a column per
@@ -341,17 +541,31 @@ accessHYCOM <- function(vars, years = NULL, months = NULL, bounding_box,
     days <- sort(unique(days))
   }
 
-  wanted_years <- unique(as.integer(format(days, "%Y")))
-  outside <- setdiff(wanted_years, spec$years)
-  if (length(outside) > 0) {
-    if (length(setdiff(wanted_years, outside)) == 0) {
-      stop("None of the requested years are in this archive, which covers ",
-           min(spec$years), " to ", max(spec$years), ".", call. = FALSE)
+  outside <- days < spec$start | days > spec$end
+  if (any(outside)) {
+    # The archives overlap and no single one reaches from 1994 to the present,
+    # so "outside this archive" is usually "inside a different one". Naming them
+    # turns a dead end into the next call to make.
+    elsewhere <- unique(unlist(lapply(days[outside], function(day) {
+      setdiff(hycom_covering(day), archive)
+    })))
+    advice <- if (length(elsewhere) > 0) {
+      paste0("\nThose dates are in: ", paste(elsewhere, collapse = ", "),
+             ".\nRead each archive in its own call and chain matchData(). The ",
+             "reanalysis and the\noperational runs are different runs, which is ",
+             "a seam in the values worth knowing\nabout; the grids themselves ",
+             "agree through the middle latitudes.")
+    } else {
+      "\nNo archive in hycom_archives() covers them."
     }
-    warning("Year(s) outside the archive (", min(spec$years), " to ",
-            max(spec$years), ") are skipped: ",
-            paste(outside, collapse = ", "), call. = FALSE)
-    days <- days[as.integer(format(days, "%Y")) %in% spec$years]
+
+    if (all(outside)) {
+      stop("This archive covers ", format(spec$start), " to ", format(spec$end),
+           ", and every requested day is outside it.", advice, call. = FALSE)
+    }
+    warning(sum(outside), " day(s) outside this archive (", format(spec$start),
+            " to ", format(spec$end), ") are skipped.", advice, call. = FALSE)
+    days <- days[!outside]
   }
 
   if (inherits(bounding_box, c("sf", "sfc"))) {
@@ -389,8 +603,8 @@ accessHYCOM <- function(vars, years = NULL, months = NULL, bounding_box,
 
     lon <- as.numeric(ncdf4::ncvar_get(handle, "lon"))
     lat <- as.numeric(ncdf4::ncvar_get(handle, "lat"))
-    lon_window <- hycom_window(lon, bounding_box[["xmin"]],
-                               bounding_box[["xmax"]], "longitude")
+    lon_window <- hycom_lon_window(lon, bounding_box[["xmin"]],
+                                   bounding_box[["xmax"]])
     lat_window <- hycom_window(lat, bounding_box[["ymin"]],
                                bounding_box[["ymax"]], "latitude")
     grid <- expand.grid(x = lon_window$values, y = lat_window$values)

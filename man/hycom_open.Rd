@@ -2,19 +2,22 @@
 % Please edit documentation in R/hycom.R
 \name{hycom_open}
 \alias{hycom_open}
-\title{Open one year of a HYCOM archive}
+\title{Open a HYCOM archive, or one year of it}
 \usage{
 hycom_open(spec, year)
 }
 \arguments{
 \item{spec}{one entry of \code{\link[=hycom_archives]{hycom_archives()}}}
 
-\item{year}{\if{html}{\out{<integer>}} the year to open}
+\item{year}{\if{html}{\out{<integer>}} the year to open, used only when \code{layout} is
+\code{"per_year"}}
 }
 \value{
 an open \code{ncdf4} handle; the caller closes it
 }
 \description{
-Open one year of a HYCOM archive
+The reanalysis is published one dataset per year and the operational runs
+each as a single aggregation, so \code{layout} decides whether the year is part of
+the address or ignored.
 }
 \keyword{internal}

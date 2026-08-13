@@ -36,7 +36,9 @@ strings, or \code{Date} objects}
 \item{hour}{\if{html}{\out{<integer>}} which UTC hour to take when \code{frequency = "daily"}. Must
 be a multiple of 3, since that is the model's step.}
 
-\item{archive}{\if{html}{\out{<char>}} which archive to read, from \code{\link[=hycom_archives]{hycom_archives()}}}
+\item{archive}{\if{html}{\out{<char>}} which archive to read, from \code{\link[=hycom_archives]{hycom_archives()}}. The
+default is the 1994–2015 reanalysis; later years live in the operational
+archives, which \code{\link[=hycom_covering]{hycom_covering()}} will name for a given date.}
 
 \item{overwrite}{\if{html}{\out{<logical>}} re-read time steps already cached}
 }
@@ -87,11 +89,36 @@ Fetching a month of three-hourly data is 248 downloads over a slow protocol.
 Prefer \code{dates} and a small box unless the whole series is genuinely wanted.
 }
 
-\section{One dataset per year}{
+\section{Reaching past 2015}{
 
-HYCOM splits its record by year, so a request spanning years opens one
-connection per year rather than one aggregation. Years outside the archive
-are warned about and skipped rather than failing the call.
+The default archive is the \strong{reanalysis}, \code{GLBv53X}, which is one
+internally consistent run over 1994–2015. HYCOM continues to the present, but
+as a chain of shorter \strong{operational} experiments — the model as it was
+running at the time. \code{\link[=hycom_archives]{hycom_archives()}} lists them and \code{\link[=hycom_covering]{hycom_covering()}}
+says which span a given date:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{hycom_covering("2019-06-15")
+#> [1] "GLBv930" "GLBy930"
+
+recent <- accessHYCOM(vars = "BOTS", dates = "2019-06-15",
+                      bounding_box = bb, archive = "GLBy930")
+}\if{html}{\out{</div>}}
+
+One archive is read per call, and a request falling outside the one named is
+told which others hold it rather than being stitched to them silently. The
+archives overlap, so where two cover a date there is a real choice between
+the more consistent run and the more recent one, and crossing from the
+reanalysis into an operational run is a discontinuity in how the values were
+made. The grids themselves agree through the middle latitudes, so on a shelf
+the cells line up across the seam even though the runs do not — see
+\code{\link[=hycom_archives]{hycom_archives()}}.
+}
+
+\section{One dataset per year, sometimes}{
+
+The reanalysis is published one dataset per year, so a request spanning years
+opens one connection per year. The operational archives are each a single
+aggregation and open once.
 }
 
 \examples{

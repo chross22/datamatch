@@ -51,7 +51,6 @@ test_that("hycom_window cuts a contiguous slice from real coordinates", {
 
   expect_error(hycom_window(lat, 50, 60, "latitude"),
                "selects no latitude")
-  expect_error(hycom_window(lat, 50, 60, "latitude"), "negative west")
 })
 
 test_that("an unknown variable or archive is refused before connecting", {
@@ -83,7 +82,7 @@ test_that("years outside the archive are refused or warned about", {
 
   expect_error(accessHYCOM(vars = "SST", years = 1970, months = 6,
                            bounding_box = bb),
-               "None of the requested years")
+               "every requested day is outside it")
   expect_error(accessHYCOM(vars = "SST", bounding_box = bb),
                "`years` and `months` are required")
   expect_error(accessHYCOM(vars = "SST", years = 2010, months = 6,
@@ -102,7 +101,8 @@ test_that("the archive catalog describes what it serves", {
 
   expect_true(grepl("%d", gofs$url))
   expect_equal(gofs$step_hours, 3L)
-  expect_true(all(c(1994, 2015) %in% gofs$years))
+  expect_equal(gofs$start, as.Date("1994-01-01"))
+  expect_equal(gofs$end, as.Date("2015-12-31"))
   expect_true(grepl("Chassignet", gofs$reference))
 })
 
@@ -154,4 +154,76 @@ test_that("three-hourly carries an HOUR column and aggregates to a daily mean", 
   expect_false("HOUR" %in% names(daily))
   expect_false(all(is.na(daily$SST)))
   expect_equal(detect_temporal_resolution(daily), "day")
+})
+
+# ---- the archive chain ------------------------------------------------------
+
+test_that("the archives reach from the reanalysis to 2024", {
+  archives <- hycom_archives()
+
+  expect_true(all(c("GLBv53X", "GLBy930") %in% names(archives)))
+  expect_equal(archives$GLBv53X$kind, "reanalysis")
+  # Everything after the reanalysis is operational output, not a reanalysis.
+  for (name in setdiff(names(archives), "GLBv53X")) {
+    expect_equal(archives[[name]]$kind, "operational", info = name)
+  }
+
+  # Layout differs: the reanalysis is one dataset per year, the rest single
+  # aggregations, and hycom_open() has to tell them apart.
+  expect_equal(archives$GLBv53X$layout, "per_year")
+  expect_true(grepl("%d", archives$GLBv53X$url))
+  expect_equal(archives$GLBy930$layout, "single")
+  expect_false(grepl("%d", archives$GLBy930$url))
+
+  expect_equal(max(do.call(c, lapply(archives, function(a) a$end))),
+               as.Date("2024-09-05"))
+})
+
+test_that("hycom_covering reports every archive spanning a date", {
+  # The reanalysis alone early on.
+  expect_equal(hycom_covering("2010-06-15"), "GLBv53X")
+
+  # Overlapping, which is why nothing here picks one.
+  expect_setequal(hycom_covering("2015-06-15"), c("GLBv53X", "GLBv563"))
+  expect_setequal(hycom_covering("2019-06-15"), c("GLBv930", "GLBy930"))
+
+  # Past the end of the record.
+  expect_length(hycom_covering("2025-06-15"), 0)
+})
+
+test_that("a request outside an archive names the ones that hold it", {
+  bb <- list(xmin = -69, xmax = -68.5, ymin = 43, ymax = 43.5)
+
+  # A dead end is much less useful than the next call to make.
+  expect_error(accessHYCOM(vars = "BOTS", dates = "2019-06-15",
+                           bounding_box = bb),
+               "GLBy930")
+  expect_error(accessHYCOM(vars = "BOTS", dates = "2019-06-15",
+                           bounding_box = bb),
+               "every requested day is outside it")
+
+  # Past every archive, there is nothing to point at.
+  expect_error(accessHYCOM(vars = "BOTS", dates = "2030-06-15",
+                           bounding_box = bb),
+               "No archive in hycom_archives")
+})
+
+test_that("the longitude window handles both of HYCOM's conventions", {
+  # GLBv0.08 runs -180 to 180; GLBy0.08 runs 0 to 360. The same box has to work
+  # against either, which is not true of a naive comparison.
+  west <- seq(-180, 179.92, by = 0.08)
+  east <- seq(0, 359.92, by = 0.08)
+
+  a <- hycom_lon_window(west, -69, -68.5)
+  b <- hycom_lon_window(east, -69, -68.5)
+
+  # Same cells, same returned coordinates, negative west from both.
+  expect_equal(a$values, b$values, tolerance = 1e-8)
+  expect_true(all(a$values >= -69 & a$values <= -68.5))
+  expect_true(all(b$values >= -69 & b$values <= -68.5))
+
+  # On a global 0-360 axis every longitude wraps to something real, so this can
+  # only fail on a regional grid - which is the case worth checking anyway.
+  regional <- seq(280, 300, by = 0.08)
+  expect_error(hycom_lon_window(regional, 20, 30), "selects no longitude")
 })

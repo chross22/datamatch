@@ -137,20 +137,47 @@ fvcom_archives <- function() {
     GOM3 = list(
       url = paste0("http://www.smast.umassd.edu:8080/thredds/dodsC/",
                    "fvcom/hindcasts/30yr_gom3/mean"),
+      layout = "aggregation",
       mesh = "GOM3",
+      kind = "hindcast",
       frequency = "monthly",
       start = as.Date("1978-01-01"),
       end = as.Date("2013-12-31"),
       nodes = 48451L,
       elements = 90415L,
       label = "NECOFS Northeast US 30+ year hindcast, GOM3 mesh, monthly means",
-      reference = paste(
-        "Chen C, Beardsley RC, Cowles G (2006). An unstructured grid,",
-        "finite-volume coastal ocean model (FVCOM) system.",
-        "Oceanography 19(1):78-89. doi:10.5670/oceanog.2006.92"
-      )
+      reference = fvcom_reference()
+    ),
+
+    # The archived operational forecast. A different mesh and a different kind of
+    # product from the hindcast above, not a continuation of it - see the
+    # Hindcast and forecast archive section.
+    GOM7 = list(
+      url = paste0("http://www.smast.umassd.edu:8080/thredds/dodsC/",
+                   "models/fvcom/NECOFS/Archive/NECOFS_GOM/%04d/",
+                   "necofs_%04d%02d.nc"),
+      layout = "per_month",
+      mesh = "GOM7",
+      kind = "forecast archive",
+      frequency = "hourly",
+      start = as.Date("2025-01-01"),
+      end = Sys.Date(),
+      nodes = 207081L,
+      elements = 371290L,
+      label = "NECOFS Gulf of Maine forecast archive, GOM7 mesh, hourly",
+      reference = fvcom_reference()
     )
   )
+}
+
+#' The FVCOM citation, which is one paper for every run
+#'
+#' @return <char> the reference
+#' @keywords internal
+fvcom_reference <- function() {
+  paste("Chen C, Beardsley RC, Cowles G (2006). An unstructured grid,",
+        "finite-volume coastal ocean model (FVCOM) system.",
+        "Oceanography 19(1):78-89. doi:10.5670/oceanog.2006.92")
 }
 
 #' Describe any FVCOM archive, so it can be read like a built-in one
@@ -340,6 +367,15 @@ fvcom_mesh_coordinates <- function(archive_name, spec, mesh) {
                              paste0(archive_name, "_", mesh, "_mesh.rds"))
   if (file.exists(cached)) return(readRDS(cached))
 
+  # A per-month archive's `url` is a template, so some real month has to be named
+  # to read the mesh from. The first one the archive covers will do: the mesh is
+  # the same in every file, which is what makes caching it worthwhile at all.
+  if (identical(spec$layout, "per_month")) {
+    spec$url <- sprintf(spec$url, as.integer(format(spec$start, "%Y")),
+                        as.integer(format(spec$start, "%Y")),
+                        as.integer(format(spec$start, "%m")))
+  }
+
   handle <- fvcom_open(spec)
   on.exit(ncdf4::nc_close(handle), add = TRUE)
 
@@ -470,7 +506,43 @@ fvcom_read_variable <- function(handle, entry, step, layers, keep) {
 #' the mesh, the period, which fields were saved — is read from the file, and
 #' [fvcom_archive()] reports it.
 #'
-#' @section Only monthly means:
+#' @section Hindcast and forecast archive are different products:
+#' Two NECOFS archives ship, and the second is not a continuation of the first:
+#'
+#' \itemize{
+#'   \item **`GOM3`** (the default) is the 30-year **hindcast**, monthly means on
+#'     the 48,451-node GOM3 mesh, 1978–2013. One consistent retrospective run.
+#'   \item **`GOM7`** is the archived **operational forecast**, hourly on the
+#'     207,081-node GOM7 mesh, 2025 onward. It is the model as it was running at
+#'     the time, stitched across whatever versions were current.
+#' }
+#'
+#' Three things change at once between them — the mesh, the time step, and
+#' whether the output is retrospective — so they are offered as separate
+#' archives rather than joined into one series. `GOM7` also saves fewer fields:
+#' it carries no wind stress, so `TAUX` and `TAUY` are unavailable there.
+#'
+#' Between 2014 and 2024 this server publishes neither, which is a gap in NECOFS
+#' rather than in this package.
+#'
+#' @section Sub-daily archives:
+#' `GOM7` is hourly, so `frequency` chooses what to take from it:
+#'
+#' \itemize{
+#'   \item `"daily"` (the default) reads **one snapshot per day**, at `hour`.
+#'   \item `"hourly"` reads every hour.
+#' }
+#'
+#' The default is the snapshot deliberately. A month of hourly GOM7 is 720 reads
+#' of a 207,081-node field, which is a long transfer to keep a shelf-sized corner
+#' of it, and a snapshot is usually what a daily covariate wants. A snapshot is
+#' an instant rather than a daily mean; [upscale_time()] makes a real mean from
+#' `frequency = "hourly"` if that is what is needed.
+#'
+#' `frequency` does nothing on a monthly archive such as `GOM3`, and saying so
+#' beats silently ignoring it.
+#'
+#' @section Only monthly means, on the hindcast:
 #' The hindcast is published hourly and as monthly means of those hours. Only the
 #' monthly aggregation is offered, because the hourly one cannot be opened: it
 #' carries 342,348 time steps, and reading the time coordinate — which
@@ -487,8 +559,12 @@ fvcom_read_variable <- function(handle, entry, step, layers, keep) {
 #' @param months <numeric> months to read. Required unless `dates` is given.
 #' @param bounding_box <list> named list with `xmin`, `xmax`, `ymin`, `ymax`, or
 #'   an `sf`/`sfc` object to take the bounding box of
-#' @param dates the months to read, named as dates. Any date selects the month
-#'   containing it, since the archive is monthly.
+#' @param dates the months to read, named as dates. On a monthly archive any
+#'   date selects the month containing it.
+#' @param frequency <char> for a sub-daily archive such as `GOM7`, `"daily"`
+#'   (the default) for one snapshot per day or `"hourly"` for every hour.
+#'   Ignored, with a warning, on a monthly archive.
+#' @param hour <integer> which UTC hour the daily snapshot takes, 0 to 23.
 #' @param archive which archive to read: the name of one from
 #'   [fvcom_archives()], or a spec from [fvcom_archive()] describing any other
 #'   FVCOM endpoint. The built-in list covers the Northeast US shelf only,
@@ -516,7 +592,10 @@ fvcom_read_variable <- function(handle, entry, step, layers, keep) {
 #'   Copernicus equivalent, [matchData()] for joining either to observations
 #' @export
 accessFVCOM <- function(vars, years = NULL, months = NULL, bounding_box,
-                        dates = NULL, archive = "GOM3", overwrite = FALSE) {
+                        dates = NULL, frequency = c("daily", "hourly"),
+                        hour = 12L, archive = "GOM3", overwrite = FALSE) {
+  frequency_given <- !missing(frequency)
+  frequency <- match.arg(frequency)
   # `archive` is either the name of a built-in or a spec from fvcom_archive(),
   # which is how any other region's FVCOM output is reached.
   if (is.list(archive)) {
@@ -610,6 +689,23 @@ accessFVCOM <- function(vars, years = NULL, months = NULL, bounding_box,
     wanted <- unique(paste(grid$YEAR, grid$MONTH, sep = "-"))
   }
 
+  # An archive is either monthly, in which case its own step is all there is, or
+  # sub-daily, in which case `frequency` chooses between every hour and one
+  # snapshot a day.
+  sub_daily <- identical(spec$layout, "per_month") ||
+    identical(spec$frequency, "hourly")
+
+  if (!sub_daily && frequency_given) {
+    warning("`frequency` applies only to sub-daily archives, and ",
+            if (is.list(archive)) "this one" else archive,
+            " is ", spec$frequency %||% "monthly",
+            ". Ignoring it.", call. = FALSE)
+  }
+  if (sub_daily && frequency == "daily" && (hour < 0 || hour > 23)) {
+    stop("`hour` must be between 0 and 23. Given: ", hour, call. = FALSE)
+  }
+  step <- if (!sub_daily) "month" else if (frequency == "hourly") "hour" else "day"
+
   # The mesh is static and cached, so which points are in the box - and
   # therefore the cache key - is known without contacting the server.
   coords <- fvcom_mesh_coordinates(archive_key, spec, mesh)
@@ -619,7 +715,9 @@ accessFVCOM <- function(vars, years = NULL, months = NULL, bounding_box,
   # a cache hit needs no time axis and no connection.
   key <- short_hash(paste(paste(sort(vars), collapse = ","),
                           paste(range(keep), collapse = "-"),
-                          length(keep), sep = "|"))
+                          length(keep), step,
+                          if (identical(step, "day")) hour else "all",
+                          sep = "|"))
   paths <- vapply(wanted, function(period) {
     parts <- as.integer(strsplit(period, "-", fixed = TRUE)[[1]])
     copernicus_cache("fvcom", paste0(archive_key, "_", mesh, "_",
@@ -631,8 +729,51 @@ accessFVCOM <- function(vars, years = NULL, months = NULL, bounding_box,
 
   # Only reach for the network when something is actually missing. A wholly
   # cached request reads from disk and never opens the archive.
-  steps <- rep(NA_integer_, length(wanted))
-  if (any(needed)) {
+  if (any(needed) && sub_daily) {
+    # A per-month archive is one file per month, so each month is opened in turn
+    # rather than one aggregation being indexed into.
+    for (i in which(needed)) {
+      parts <- as.integer(strsplit(wanted[i], "-", fixed = TRUE)[[1]])
+      month_spec <- spec
+      month_spec$url <- sprintf(spec$url, parts[1], parts[1], parts[2])
+
+      handle <- tryCatch(fvcom_open(month_spec), error = function(e) e)
+      if (inherits(handle, "error")) {
+        warning("No file for ", wanted[i], " in this archive; skipping.",
+                call. = FALSE)
+        next
+      }
+
+      times <- fvcom_hourly_times(handle)
+      hours <- as.integer(format(times, "%H", tz = "UTC"))
+      days <- as.integer(format(times, "%d", tz = "UTC"))
+
+      # Every hour of the month, or one snapshot per day. The default is the
+      # snapshot: a month of hourly GOM7 is 720 reads of a 207,081-node field,
+      # which is hours of transfer to keep a shelf-sized corner of it.
+      steps <- if (step == "hour") seq_along(times) else which(hours == hour)
+
+      layers <- handle$dim$siglay$len %||% 1L
+      frames <- lapply(steps, function(s) {
+        frame <- coords[keep, , drop = FALSE]
+        for (name in vars) {
+          frame[[name]] <- fvcom_read_variable(handle, entries[[name]], s,
+                                               layers, keep)
+        }
+        frame$YEAR <- parts[1]
+        frame$MONTH <- parts[2]
+        frame$DAY <- days[s]
+        if (step == "hour") frame$HOUR <- hours[s]
+        frame
+      })
+      ncdf4::nc_close(handle)
+
+      if (length(frames) == 0) next
+      frame <- dplyr::bind_rows(frames)
+      rownames(frame) <- NULL
+      saveRDS(frame, paths[i])
+    }
+  } else if (any(needed)) {
     handle <- fvcom_open(spec)
     on.exit(ncdf4::nc_close(handle), add = TRUE)
 
@@ -687,8 +828,33 @@ accessFVCOM <- function(vars, years = NULL, months = NULL, bounding_box,
 
   out <- sf::st_as_sf(dplyr::bind_rows(frames), coords = c("x", "y"),
                       crs = sf::st_crs(4326))
-  attr(out, "datamatch_step") <- "month"
+  attr(out, "datamatch_step") <- step
   out
+}
+
+#' Time steps of one sub-daily FVCOM file, as UTC instants
+#'
+#' [fvcom_times()] returns dates, which is all a monthly aggregation needs. An
+#' hourly file needs the hour as well, so this keeps `Itime2` — the milliseconds
+#' within the day that the date-only reader discards.
+#'
+#' @param handle an open `ncdf4` handle
+#' @return a `POSIXct` vector in UTC, one per time step
+#' @keywords internal
+fvcom_hourly_times <- function(handle) {
+  units <- ncdf4::ncatt_get(handle, "Itime", "units")$value
+  epoch <- as.Date(substr(trimws(sub("^.*since\\s+", "", units)), 1, 10))
+  if (is.na(epoch)) {
+    stop("The archive's time epoch could not be read from '", units, "'.",
+         call. = FALSE)
+  }
+
+  days <- as.numeric(ncdf4::ncvar_get(handle, "Itime"))
+  # Itime2 is milliseconds past midnight. Absent on a file storing whole days.
+  millis <- tryCatch(as.numeric(ncdf4::ncvar_get(handle, "Itime2")),
+                     error = function(e) rep(0, length(days)))
+
+  as.POSIXct(epoch, tz = "UTC") + days * 86400 + millis / 1000
 }
 
 #' Printable dictionary of FVCOM variables

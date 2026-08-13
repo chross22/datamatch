@@ -7,8 +7,8 @@
 hycom_archives()
 }
 \value{
-a named list, one entry per archive, each with \code{url} (a template
-taking the year), \code{years}, \code{step_hours}, \code{label}, and \code{reference}
+a named list, one entry per archive, each with \code{url}, \code{layout},
+\code{start}, \code{end}, \code{step_hours}, \code{kind}, \code{label}, and \code{reference}
 }
 \description{
 Served over OPeNDAP from the HYCOM THREDDS server at the Naval Research
@@ -16,19 +16,63 @@ Laboratory. Unlike the Copernicus and FVCOM sources, HYCOM publishes \strong{one
 dataset per year} rather than one aggregation, so a request spanning years
 opens several.
 }
-\section{Coverage and the gap after 2015}{
+\section{One reanalysis, then a chain of operational experiments}{
 
-Only the GOFS 3.1 reanalysis, \code{GLBv0.08/expt_53.X}, is listed. It runs
-1994–2015, which overlaps GLORYS well. HYCOM's later record is split across
-several short experiments with differing grids and variable sets, and picking
-between them is a judgement about which to track rather than a lookup — so
-this offers the one long consistent record and says nothing about the rest.
+\code{GLBv53X} is the GOFS 3.1 \strong{reanalysis}: one internally consistent run over
+1994–2015, which is what makes it the default. Everything after it is
+\strong{operational} output — the model as it was running at the time, reassigned
+an experiment number whenever it changed — so the later archives are short,
+they overlap each other, and they are not a reanalysis.
+
+Together they reach the present:
+
+\tabular{lll}{
+\code{GLBv53X}  \tab 1994-01-01 to 2015-12-31 \tab reanalysis \cr
+\code{GLBv563}  \tab 2014-07-01 to 2016-09-30 \tab operational \cr
+\code{GLBv572}  \tab 2016-05-01 to 2017-02-01 \tab operational \cr
+\code{GLBv928}  \tab 2017-02-01 to 2017-06-01 \tab operational \cr
+\code{GLBv577}  \tab 2017-06-01 to 2017-10-01 \tab operational \cr
+\code{GLBv929}  \tab 2017-10-01 to 2018-03-20 \tab operational \cr
+\code{GLBv930}  \tab 2018-01-01 to 2020-02-19 \tab operational \cr
+\code{GLBy930}  \tab 2018-12-04 to 2024-09-05 \tab operational, finer grid
+}
+}
+
+\section{Two seams to know about}{
+
+\strong{They overlap.} \code{GLBv563} starts eighteen months before \code{GLBv53X} ends, and
+several of the 2017 experiments abut or overlap. Nothing here picks between
+them, because which one to prefer where they overlap is a judgement: the
+reanalysis is the more consistent, the operational run the more recent.
+
+\strong{The seam that matters is the run, not the grid.} Crossing from \code{GLBv53X}
+into an operational archive means changing from a reanalysis to the model as
+it was running at the time, which is a genuine discontinuity in how the
+values were produced.
+
+The grid difference is smaller than it looks. \code{GLBv0.08} carries 3251
+latitudes and \code{GLBy0.08} carries 4251, but both span -80 to 90 and both are
+spaced 0.04 degrees through the middle latitudes — \code{GLBv0.08} stretches
+toward the poles where \code{GLBy0.08} stays uniform. Between 40 and 45 N the two
+hold the same 126 latitudes, identically, so on a mid-latitude shelf the cells
+\emph{do} correspond and a series spanning the seam is on one grid. They diverge
+at high latitude, where a polar study would be comparing different cells.
+
+The longitude convention differs too — \code{GLBv0.08} runs -180 to 180 and
+\code{GLBy0.08} runs 0 to 360 — but that is handled internally. Give
+\code{bounding_box} negative west for either.
+
+\code{\link[=accessHYCOM]{accessHYCOM()}} reads one archive per call and names the others when a
+request falls outside the one asked for, rather than stitching them silently.
 }
 
 \examples{
 names(hycom_archives())
-hycom_archives()$GLBv53X$years
+hycom_archives()$GLBv53X$end
+
+# Which archives cover a given day
+hycom_covering(as.Date("2019-06-15"))
 }
 \seealso{
-\code{\link[=accessHYCOM]{accessHYCOM()}}
+\code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=hycom_covering]{hycom_covering()}}
 }

@@ -10,6 +10,8 @@ accessFVCOM(
   months = NULL,
   bounding_box,
   dates = NULL,
+  frequency = c("daily", "hourly"),
+  hour = 12L,
   archive = "GOM3",
   overwrite = FALSE
 )
@@ -24,8 +26,14 @@ accessFVCOM(
 \item{bounding_box}{\if{html}{\out{<list>}} named list with \code{xmin}, \code{xmax}, \code{ymin}, \code{ymax}, or
 an \code{sf}/\code{sfc} object to take the bounding box of}
 
-\item{dates}{the months to read, named as dates. Any date selects the month
-containing it, since the archive is monthly.}
+\item{dates}{the months to read, named as dates. On a monthly archive any
+date selects the month containing it.}
+
+\item{frequency}{\if{html}{\out{<char>}} for a sub-daily archive such as \code{GOM7}, \code{"daily"}
+(the default) for one snapshot per day or \code{"hourly"} for every hour.
+Ignored, with a warning, on a monthly archive.}
+
+\item{hour}{\if{html}{\out{<integer>}} which UTC hour the daily snapshot takes, 0 to 23.}
 
 \item{archive}{which archive to read: the name of one from
 \code{\link[=fvcom_archives]{fvcom_archives()}}, or a spec from \code{\link[=fvcom_archive]{fvcom_archive()}} describing any other
@@ -94,7 +102,47 @@ the mesh, the period, which fields were saved — is read from the file, and
 \code{\link[=fvcom_archive]{fvcom_archive()}} reports it.
 }
 
-\section{Only monthly means}{
+\section{Hindcast and forecast archive are different products}{
+
+Two NECOFS archives ship, and the second is not a continuation of the first:
+
+\itemize{
+\item \strong{\code{GOM3}} (the default) is the 30-year \strong{hindcast}, monthly means on
+the 48,451-node GOM3 mesh, 1978–2013. One consistent retrospective run.
+\item \strong{\code{GOM7}} is the archived \strong{operational forecast}, hourly on the
+207,081-node GOM7 mesh, 2025 onward. It is the model as it was running at
+the time, stitched across whatever versions were current.
+}
+
+Three things change at once between them — the mesh, the time step, and
+whether the output is retrospective — so they are offered as separate
+archives rather than joined into one series. \code{GOM7} also saves fewer fields:
+it carries no wind stress, so \code{TAUX} and \code{TAUY} are unavailable there.
+
+Between 2014 and 2024 this server publishes neither, which is a gap in NECOFS
+rather than in this package.
+}
+
+\section{Sub-daily archives}{
+
+\code{GOM7} is hourly, so \code{frequency} chooses what to take from it:
+
+\itemize{
+\item \code{"daily"} (the default) reads \strong{one snapshot per day}, at \code{hour}.
+\item \code{"hourly"} reads every hour.
+}
+
+The default is the snapshot deliberately. A month of hourly GOM7 is 720 reads
+of a 207,081-node field, which is a long transfer to keep a shelf-sized corner
+of it, and a snapshot is usually what a daily covariate wants. A snapshot is
+an instant rather than a daily mean; \code{\link[=upscale_time]{upscale_time()}} makes a real mean from
+\code{frequency = "hourly"} if that is what is needed.
+
+\code{frequency} does nothing on a monthly archive such as \code{GOM3}, and saying so
+beats silently ignoring it.
+}
+
+\section{Only monthly means, on the hindcast}{
 
 The hindcast is published hourly and as monthly means of those hours. Only the
 monthly aggregation is offered, because the hourly one cannot be opened: it
