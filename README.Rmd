@@ -13,17 +13,40 @@ knitr::opts_chunk$set(
 )
 ```
 
-# datamatch: Fetch Copernicus Marine Data and Match It in Space and Time
+# datamatch: Fetch Ocean Data from Several Sources and Match It in Space and Time
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/chross22/datamatch/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/chross22/datamatch/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-datamatch pulls environmental data from the Copernicus Marine Service and joins
-it to point data in space and time. The join is general — species observations,
-survey stations, tag positions, or another gridded product — and the package
-also covers regridding, gap filling, seafloor terrain, and basin-scale climate
-indices.
+datamatch pulls ocean and atmosphere data and joins it to point data in space
+and time. The join is general — species observations, survey stations, tag
+positions, or another gridded product — and the package also covers regridding,
+gap filling, seafloor terrain, and basin-scale climate indices.
+
+Four sources sit behind one interface, sharing one set of variable names:
+
+| Source | Function | Gives | Steps | Record |
+|---|---|---|---|---|
+| [Copernicus Marine](#quick-start) | `accessEnvDat()` | physics, biogeochemistry, ocean colour, wind and stress | monthly, daily, hourly | 1993– |
+| [FVCOM / NECOFS](#fvcom-a-regional-model-on-an-unstructured-mesh) | `accessFVCOM()` | coastal model on a triangular mesh | monthly | 1978–2013 |
+| [HYCOM](#hycom-and-bottom-fields-for-free) | `accessHYCOM()` | independent global model, sea-floor fields | 3-hourly | 1994–2015 |
+| [CCMP](#ccmp-the-long-wind-record) | `accessCCMP()` | surface winds | 6-hourly | 1993–present |
+
+All four return the same `sf` shape, so `matchData()` joins any of them to your
+observations and they chain together:
+
+``` r
+matched <- matchData(observations, accessEnvDat(vars = "SST", ...))
+matched <- matchData(matched,      accessHYCOM(vars = "BOTS", ...))
+matched <- matchData(matched,      accessCCMP(vars = "WSPD", ...))
+```
+
+> **One name, several sources, and they are not the same number.** `SST` from
+> Copernicus, FVCOM and HYCOM are three different models, and `WSPD` from
+> Copernicus and CCMP two different analyses. Sharing the column name is what
+> makes them interchangeable *mechanically* — so everything downstream works
+> unchanged — and is exactly why it is worth recording which one you used.
 
 <details>
 <summary><b>Contents</b></summary>

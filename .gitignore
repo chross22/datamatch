@@ -15,3 +15,5 @@ README.html
 
 # pkgdown site, built and deployed from CI
 docs/
+/doc/
+/Meta/
