@@ -93,3 +93,12 @@ reference:
   - erddap_dictionary
   - product_url
   - as_markdown
+
+articles:
+- title: Articles
+  navbar: ~
+  contents:
+  - datamatch
+  - sources
+  - working-with-data
+  - covariates
