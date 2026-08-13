@@ -1,5 +1,215 @@
 # Changelog
 
+## datamatch 0.2.0
+
+### New features
+
+- **CCMP winds, through
+  [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md).**
+  The Cross-Calibrated Multi-Platform ocean surface wind analysis from
+  Remote Sensing Systems: `WSPD`, `UWND`, `VWND` and `NOBS`, six-hourly
+  from January 1993 to within days of the present. No account is needed
+  — the registration RSS asks for covers their FTP service, and the
+  HTTPS archive is open.
+
+  It is the longest and finest-in-time wind record the package can
+  reach. The Copernicus L4 wind is monthly from mid-1994 or hourly only
+  from 2007, with nothing daily between; CCMP is six-hourly throughout.
+
+  Two costs. **It carries no wind stress**, which the Copernicus product
+  does, and stress cannot be recovered from these winds without choosing
+  a drag coefficient — so where stress is the covariate, use Copernicus.
+  And **there is no server-side subsetting**: RSS publishes static
+  files, so a day is one 33 MB global file however small the bounding
+  box, and a year is roughly 12 GB of transfer. Subsets are cached, and
+  a request for more than 30 days says what it is about to download
+  first.
+
+  CCMP is stored on a **0–360 longitude grid**, alone among the sources
+  here. `bounding_box` is given negative west as everywhere else,
+  converted on the way in, and the returned coordinates are negative
+  west too — so a CCMP result overlays the others without adjustment.
+
+- **HYCOM, through
+  [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md).**
+  Reads the HYCOM + NCODA GOFS 3.1 reanalysis (`GLBv0.08` `expt_53.X`,
+  1994–2015) from the Naval Research Laboratory’s THREDDS server, in the
+  same `sf` shape as everything else.
+
+  It is worth having for two things GLORYS cannot give. HYCOM publishes
+  `salinity_bottom` and `water_temp_bottom` as **fields**, so `BOTS` is
+  an ordinary request rather than a derivation from the full depth
+  column. And it is an **independent model**, so agreement with
+  Copernicus is evidence in a way either alone is not.
+
+  HYCOM publishes instantaneous fields every three hours and no mean at
+  all, so none is invented: `frequency = "daily"` takes one **snapshot**
+  per day at `hour`, and `frequency = "3hourly"` returns every step with
+  an `HOUR` column. A real mean is
+  [`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md)’s
+  job. The archive also has gaps — some steps are simply absent — so a
+  daily request at a missing hour skips that day and says so.
+
+- **Any FVCOM endpoint, through
+  [`fvcom_archive()`](https://chross22.github.io/datamatch/reference/fvcom_archive.md).**
+  FVCOM is a model rather than a data product, so there is no global
+  archive of it: groups run it for their own coastlines and publish on
+  their own servers, and
+  [`fvcom_archives()`](https://chross22.github.io/datamatch/reference/fvcom_archives.md)
+  ships only what one server publishes for the Northeast US.
+
+  `fvcom_archive(url)` describes any other FVCOM endpoint — opening it
+  once to read the mesh size, period, and which fields that run actually
+  saved — and the result is passed to `accessFVCOM(archive = )`. This
+  works because the reader depends on FVCOM’s structure rather than on
+  the region. A URL that is wrong, blocked, or not FVCOM fails there
+  with the reason instead of part-way through a fetch.
+
+- **FVCOM, through
+  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md).**
+  Reads NECOFS — the Northeast Coastal Ocean Forecast System — from the
+  UMass Dartmouth THREDDS server over OPeNDAP, and returns the same `sf`
+  shape
+  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+  does, so
+  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+  and everything downstream work unchanged.
+  [`fvcom_variables()`](https://chross22.github.io/datamatch/reference/fvcom_variables.md)
+  and
+  [`fvcom_archives()`](https://chross22.github.io/datamatch/reference/fvcom_archives.md)
+  say what can be read; currently the 30-year GOM3 hindcast, 1978–2013,
+  monthly means.
+
+  Variables reuse the Copernicus names for the same quantities, so a
+  covariate lands in a column of the same name from either source.
+  **They are not interchangeable for that reason** — one is a regional
+  model on a triangular mesh, the other a global reanalysis. Which was
+  used is worth recording.
+
+  Two things behave unlike the Copernicus path, both because FVCOM is an
+  unstructured mesh:
+
+  - **Scalars are on mesh nodes and velocities on element centroids**,
+    which are two different sets of points (48,451 and 90,415 on GOM3).
+    Fetching both in one call is an error rather than a silent
+    interpolation of one onto the other, in the same spirit as refusing
+    to mix two Copernicus grids.
+  - **`BOTS` costs nothing.** FVCOM’s sigma coordinate makes the deepest
+    layer the sea floor at every node, so bottom salinity is a layer
+    index rather than the derivation it needs against GLORYS. A sigma
+    layer is not a depth, though: the deepest sits at 98.9% of the local
+    column.
+
+  Only the monthly means are offered. The hourly hindcast carries
+  342,348 time steps, and `nc_open()` reads the whole time coordinate
+  before returning, so the request exceeds the server’s DAP timeout —
+  the failure takes over ten minutes to arrive and says only
+  `NetCDF: DAP failure`. Sub-monthly FVCOM would mean reading the
+  per-file datasets behind the aggregation, a month at a time. Reading
+  FVCOM needs `ncdf4`, a `Suggests`, and a route to a plain-HTTP service
+  on port 8080.
+
+- **Surface wind and stress.** Six new variables from the Copernicus L4
+  wind product — `WSPD` (speed), `UWND`/`VWND` (components),
+  `TAUX`/`TAUY` (stress components) and `TAU` (stress magnitude). Wind
+  is its own product on its own 0.25° grid, running from June 1994, so
+  it is a separate
+  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+  call from `SST` as usual.
+
+  Stress rather than speed is what sets mixing and Ekman pumping, and
+  the two are not interchangeable: stress is roughly quadratic in speed.
+  Note also that the monthly `WSPD` is averaged as a *speed*, so it
+  exceeds the magnitude of the mean vector wherever direction varied
+  within the month.
+
+- **`frequency = "hourly"`.** Copernicus publishes its L4 wind hourly or
+  monthly and nothing between, so there is no daily wind to fetch.
+  Hourly is the way to a sub-monthly wind field, and
+  `upscale_time(to = "day")` aggregates it — which keeps the choice of
+  summary, mean or maximum, with the caller.
+
+  Hourly results carry an `HOUR` column, and
+  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+  joins on it, so observations matched against hourly data need an hour
+  of their own, on UTC. A day is one download at either step, so hourly
+  costs no extra requests — it costs 24 times the rows.
+
+  `frequency = "daily"` is refused for the wind variables, and
+  `"hourly"` for everything else, both before anything is downloaded.
+  `WSPD` and `TAU` are magnitudes the hourly product does not carry, so
+  they are monthly only.
+
+- **`upscale_time(to = "day")`.** The time axis now goes hour → day →
+  month → year rather than starting at day.
+
+- **Bottom salinity, as `BOTS`.** GLORYS12V1 publishes potential
+  temperature at the sea floor but no salinity counterpart, so in
+  reanalysis mode this is *derived*: the full salinity column is fetched
+  and the deepest wet level in each cell kept. The depth that value came
+  from is returned as `BOTS_depth` rather than left to be assumed — the
+  deepest wet model level is not the sea floor, and in deep water can
+  sit well above it.
+
+  Because it needs the whole depth column, `BOTS` must be fetched on its
+  own; mixing it with a surface variable is an error rather than a quiet
+  second download. It is also much more expensive than a surface
+  variable, downloading roughly fifty levels to keep one, and
+  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+  says so when it starts.
+
+  In forecast mode none of this applies. The analysis-and-forecast
+  product publishes `sob` outright, so `BOTS` is an ordinary variable
+  there, fetches alongside `BOTT`, and returns no `BOTS_depth`. The two
+  are the same quantity but not the same number, so a record spanning
+  both modes has a seam in it.
+
+- `variable_dictionary("wind")` filters the catalog to the wind
+  variables, and `variable_dataset(frequency = "hourly")` reports which
+  have an hourly dataset.
+
+### Bug fixes
+
+- **[`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md)
+  and
+  [`downscale_time()`](https://chross22.github.io/datamatch/reference/downscale_time.md)
+  did not record the step they produced.** The result’s resolution was
+  left to be inferred from its own time stamps, which fails when there
+  are too few periods to tell: one day of hourly data aggregated to
+  daily is a single day in a single month, indistinguishable by
+  inspection from monthly data.
+  [`detect_temporal_resolution()`](https://chross22.github.io/datamatch/reference/detect_temporal_resolution.md)
+  fell back to monthly, and
+  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+  would then join by month and quietly ignore the day. Both now record
+  the target step, which they know exactly.
+
+- **A `yearday` column could be matched on as though it were the year.**
+  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+  finds a table’s time columns by prefix, and `yearday` begins with
+  `year`. With no plain `year` column beside it to win the tiebreak, it
+  was renamed to `YEAR` without complaint, and every row went into a
+  period no `source` covers — so the join came back all `NA` behind a
+  warning about uncovered periods, which reads like a gap in the data
+  rather than a mistake.
+
+  Day-of-year names — `yearday`, `dayofyear`, `jday`, `doy` and the
+  usual variants — are now never matched on, for any time column. A
+  table carrying one and no real year or day column gets the
+  missing-column error instead.
+
+- **The missing-column error now names the columns it passed over.** The
+  lookup stays a prefix match, so `obs_month` and `survey_year` are
+  still not recognised. Rather than only saying what it looked for, the
+  error lists the similar names that are present and asks for the
+  intended one to be renamed. Suggesting is not selecting: widening the
+  rule to a contains match would have swept up `jday` and `yearday`
+  alongside `obs_month`, trading a clear error for a wrong answer.
+
+  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)’s
+  own documentation had claimed `obs_month` would be recognised, which
+  was never true. It now describes the prefix rule the code implements.
+
 ## datamatch 0.1.0
 
 ### Bug fixes

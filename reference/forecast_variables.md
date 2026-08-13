@@ -30,10 +30,20 @@ identifier for another:
   reanalysis and `tob` in the forecast. Reusing the reanalysis code
   would produce a failed download.
 
+- **`BOTS` stops being derived.** The forecast publishes sea-floor
+  salinity as `sob`, so what the reanalysis has to compute from the
+  three-dimensional field is a plain variable request here.
+
 Satellite variables have no forecast: ocean colour is observation, and
 an observation of the future does not exist. `CHL`, `PP`, `DIATO`, and
 `DINO` are therefore absent here, and asking for them in forecast mode
 says so.
+
+Neither do the wind variables, for a different reason. Copernicus
+publishes a near-real-time wind analysis, but it is hourly only and
+reaches the present rather than past it, so there is no monthly forecast
+field to map onto. It is an analysis of what the wind has just done, not
+a prediction.
 
 ## See also
 
@@ -45,8 +55,8 @@ which takes `mode = "forecast"`
 ``` r
 names(forecast_variables())
 #>  [1] "SST"       "SSS"       "UO"        "VO"        "SSH"       "MLD"      
-#>  [7] "SIC"       "BOTT"      "NO3"       "PO4"       "O2"        "NPP_MODEL"
-#> [13] "CHL_MODEL" "PH"       
+#>  [7] "SIC"       "BOTT"      "BOTS"      "NO3"       "PO4"       "O2"       
+#> [13] "NPP_MODEL" "CHL_MODEL" "PH"       
 forecast_variables()$BOTT$variable   # "tob", not "bottomT"
 #> [1] "tob"
 ```

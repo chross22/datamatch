@@ -17,7 +17,7 @@ accessEnvDat(
   depth = c(0, 1),
   overwrite = FALSE,
   n_workers = 4,
-  frequency = c("monthly", "daily"),
+  frequency = c("monthly", "daily", "hourly"),
   dates = NULL,
   mode = c("reanalysis", "forecast")
 )
@@ -56,7 +56,9 @@ accessEnvDat(
 
 - depth:
 
-  depth range to access (in meters)
+  depth range to access (in meters). Widened to the whole water column
+  for a derived variable such as `BOTS`, which needs it, unless given
+  explicitly.
 
 - overwrite:
 
@@ -69,9 +71,10 @@ accessEnvDat(
 
 - frequency:
 
-  `"monthly"` (the default) for monthly means, or `"daily"` for daily
-  ones. See the Monthly and daily data section. Ignored when
-  `dataset_id` is given, since the dataset itself fixes the step.
+  `"monthly"` (the default) for monthly means, `"daily"` for daily ones,
+  or `"hourly"`, which only the wind variables have. See the Monthly and
+  daily data and Hourly wind sections. Ignored when `dataset_id` is
+  given, since the dataset itself fixes the step.
 
 - dates:
 
@@ -93,7 +96,9 @@ accessEnvDat(
 ## Value
 
 sf object containing requested environmental data from Copernicus Marine
-Service
+Service, with `YEAR`/`MONTH`/`DAY` columns, an `HOUR` column when the
+fetch was hourly, and a `<var>_depth` column for a derived bottom
+variable
 
 ## Requesting variables by name
 
@@ -189,6 +194,60 @@ daily is refused before anything is downloaded. Daily `CHL` comes from
 the gap-free interpolated ocean colour dataset rather than the monthly
 composite, which `accessEnvDat()` reports when it happens — see
 [`copernicus_variables()`](https://chross22.github.io/datamatch/reference/copernicus_variables.md).
+
+## Hourly wind
+
+`frequency = "hourly"` fetches the hourly wind product. It is the only
+step below daily this package reaches, and only the wind variables have
+one — the ocean reanalyses are daily at finest.
+
+The result carries an `HOUR` column alongside `YEAR`/`MONTH`/`DAY`, so a
+day is 24 rows per cell rather than one, and
+[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+joins on the hour. Observations must then carry an hour of their own, on
+UTC.
+
+    wind <- accessEnvDat(vars = c("UWND", "VWND"), frequency = "hourly",
+                         dates = unique(observations$date), bounding_box = bb)
+
+A day is one download whichever step is used, so hourly costs no more
+requests than daily — but 24 times the rows, which is what makes a large
+box expensive.
+
+**There is no daily wind.** Copernicus publishes this wind hourly and
+monthly and nothing between, so `frequency = "daily"` is refused for it.
+Aggregate the hourly field instead, which also leaves the choice of
+summary with you:
+
+    daily_wind <- upscale_time(wind, to = "day")               # the day's mean
+    peak       <- upscale_time(wind, to = "day", method = "max")  # its strongest hour
+
+`WSPD` and `TAU` are magnitudes the hourly product does not carry, so
+they are monthly only.
+
+## Bottom salinity
+
+`BOTS` is the one variable that is computed rather than downloaded.
+GLORYS12V1 publishes temperature at the sea floor but no salinity
+counterpart, so in reanalysis mode the full salinity column is fetched
+and the deepest wet level in each cell kept. The depth that value came
+from is returned alongside it, as `BOTS_depth`, rather than left to be
+assumed.
+
+Two consequences follow, and both are said out loud when it happens:
+
+- **It must be fetched on its own.** The whole depth column is a
+  different request from the single level a surface variable wants, so
+  mixing `BOTS` with `SST` is an error rather than a quiet second
+  download.
+
+- **It costs far more than a surface variable.** Roughly fifty levels
+  are downloaded over the same box to keep one, so `depth` is widened to
+  the full column unless you set it yourself.
+
+In forecast mode none of this applies: the analysis-and-forecast product
+publishes `sob` outright, so `BOTS` is an ordinary variable there,
+fetches alongside `BOTT`, and returns no `BOTS_depth`.
 
 Passing `dataset_id` explicitly overrides all of this: that dataset's
 own frequency decides, since a Copernicus dataset is published at one

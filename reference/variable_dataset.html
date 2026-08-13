@@ -11,7 +11,7 @@ a caller can group them."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">datamatch</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -21,6 +21,10 @@ a caller can group them."></head><body>
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/datamatch.html">Get started</a></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/sources.html">Choosing a data source</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -49,7 +53,7 @@ a caller can group them.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">variable_dataset</span><span class="op">(</span></span>
 <span>  <span class="va">vars</span>,</span>
 <span>  mode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"reanalysis"</span>, <span class="st">"forecast"</span><span class="op">)</span>,</span>
-<span>  frequency <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"monthly"</span>, <span class="st">"daily"</span><span class="op">)</span></span>
+<span>  frequency <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"monthly"</span>, <span class="st">"daily"</span>, <span class="st">"hourly"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -66,14 +70,14 @@ a caller can group them.</p>
 
 
 <dt id="arg-frequency">frequency<a class="anchor" aria-label="anchor" href="#arg-frequency"></a></dt>
-<dd><p><code>"monthly"</code> (the default) or <code>"daily"</code></p></dd>
+<dd><p><code>"monthly"</code> (the default), <code>"daily"</code>, or <code>"hourly"</code></p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>a named character vector of dataset identifiers, <code>NA</code> for names not in
-the catalog and, when <code>frequency = "daily"</code>, for catalog variables that have
-no daily dataset</p>
+the catalog and, when <code>frequency</code> is <code>"daily"</code> or <code>"hourly"</code>, for catalog
+variables that have no dataset at that step</p>
     </div>
 
     <div class="section level2">
@@ -94,6 +98,13 @@ no daily dataset</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> "cmems_obs-oc_glo_bgc-plankton_my_l4-gapfree-multi-4km_P1D" </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                          PP </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                                          NA </span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Wind is the other way round: hourly or monthly, never daily</span></span></span>
+<span class="r-in"><span><span class="fu">variable_dataset</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"UWND"</span>, <span class="st">"TAU"</span><span class="op">)</span>, frequency <span class="op">=</span> <span class="st">"hourly"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                         UWND </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> "cmems_obs-wind_glo_phy_my_l4_0.125deg_PT1H" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                          TAU </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                                           NA </span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

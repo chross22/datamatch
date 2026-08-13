@@ -15,7 +15,7 @@ produces a failed download rather than an obvious mistake."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">datamatch</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -25,6 +25,10 @@ produces a failed download rather than an obvious mistake."></head><body>
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/datamatch.html">Get started</a></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/sources.html">Choosing a data source</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -63,23 +67,49 @@ produces a failed download rather than an obvious mistake.</p>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Entries come from the global reanalyses: physical variables from
-<code>GLOBAL_MULTIYEAR_PHY_001_030</code> (GLORYS12V1) and biogeochemical ones from
-<code>GLOBAL_MULTIYEAR_BGC_001_029</code>.</p>
+<code>GLOBAL_MULTIYEAR_PHY_001_030</code> (GLORYS12V1), biogeochemical ones from
+<code>GLOBAL_MULTIYEAR_BGC_001_029</code>, and surface wind from
+<code>WIND_GLO_PHY_CLIMATE_L4_MY_012_003</code>.</p>
     </div>
     <div class="section level2">
-    <h2 id="monthly-and-daily">Monthly and daily<a class="anchor" aria-label="anchor" href="#monthly-and-daily"></a></h2>
+    <h2 id="monthly-daily-and-hourly">Monthly, daily and hourly<a class="anchor" aria-label="anchor" href="#monthly-daily-and-hourly"></a></h2>
 
 
 <p><code>dataset_id</code> is the monthly mean; <code>daily_dataset_id</code> is the daily one, which
-<code><a href="accessEnvDat.html">accessEnvDat()</a></code> uses when given <code>frequency = "daily"</code>. It is <code>NA</code> where no
-daily equivalent exists, and those gaps are not incidental:</p>
+<code><a href="accessEnvDat.html">accessEnvDat()</a></code> uses when given <code>frequency = "daily"</code>, and
+<code>hourly_dataset_id</code> the hourly one. Either is <code>NA</code> where no such equivalent
+exists, and those gaps are not incidental:</p>
 <ul><li><p><strong><code>PH</code></strong> — the daily biogeochemical reanalysis carries <code>chl</code>, <code>no3</code>,
 <code>nppv</code>, <code>o2</code>, <code>po4</code> and <code>si</code>, but not <code>ph</code>. Only the monthly mean has it.</p></li>
 <li><p><strong><code>PP</code></strong> — Copernicus-GlobColour serves primary production as a
 monthly composite only.</p></li>
 <li><p><strong><code>DIATO</code>, <code>DINO</code></strong> — the daily ocean colour dataset carries total
 chlorophyll alone. The phytoplankton functional types are monthly.</p></li>
-</ul><p><code>CHL</code> is the case worth reading twice. Daily ocean colour is not the monthly
+<li><p><strong>The wind variables</strong> — have no daily dataset at all. Copernicus
+publishes this wind monthly or hourly and nothing between, so
+<code>frequency = "daily"</code> is refused for them. Aggregate the hourly field
+with <code><a href="upscale_time.html">upscale_time()</a></code> if a daily mean is what you need.</p></li>
+<li><p><strong><code>WSPD</code>, <code>TAU</code></strong> — the hourly wind product carries the vector
+components but not the two magnitudes, which it leaves to be computed
+from them. Both are monthly only.</p></li>
+</ul><p>Only the wind variables are hourly, so <code>hourly_dataset_id</code> is <code>NA</code> throughout
+the ocean catalog. The ocean reanalyses are published no finer than daily.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="bottom-salinity">Bottom salinity<a class="anchor" aria-label="anchor" href="#bottom-salinity"></a></h2>
+
+
+<p><code>BOTS</code> is the one entry that is not a straight variable request. GLORYS12V1
+publishes potential temperature at the sea floor (<code>bottomT</code>) but no salinity
+counterpart, so in reanalysis mode <code>BOTS</code> is <em>derived</em>: the salinity field is
+fetched over the full depth range and the deepest wet level in each cell is
+kept. Its <code>derived</code> element records that. In forecast mode no derivation is
+needed — the analysis-and-forecast product publishes <code>sob</code> directly — so
+<code><a href="forecast_variables.html">forecast_variables()</a></code> overrides it with the real variable.</p>
+<p>The two are the same quantity by construction but not the same number: one is
+the deepest wet level of a 50-level grid, the other Copernicus's own sea-floor
+diagnostic. <code><a href="accessEnvDat.html">accessEnvDat()</a></code> says which it used.</p>
+<p><code>CHL</code> is the case worth reading twice. Daily ocean colour is not the monthly
 product at a finer step: it is <code>l4-gapfree</code>, the space-time interpolated
 field, because a single day of a single sensor is mostly cloud. The daily
 values are therefore already gap-filled by Copernicus, and running
@@ -97,9 +127,11 @@ Data Store and pass <code>dataset_id</code> explicitly.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="fu">copernicus_variables</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] "SST"       "SSS"       "BOTT"      "UO"        "VO"        "SSH"      </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [7] "MLD"       "SIC"       "CHL"       "PP"        "DIATO"     "DINO"     </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13] "NO3"       "PO4"       "O2"        "PH"        "CHL_MODEL" "NPP_MODEL"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] "SST"       "SSS"       "BOTT"      "BOTS"      "UO"        "VO"       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [7] "SSH"       "MLD"       "SIC"       "CHL"       "PP"        "DIATO"    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13] "DINO"      "NO3"       "PO4"       "O2"        "PH"        "CHL_MODEL"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [19] "NPP_MODEL" "WSPD"      "UWND"      "VWND"      "TAUX"      "TAUY"     </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [25] "TAU"      </span>
 <span class="r-in"><span><span class="fu">copernicus_variables</span><span class="op">(</span><span class="op">)</span><span class="op">$</span><span class="va">SST</span><span class="op">$</span><span class="va">variable</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "thetao"</span>
 </code></pre></div>

@@ -10,7 +10,7 @@ known.
 infer_dataset(
   vars,
   mode = c("reanalysis", "forecast"),
-  frequency = c("monthly", "daily")
+  frequency = c("monthly", "daily", "hourly")
 )
 ```
 
@@ -26,7 +26,7 @@ infer_dataset(
 
 - frequency:
 
-  `"monthly"` or `"daily"`
+  `"monthly"`, `"daily"`, or `"hourly"`
 
 ## Value
 

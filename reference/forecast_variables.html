@@ -11,7 +11,7 @@ catalog name onto the forecast product, dataset, and code that supply it."></hea
 
     <a class="navbar-brand me-2" href="../index.html">datamatch</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -21,6 +21,10 @@ catalog name onto the forecast product, dataset, and code that supply it."></hea
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/datamatch.html">Get started</a></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/sources.html">Choosing a data source</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -65,9 +69,16 @@ of SST and SSS is two requests where the reanalysis is one.</p></li>
 <li><p><strong>Some codes differ.</strong> Bottom temperature is <code>bottomT</code> in the
 reanalysis and <code>tob</code> in the forecast. Reusing the reanalysis code would
 produce a failed download.</p></li>
+<li><p><strong><code>BOTS</code> stops being derived.</strong> The forecast publishes sea-floor
+salinity as <code>sob</code>, so what the reanalysis has to compute from the
+three-dimensional field is a plain variable request here.</p></li>
 </ul><p>Satellite variables have no forecast: ocean colour is observation, and an
 observation of the future does not exist. <code>CHL</code>, <code>PP</code>, <code>DIATO</code>, and <code>DINO</code> are
 therefore absent here, and asking for them in forecast mode says so.</p>
+<p>Neither do the wind variables, for a different reason. Copernicus publishes a
+near-real-time wind analysis, but it is hourly only and reaches the present
+rather than past it, so there is no monthly forecast field to map onto. It is
+an analysis of what the wind has just done, not a prediction.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -78,8 +89,8 @@ therefore absent here, and asking for them in forecast mode says so.</p>
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="fu">forecast_variables</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [1] "SST"       "SSS"       "UO"        "VO"        "SSH"       "MLD"      </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [7] "SIC"       "BOTT"      "NO3"       "PO4"       "O2"        "NPP_MODEL"</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13] "CHL_MODEL" "PH"       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [7] "SIC"       "BOTT"      "BOTS"      "NO3"       "PO4"       "O2"       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13] "NPP_MODEL" "CHL_MODEL" "PH"       </span>
 <span class="r-in"><span><span class="fu">forecast_variables</span><span class="op">(</span><span class="op">)</span><span class="op">$</span><span class="va">BOTT</span><span class="op">$</span><span class="va">variable</span>   <span class="co"># "tob", not "bottomT"</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "tob"</span>
 </code></pre></div>

@@ -1,16 +1,16 @@
 # Aggregate environmental data onto a coarser time step
 
 Combines the time steps falling inside each target period into one
-value, so a daily product becomes monthly means, or a monthly one
-becomes annual. The grid is untouched — every cell keeps its own series,
-aggregated in place.
+value, so an hourly product becomes daily means, a daily one monthly, or
+a monthly one annual. The grid is untouched — every cell keeps its own
+series, aggregated in place.
 
 ## Usage
 
 ``` r
 upscale_time(
   env_dat,
-  to = c("month", "year"),
+  to = c("month", "year", "day"),
   vars = NULL,
   method = "mean",
   min_coverage = 0.5,
@@ -27,7 +27,8 @@ upscale_time(
 
 - to:
 
-  the target period: `"month"` or `"year"`
+  the target period: `"day"`, `"month"`, or `"year"`. `"day"` requires
+  hourly input, which only the wind variables have.
 
 - vars:
 
@@ -50,13 +51,35 @@ upscale_time(
 
 ## Value
 
-an `sf` POINT object with one row per cell per target period. Monthly
-output is stamped `DAY = 1`; annual output `MONTH = 1, DAY = 1`,
-matching what
+an `sf` POINT object with one row per cell per target period. Daily
+output keeps its `YEAR`/`MONTH`/`DAY` and drops `HOUR`; monthly output
+is stamped `DAY = 1`; annual output `MONTH = 1, DAY = 1`, matching what
 [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
 returns for non-daily products so that
 [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
 reads the resolution back correctly.
+
+## Hourly to daily
+
+This is the route to a daily wind field. Copernicus publishes its L4
+wind hourly and monthly and nothing between, so `frequency = "daily"` is
+refused for the wind variables; aggregating the hourly field is how a
+daily mean is produced, and doing it here rather than inside
+[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+keeps the choice of summary — mean wind, or the day's maximum gust —
+with the caller.
+
+The `HOUR` column is consumed rather than carried through: it is the
+axis being aggregated away. The result is stamped `YEAR`/`MONTH`/`DAY`
+like any daily product, so
+[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+reads it back as daily.
+
+Note that a daily mean of wind *components* is not the same as a daily
+mean *speed*. Averaging `UWND` and `VWND` over a day and taking the
+magnitude gives the net displacement of air; averaging the speed gives
+how hard it blew. On a day the wind reversed, the first is near zero and
+the second is not.
 
 ## Choosing a method
 

@@ -1,10 +1,38 @@
-# datamatch: Fetch Copernicus Marine Data and Match It in Space and Time
+# datamatch: Fetch Ocean Data from Several Sources and Match It in Space and Time
 
-datamatch pulls environmental data from the Copernicus Marine Service
-and joins it to point data in space and time. The join is general —
-species observations, survey stations, tag positions, or another gridded
-product — and the package also covers regridding, gap filling, seafloor
-terrain, and basin-scale climate indices.
+datamatch pulls ocean and atmosphere data and joins it to point data in
+space and time. The join is general — species observations, survey
+stations, tag positions, or another gridded product — and the package
+also covers regridding, gap filling, seafloor terrain, and basin-scale
+climate indices.
+
+Four sources sit behind one interface, sharing one set of variable
+names:
+
+| Source | Function | Gives | Steps | Record |
+|----|----|----|----|----|
+| [Copernicus Marine](#quick-start) | [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md) | physics, biogeochemistry, ocean colour, wind and stress | monthly, daily, hourly | 1993– |
+| [FVCOM / NECOFS](#fvcom-a-regional-model-on-an-unstructured-mesh) | [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md) | coastal model on a triangular mesh | monthly | 1978–2013 |
+| [HYCOM](#hycom-and-bottom-fields-for-free) | [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md) | independent global model, sea-floor fields | 3-hourly | 1994–2015 |
+| [CCMP](#ccmp-the-long-wind-record) | [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md) | surface winds | 6-hourly | 1993–present |
+
+All four return the same `sf` shape, so
+[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+joins any of them to your observations and they chain together:
+
+``` r
+
+matched <- matchData(observations, accessEnvDat(vars = "SST", ...))
+matched <- matchData(matched,      accessHYCOM(vars = "BOTS", ...))
+matched <- matchData(matched,      accessCCMP(vars = "WSPD", ...))
+```
+
+> **One name, several sources, and they are not the same number.** `SST`
+> from Copernicus, FVCOM and HYCOM are three different models, and
+> `WSPD` from Copernicus and CCMP two different analyses. Sharing the
+> column name is what makes them interchangeable *mechanically* — so
+> everything downstream works unchanged — and is exactly why it is worth
+> recording which one you used.
 
 **Contents**
 
@@ -16,8 +44,8 @@ terrain, and basin-scale climate indices.
 - [Quick start](#quick-start)
   - [One call per product](#one-call-per-product) — why `SST` and `CHL`
     are two fetches
-  - [Monthly or daily](#monthly-or-daily) — monthly by default; every
-    day of a period, or particular dates
+  - [Monthly, daily, or hourly](#monthly-daily-or-hourly) — monthly by
+    default; every day of a period, or particular dates
     - [Every day in a period](#every-day-in-a-period)
     - [Particular days](#particular-days)
   - [Downloads run in parallel](#downloads-run-in-parallel) —
@@ -28,6 +56,11 @@ terrain, and basin-scale climate indices.
 - [Variable names](#variable-names) — request `SST` rather than `thetao`
   - [Satellite or model?](#satellite-or-model) — two sources for
     chlorophyll, and why they are not interchangeable
+  - [Winds](#winds) — speed, components, and stress; hourly or monthly,
+    never daily
+    - [There is no daily wind](#there-is-no-daily-wind)
+  - [Bottom salinity](#bottom-salinity) — derived from the depth column,
+    because the reanalysis omits it
 - [Spatial and temporal resolution](#spatial-and-temporal-resolution) —
   what each product resolves, and where the gaps are
 - [Forecasts](#forecasts) — the same variables, ten days ahead
@@ -44,8 +77,23 @@ terrain, and basin-scale climate indices.
 - [Looking at the data](#looking-at-the-data) — maps, coverage, series,
   and matched points
 
-**Other covariates**
+**Other sources and covariates**
 
+- [FVCOM, a regional model on an unstructured
+  mesh](#fvcom-a-regional-model-on-an-unstructured-mesh) — NECOFS on the
+  GOM3 mesh, 1978–2013
+  - [Bottom salinity is free here](#bottom-salinity-is-free-here)
+  - [Nodes and elements are two different sets of
+    points](#nodes-and-elements-are-two-different-sets-of-points)
+  - [Monthly means only](#monthly-means-only)
+  - [Reading FVCOM from anywhere
+    else](#reading-fvcom-from-anywhere-else)
+- [HYCOM, and bottom fields for free](#hycom-and-bottom-fields-for-free)
+  — GOFS 3.1, 1994–2015
+  - [Three-hourly, and no mean to
+    fetch](#three-hourly-and-no-mean-to-fetch)
+- [CCMP, the long wind record](#ccmp-the-long-wind-record) — six-hourly
+  winds, 1993–present
 - [Static and basin-scale
   covariates](#static-and-basin-scale-covariates)
   - [Seafloor terrain](#seafloor-terrain) — depth, slope, aspect, and
@@ -174,7 +222,7 @@ never quietly reconciles those grids on your behalf.
 handles both correctly because it matches to the nearest cell whatever
 its size.
 
-### Monthly or daily
+### Monthly, daily, or hourly
 
 **Fetches are monthly means by default**, and a call that mentions
 neither `frequency` nor `dates` behaves exactly as it always has.
@@ -185,6 +233,9 @@ There are two ways to ask for daily data, for two different jobs:
 |----|----|----|
 | Every day in a period | `frequency = "daily"` with `years` and `months` | a continuous series |
 | Particular days | `dates` | only those dates |
+
+There is also `frequency = "hourly"`, which only the wind variables have
+— see [Winds](#winds). The ocean reanalyses are daily at finest.
 
 #### Every day in a period
 
@@ -343,40 +394,79 @@ library(datamatch)
 variable_dictionary()
 #> Copernicus variables available by name
 #> ------------------------------------------------------------------
-#>  name      variable label                                   units    
-#>  SST       thetao   Sea surface temperature                 degrees C
-#>  SSS       so       Sea surface salinity                    PSU      
-#>  BOTT      bottomT  Bottom temperature                      degrees C
-#>  UO        uo       Eastward current velocity               m/s      
-#>  VO        vo       Northward current velocity              m/s      
-#>  SSH       zos      Sea surface height                      m        
-#>  MLD       mlotst   Mixed layer depth                       m        
-#>  SIC       siconc   Sea ice concentration                   fraction 
-#>  CHL       CHL      Chlorophyll-a concentration (satellite) mg/m3    
-#>  PP        PP       Primary production (satellite)          mg/m2/day
-#>  DIATO     DIATO    Diatom chlorophyll-a concentration      mg/m3    
-#>  DINO      DINO     Dinophyte chlorophyll-a concentration   mg/m3    
-#>  NO3       no3      Nitrate concentration                   mmol/m3  
-#>  PO4       po4      Phosphate concentration                 mmol/m3  
-#>  O2        o2       Dissolved oxygen                        mmol/m3  
-#>  PH        ph       pH                                      unitless 
-#>  CHL_MODEL chl      Chlorophyll-a concentration (model)     mg/m3    
-#>  NPP_MODEL nppv     Net primary production (model)          mg/m3/day
+#>  name      variable              label                                  
+#>  SST       thetao                Sea surface temperature                
+#>  SSS       so                    Sea surface salinity                   
+#>  BOTT      bottomT               Bottom temperature                     
+#>  BOTS      so                    Bottom salinity                        
+#>  UO        uo                    Eastward current velocity              
+#>  VO        vo                    Northward current velocity             
+#>  SSH       zos                   Sea surface height                     
+#>  MLD       mlotst                Mixed layer depth                      
+#>  SIC       siconc                Sea ice concentration                  
+#>  CHL       CHL                   Chlorophyll-a concentration (satellite)
+#>  PP        PP                    Primary production (satellite)         
+#>  DIATO     DIATO                 Diatom chlorophyll-a concentration     
+#>  DINO      DINO                  Dinophyte chlorophyll-a concentration  
+#>  NO3       no3                   Nitrate concentration                  
+#>  PO4       po4                   Phosphate concentration                
+#>  O2        o2                    Dissolved oxygen                       
+#>  PH        ph                    pH                                     
+#>  CHL_MODEL chl                   Chlorophyll-a concentration (model)    
+#>  NPP_MODEL nppv                  Net primary production (model)         
+#>  WSPD      wind_speed            Wind speed                             
+#>  UWND      eastward_wind         Eastward wind                          
+#>  VWND      northward_wind        Northward wind                         
+#>  TAUX      eastward_stress       Eastward wind stress                   
+#>  TAUY      northward_stress      Northward wind stress                  
+#>  TAU       wind_stress_magnitude Wind stress magnitude                  
+#>  units    
+#>  degrees C
+#>  PSU      
+#>  degrees C
+#>  PSU      
+#>  m/s      
+#>  m/s      
+#>  m        
+#>  m        
+#>  fraction 
+#>  mg/m3    
+#>  mg/m2/day
+#>  mg/m3    
+#>  mg/m3    
+#>  mmol/m3  
+#>  mmol/m3  
+#>  mmol/m3  
+#>  unitless 
+#>  mg/m3    
+#>  mg/m3/day
+#>  m/s      
+#>  m/s      
+#>  m/s      
+#>  N/m2     
+#>  N/m2     
+#>  N/m2     
 #> 
 #> GLOBAL_MULTIYEAR_PHY_001_030
-#>   variables: SST, SSS, BOTT, UO, VO, SSH, MLD, SIC
+#>   variables: SST, SSS, BOTT, BOTS, UO, VO, SSH, MLD, SIC
 #>   dataset:   cmems_mod_glo_phy_my_0.083deg_P1M-m
 #>   docs:      https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_PHY_001_030/description
 #> 
 #> OCEANCOLOUR_GLO_BGC_L4_MY_009_104
 #>   variables: CHL, PP, DIATO, DINO
-#>   dataset:   cmems_obs-oc_glo_bgc-plankton_my_l4-multi-4km_P1Mcmems_obs-oc_glo_bgc-pp_my_l4-multi-4km_P1M
+#>   dataset:   cmems_obs-oc_glo_bgc-plankton_my_l4-multi-4km_P1M
+#>              cmems_obs-oc_glo_bgc-pp_my_l4-multi-4km_P1M
 #>   docs:      https://data.marine.copernicus.eu/product/OCEANCOLOUR_GLO_BGC_L4_MY_009_104/description
 #> 
 #> GLOBAL_MULTIYEAR_BGC_001_029
 #>   variables: NO3, PO4, O2, PH, CHL_MODEL, NPP_MODEL
 #>   dataset:   cmems_mod_glo_bgc_my_0.25deg_P1M-m
 #>   docs:      https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/description
+#> 
+#> WIND_GLO_PHY_CLIMATE_L4_MY_012_003
+#>   variables: WSPD, UWND, VWND, TAUX, TAUY, TAU
+#>   dataset:   cmems_obs-wind_glo_phy_my_l4_P1M
+#>   docs:      https://data.marine.copernicus.eu/product/WIND_GLO_PHY_CLIMATE_L4_MY_012_003/description
 #> 
 #> Pass a name to accessEnvDat(vars = ...), or the Copernicus code.
 #> With every variable from one product, product_id and dataset_id can be
@@ -393,26 +483,33 @@ documentation:
 as_markdown(variable_dictionary())
 ```
 
-| name      | variable | label                                   | units     |
-|-----------|----------|-----------------------------------------|-----------|
-| SST       | thetao   | Sea surface temperature                 | degrees C |
-| SSS       | so       | Sea surface salinity                    | PSU       |
-| BOTT      | bottomT  | Bottom temperature                      | degrees C |
-| UO        | uo       | Eastward current velocity               | m/s       |
-| VO        | vo       | Northward current velocity              | m/s       |
-| SSH       | zos      | Sea surface height                      | m         |
-| MLD       | mlotst   | Mixed layer depth                       | m         |
-| SIC       | siconc   | Sea ice concentration                   | fraction  |
-| CHL       | CHL      | Chlorophyll-a concentration (satellite) | mg/m3     |
-| PP        | PP       | Primary production (satellite)          | mg/m2/day |
-| DIATO     | DIATO    | Diatom chlorophyll-a concentration      | mg/m3     |
-| DINO      | DINO     | Dinophyte chlorophyll-a concentration   | mg/m3     |
-| NO3       | no3      | Nitrate concentration                   | mmol/m3   |
-| PO4       | po4      | Phosphate concentration                 | mmol/m3   |
-| O2        | o2       | Dissolved oxygen                        | mmol/m3   |
-| PH        | ph       | pH                                      | unitless  |
-| CHL_MODEL | chl      | Chlorophyll-a concentration (model)     | mg/m3     |
-| NPP_MODEL | nppv     | Net primary production (model)          | mg/m3/day |
+| name | variable | label | units |
+|----|----|----|----|
+| SST | thetao | Sea surface temperature | degrees C |
+| SSS | so | Sea surface salinity | PSU |
+| BOTT | bottomT | Bottom temperature | degrees C |
+| BOTS | so | Bottom salinity | PSU |
+| UO | uo | Eastward current velocity | m/s |
+| VO | vo | Northward current velocity | m/s |
+| SSH | zos | Sea surface height | m |
+| MLD | mlotst | Mixed layer depth | m |
+| SIC | siconc | Sea ice concentration | fraction |
+| CHL | CHL | Chlorophyll-a concentration (satellite) | mg/m3 |
+| PP | PP | Primary production (satellite) | mg/m2/day |
+| DIATO | DIATO | Diatom chlorophyll-a concentration | mg/m3 |
+| DINO | DINO | Dinophyte chlorophyll-a concentration | mg/m3 |
+| NO3 | no3 | Nitrate concentration | mmol/m3 |
+| PO4 | po4 | Phosphate concentration | mmol/m3 |
+| O2 | o2 | Dissolved oxygen | mmol/m3 |
+| PH | ph | pH | unitless |
+| CHL_MODEL | chl | Chlorophyll-a concentration (model) | mg/m3 |
+| NPP_MODEL | nppv | Net primary production (model) | mg/m3/day |
+| WSPD | wind_speed | Wind speed | m/s |
+| UWND | eastward_wind | Eastward wind | m/s |
+| VWND | northward_wind | Northward wind | m/s |
+| TAUX | eastward_stress | Eastward wind stress | N/m2 |
+| TAUY | northward_stress | Northward wind stress | N/m2 |
+| TAU | wind_stress_magnitude | Wind stress magnitude | N/m2 |
 
 Pass those names to
 [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
@@ -489,9 +586,129 @@ env <- accessEnvDat(
 spring-bloom species large copepods prefer, and the later
 stratified-water group respectively.
 
+### Winds
+
+Six wind variables come from the Copernicus L4 wind product —
+scatterometer retrievals blended with an ECMWF model background. They
+are fetched like anything else:
+
+``` r
+
+wind <- accessEnvDat(vars = c("WSPD", "UWND", "VWND", "TAU"),
+                     years = 2003:2017, months = 1:12, bounding_box = bb)
+```
+
+| Name           | What it is                             | Units |
+|----------------|----------------------------------------|-------|
+| `WSPD`         | Wind speed at 10 m                     | m/s   |
+| `UWND`, `VWND` | Eastward and northward wind components | m/s   |
+| `TAUX`, `TAUY` | Eastward and northward wind stress     | N/m2  |
+| `TAU`          | Wind stress magnitude                  | N/m2  |
+
+**Wind is its own product on its own grid**, not part of the physics
+reanalysis, so it is a separate call from `SST` — the usual rule. It is
+0.25° monthly, about three times coarser than GLORYS, and runs from June
+1994.
+
+**Speed and stress are not the same covariate.** Stress is roughly
+quadratic in speed, so it is what actually sets mixing and, through its
+curl, Ekman pumping. If the question is about the ocean’s response to
+wind rather than about the wind itself, `TAU` is usually the one to
+reach for.
+
+One subtlety in the monthly means: `WSPD` is averaged *as a speed*, so
+it exceeds the magnitude of the mean vector wherever direction varied
+within the month. A month of storms from every direction has a large
+`WSPD` and a small `sqrt(UWND² + VWND²)`. Both are correct; they answer
+different questions.
+
+#### There is no daily wind
+
+Copernicus publishes this wind monthly or hourly and **nothing
+between**, so `frequency = "daily"` is refused for it rather than
+quietly substituted. Fetch hourly and aggregate, which also leaves the
+choice of summary with you:
+
+``` r
+
+hourly <- accessEnvDat(vars = c("UWND", "VWND"), frequency = "hourly",
+                       dates = unique(observations$date), bounding_box = bb)
+
+daily <- upscale_time(hourly, to = "day")                  # the day's mean
+peak  <- upscale_time(hourly, to = "day", method = "max")  # its strongest hour
+```
+
+Hourly data carries an `HOUR` column, so a day is 24 rows per cell and
+[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+joins on the hour — which means observations need an hour of their own,
+on UTC. A day is still one download, so hourly costs no more requests
+than daily; it costs 24 times the rows.
+
+Two limits worth knowing before planning around it. The hourly product
+starts in **2007**, where the monthly one reaches back to 1994. And it
+carries the vector components only — `WSPD` and `TAU` are magnitudes it
+leaves to be computed, so both are monthly only.
+
+Wind has no forecast, either. Copernicus publishes a near-real-time wind
+analysis, but it is hourly only and reaches the present rather than past
+it.
+
+### Bottom salinity
+
+`BOTS` pairs with `BOTT`, but it is not fetched the same way, because
+**GLORYS12V1 does not publish it.** The reanalysis has temperature at
+the sea floor and no salinity counterpart. So it is derived: the full
+salinity column is fetched and the deepest wet level in each cell kept.
+
+``` r
+
+bots <- accessEnvDat(vars = "BOTS", years = 2010:2014, months = 1:12,
+                     bounding_box = bb)
+#> BOTS is not published by this product. Deriving it from the full 'so' column
+#> and keeping the deepest wet level in each cell; the depth used comes back as
+#> BOTS_depth.
+```
+
+The depth each value came from is returned as `BOTS_depth` rather than
+left to be assumed. That matters because the deepest wet *model level*
+is not the sea floor: level spacing coarsens with depth, so in deep
+water the value can sit a long way above the bottom. In shelf water it
+is within a few metres.
+
+Two consequences, both deliberate:
+
+- **It must be fetched on its own.** The whole depth column is a
+  different request from the single level `SST` wants, so mixing them is
+  an error rather than a quiet second download. Call twice and chain
+  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md).
+- **It costs far more.** Roughly fifty levels are downloaded over the
+  same box to keep one, so a large box is much slower than the same box
+  of `SST`.
+
+In forecast mode none of this applies. The analysis-and-forecast product
+publishes sea-floor salinity outright, so `BOTS` is an ordinary variable
+there, fetches alongside `BOTT`, and returns no `BOTS_depth`:
+
+``` r
+
+accessEnvDat(vars = c("BOTT", "BOTS"), years = 2026, months = 8,
+             bounding_box = bb, mode = "forecast")
+```
+
+The two are the same quantity by construction but not the same number —
+one is the deepest level of a 50-level grid, the other Copernicus’s own
+diagnostic — so a record spanning both modes has a seam in it.
+
 ``` r
 
 variable_dictionary("biogeochemical")        # filter by product
+variable_dictionary("wind")                  # or just the winds
+fvcom_dictionary()                           # the FVCOM catalog, for accessFVCOM()
+fvcom_archives()                             # which FVCOM archives are built in
+hycom_dictionary()                           # the HYCOM catalog, for accessHYCOM()
+hycom_archives()                             # which HYCOM archives can be read
+ccmp_dictionary()                            # the CCMP catalog, for accessCCMP()
+ccmp_versions()                              # which CCMP versions can be read
 variable_dataset(c("SST", "CHL"))            # which dataset each comes from
 as.data.frame(variable_dictionary())$description  # full descriptions
 ```
@@ -505,6 +722,7 @@ Products do not share a grid, so how resolution is handled matters:
 | Physics reanalysis | 0.083° (~9 km) | monthly or daily, from 1993 | gap-free |
 | Biogeochemistry reanalysis | 0.25° (~28 km) | monthly or daily, from 1993 | gap-free |
 | Satellite ocean colour | 4 km | monthly, from 1997 | **cloud gaps** |
+| Surface wind | 0.25° monthly, 0.125° hourly | monthly from 1994, hourly from 2007; **no daily** | gap-free |
 | Analysis-and-forecast | 0.083° / 0.25° | monthly or daily, to ~10 days ahead | gap-free |
 
 Satellite is the finest source, and the only observed one. It is also
@@ -557,7 +775,7 @@ Four functions, one pair per axis, plus one for gaps. Each takes a
 |----|----|
 | [`upscale_grid()`](https://chross22.github.io/datamatch/reference/upscale_grid.md) | Aggregates onto a coarser grid — `mean`, `median`, `min`, `max`, `sum`, `mode` |
 | [`downscale_grid()`](https://chross22.github.io/datamatch/reference/downscale_grid.md) | Interpolates onto a finer grid — `nearest`, `bilinear`, `cubic`, `idw` |
-| [`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md) | Aggregates onto a coarser time step — `mean`, `median`, `min`, `max`, `sum`, `sd` |
+| [`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md) | Aggregates onto a coarser time step — hourly to daily, daily to monthly, monthly to annual |
 | [`downscale_time()`](https://chross22.github.io/datamatch/reference/downscale_time.md) | Interpolates onto a finer time step — `step`, `linear`, `spline` |
 | [`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md) | Substitutes another covariate wherever the first is missing |
 
@@ -780,6 +998,264 @@ Subset to one period first, as above. The colour scale spans everything
 passed in. Plot a whole year of a seasonal variable and the seasons mix
 together, so the map reads as noise. A warm February inshore point and a
 cool August offshore one can take the same colour.
+
+## FVCOM, a regional model on an unstructured mesh
+
+Copernicus is not the only source.
+[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md)
+reads NECOFS — the Northeast Coastal Ocean Forecast System, built on
+FVCOM at UMass Dartmouth — and returns the same shape of object, so
+everything downstream works unchanged:
+
+``` r
+
+bb <- list(xmin = -70, xmax = -66, ymin = 41, ymax = 44)
+
+fv <- accessFVCOM(vars = c("SST", "BOTT", "BOTS"), years = 2010:2013,
+                  months = 1:12, bounding_box = bb)
+
+matched <- matchData(observations, fv)
+```
+
+[`fvcom_variables()`](https://chross22.github.io/datamatch/reference/fvcom_variables.md)
+lists what is available, under the same names the Copernicus catalog
+uses: `SST`, `SSS`, `BOTT`, `BOTS`, `SSH`, `UO`, `VO`, `UBAR`, `VBAR`,
+`TAUX`, `TAUY`, plus `DEPTH`, `SWRAD` and `NHF`.
+
+**Why reach for it.** It is a coastal model on a triangular mesh that
+refines toward the shore. A Gulf of Maine box holding about 2,700 GLORYS
+cells holds some 19,000 GOM3 nodes, concentrated where the bathymetry is
+complicated. If the question is about the shelf rather than the basin,
+that resolution is the reason.
+
+**Why not.** It is one regional model rather than a reanalysis
+assimilating observations basin-wide, it stops at the mesh boundary, and
+the hindcast **ends in 2013**. Most importantly:
+
+> A covariate from FVCOM is **not interchangeable** with the same-named
+> covariate from Copernicus, even though this returns it in a column of
+> the same name. They are different models on different meshes. Say
+> which you used.
+
+### Bottom salinity is free here
+
+FVCOM uses sigma coordinates — each of the 45 layers is a fixed
+*fraction* of the local water column — so the deepest layer is the sea
+floor at every node. `BOTS` is a layer index rather than the derivation
+it takes against GLORYS. If bottom properties are the point, this is the
+cheaper source for them.
+
+The flip side is that a sigma layer is not a depth. Layer 45 sits at
+98.9% of the local depth: a metre off the bottom on the shelf, fifty
+metres off it in the Northeast Channel.
+
+### Nodes and elements are two different sets of points
+
+Scalars sit on mesh nodes; velocities and stresses sit on element
+centroids — 48,451 and 90,415 of them on GOM3. So the two kinds cannot
+be fetched together, and asking is an error rather than a silent
+interpolation of one onto the other:
+
+``` r
+
+accessFVCOM(vars = c("SST", "UBAR"), ...)
+#> Error: These variables sit on different parts of the FVCOM mesh and cannot be
+#>   read together:
+#>     SST  ->  nodes
+#>     UBAR  ->  elements
+
+# Two calls, chained - the same pattern as two Copernicus products
+scalars  <- accessFVCOM(vars = c("SST", "BOTS"), years = 2010, months = 1:12,
+                        bounding_box = bb)
+currents <- accessFVCOM(vars = c("UBAR", "VBAR"), years = 2010, months = 1:12,
+                        bounding_box = bb)
+
+matched <- matchData(observations, scalars)
+matched <- matchData(matched, currents)
+```
+
+### Monthly means only
+
+The hindcast is published as hourly fields and as monthly means of them,
+and only the monthly aggregation is offered — because the hourly one
+cannot be opened at all. It carries 342,348 time steps, and `nc_open()`
+reads the whole time coordinate before returning anything, so the
+request for it exceeds the server’s DAP timeout. The failure takes over
+ten minutes to arrive and says only `NetCDF: DAP failure`, which is why
+this is documented rather than left to be discovered.
+
+Sub-monthly FVCOM is therefore not a matter of passing a different
+argument. It would mean reading the per-file datasets behind the
+aggregation, a month at a time.
+
+[`fvcom_archives()`](https://chross22.github.io/datamatch/reference/fvcom_archives.md)
+names what is built in: currently the 30-year GOM3 hindcast, 1978–2013,
+monthly. Reading it needs the `ncdf4` package, a `Suggests`, and a
+network route to a plain-HTTP service on port 8080, which some
+institutional networks block.
+
+### Reading FVCOM from anywhere else
+
+**FVCOM is a model, not a data product.** There is no global FVCOM
+archive to point at. Groups run it for their own coastlines and publish
+on their own servers, and what ships here is one server’s Northeast US
+output — so the built-in list is a convenience, not the limit.
+
+Any other FVCOM endpoint is reached by describing it once:
+
+``` r
+
+elsewhere <- fvcom_archive("http://example.org/thredds/dodsC/some_fvcom_run")
+
+str(elsewhere)     # mesh size, period, and which fields that run actually saved
+
+env <- accessFVCOM(vars = "SST", years = 2010, months = 1:12,
+                   bounding_box = bb, archive = elsewhere)
+```
+
+This works because everything
+[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md)
+does depends on FVCOM’s *structure* rather than on the region: values on
+mesh nodes and element centroids, sigma layers, `lon`/`lat` and
+`lonc`/`latc`, an `Itime` day count. What differs between deployments —
+the mesh, the period, which fields were saved — is read from the file.
+[`fvcom_archive()`](https://chross22.github.io/datamatch/reference/fvcom_archive.md)
+opens the endpoint once and reports all of it, so a URL that is wrong,
+blocked, or not FVCOM fails there with the reason rather than part-way
+through a fetch:
+
+``` r
+
+fvcom_archive("https://tds.hycom.org/thredds/dodsC/GLBv0.08/expt_53.X/data/1994")
+#> Error: This does not look like FVCOM output: it has no 'node' dimension.
+```
+
+One caution carries over: point it at an aggregation of *hourly* output
+and it may not open at all, for the reason above. Prefer a monthly
+aggregation, or a single file, over a long hourly one.
+
+FVCOM is somebody else’s model, so cite it:
+
+> Chen C, Beardsley RC, Cowles G (2006). An unstructured grid,
+> finite-volume coastal ocean model (FVCOM) system. *Oceanography*
+> **19**(1):78–89. <https://doi.org/10.5670/oceanog.2006.92>
+
+## HYCOM, and bottom fields for free
+
+[`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md)
+reads the HYCOM + NCODA GOFS 3.1 reanalysis (`GLBv0.08` `expt_53.X`,
+1994–2015) from the Naval Research Laboratory’s THREDDS server:
+
+``` r
+
+bb <- list(xmin = -70, xmax = -66, ymin = 41, ymax = 44)
+
+bottom <- accessHYCOM(vars = c("BOTT", "BOTS"), years = 2010, months = 1:12,
+                      bounding_box = bb)
+
+matched <- matchData(observations, bottom)
+```
+
+Two reasons to reach for it. HYCOM publishes **`salinity_bottom` and
+`water_temp_bottom` as fields**, so `BOTS` costs nothing here — where
+GLORYS12V1 has no bottom salinity at all and
+[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+must derive one from the full depth column. And it is an **independent
+model**, so agreement between it and Copernicus is evidence about a
+result in a way that either alone is not.
+
+[`hycom_variables()`](https://chross22.github.io/datamatch/reference/hycom_variables.md)
+lists what is available: `SST`, `SSS`, `BOTT`, `BOTS`, `SSH`, `UO`,
+`VO`, plus `UO_BOTTOM` and `VO_BOTTOM`.
+
+### Three-hourly, and no mean to fetch
+
+HYCOM publishes instantaneous fields every three hours. There is no
+daily or monthly mean in the archive, so this does not offer one:
+
+| `frequency`         | Gives                                                |
+|---------------------|------------------------------------------------------|
+| `"daily"` (default) | one **snapshot** per day, at `hour` (default 12 UTC) |
+| `"3hourly"`         | every step, with an `HOUR` column                    |
+
+A snapshot is not a mean. A 12:00 UTC field on a tidal shelf sea is one
+instant of that day. For a real mean, fetch the steps and aggregate —
+which keeps the operation visible and the choice of summary yours:
+
+``` r
+
+steps <- accessHYCOM(vars = "SST", frequency = "3hourly",
+                     dates = "2010-06-15", bounding_box = bb)
+
+daily <- upscale_time(steps, to = "day")     # a genuine daily mean
+```
+
+Two practical notes. **The archive has gaps** — some three-hourly steps
+are simply absent, so a `"daily"` request at an hour that is missing
+skips that day and warns. And **the first request against a year is
+slow**, tens of seconds, because it opens that year’s dataset; later
+days within the same year cost a second or two, and everything is
+cached.
+
+## CCMP, the long wind record
+
+[`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+reads the Cross-Calibrated Multi-Platform ocean surface wind analysis
+from Remote Sensing Systems. No account is needed — the registration RSS
+asks for covers their FTP service, and the HTTPS archive is open:
+
+``` r
+
+bb <- list(xmin = -70, xmax = -66, ymin = 41, ymax = 44)
+
+wind <- accessCCMP(vars = c("UWND", "VWND", "WSPD"),
+                   dates = unique(observations$date), bounding_box = bb)
+
+matched <- matchData(observations, wind)
+```
+
+It is the longest and finest-in-time wind record here — **six-hourly
+from January 1993 to within days of the present**, where the Copernicus
+L4 wind is monthly from mid-1994 or hourly only from 2007, with nothing
+daily between:
+
+|            | Copernicus L4                | CCMP v3.1               |
+|------------|------------------------------|-------------------------|
+| Record     | monthly 1994–, hourly 2007–  | six-hourly 1993–present |
+| Grid       | 0.25° monthly, 0.125° hourly | 0.25°                   |
+| Winds      | `WSPD`, `UWND`, `VWND`       | `WSPD`, `UWND`, `VWND`  |
+| Stress     | `TAUX`, `TAUY`, `TAU`        | **none**                |
+| Subsetting | server-side                  | **whole globe per day** |
+
+The last two rows are the trade. **CCMP carries no wind stress**, and
+stress — not speed — is what drives mixing and Ekman pumping. It cannot
+be recovered from these winds without choosing a drag coefficient, which
+is a modelling decision this package will not make for you. Where stress
+is the covariate, use the Copernicus wind.
+
+And **CCMP has no server-side subsetting**: RSS publishes static files,
+so a day is one 33 MB global file however small the box. A year is
+roughly 12 GB of transfer to keep a few megabytes. Subsets are cached,
+so it is paid once, and a request for more than 30 days says what it is
+about to download before starting.
+
+[`ccmp_variables()`](https://chross22.github.io/datamatch/reference/ccmp_variables.md)
+lists the four: `WSPD`, `UWND`, `VWND` and `NOBS`.
+
+`NOBS` is worth fetching alongside the winds when coverage is in doubt —
+it counts the satellite retrievals behind each cell, and zero means the
+value is the model background rather than an observation.
+
+Like HYCOM, CCMP is an analysis at fixed hours with no mean in the
+archive, so `frequency = "daily"` takes a snapshot at `hour` and
+`"6hourly"` returns all four steps; `upscale_time(to = "day")` is how a
+real mean is made.
+
+> One trap handled for you: CCMP is stored on a **0–360 longitude
+> grid**, alone among the sources here. Pass `bounding_box` negative
+> west as everywhere else — it is converted on the way in, and the
+> coordinates come back negative west, so the result overlays the other
+> sources without adjustment.
 
 ## Static and basin-scale covariates
 
@@ -1181,6 +1657,30 @@ In forecast mode this happens more often, because the forecast products
 split variables across more datasets than the reanalysis does. `SST` and
 `UO` share a dataset as reanalysis but not as forecast.
 
+**`Copernicus publishes no daily dataset for: UWND, VWND`**
+
+Expected. This wind is published hourly or monthly and nothing between.
+Fetch `frequency = "hourly"` and aggregate with
+`upscale_time(to = "day")`, as in [There is no daily
+wind](#there-is-no-daily-wind). The same message for `PH`, `PP`, `DIATO`
+or `DINO` means the opposite — those are monthly composites, so fetch
+them monthly.
+
+**`Copernicus publishes no hourly dataset for: WSPD`**
+
+`WSPD` and `TAU` are magnitudes the hourly wind product does not carry.
+Fetch `UWND` and `VWND` hourly and compute the magnitude, or take these
+monthly.
+
+**`BOTS must be fetched on its own`**
+
+Bottom salinity is derived from the whole depth column, which is a
+different request from the single level a surface variable wants. Call
+[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+once for `BOTS` and once for the rest, then chain
+[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md).
+See [Bottom salinity](#bottom-salinity).
+
 **`The download did not return: uo, vo`**
 
 Those variables were requested but are not in the returned file. Either
@@ -1245,9 +1745,19 @@ Reanalysis products, used by default:
 
 | Product | Supplies | DOI |
 |----|----|----|
-| Global Ocean Physics Reanalysis (GLORYS12V1) | `SST`, `SSS`, `BOTT`, `UO`, `VO`, `SSH`, `MLD`, `SIC` | [10.48670/moi-00021](https://doi.org/10.48670/moi-00021) |
+| Global Ocean Physics Reanalysis (GLORYS12V1) | `SST`, `SSS`, `BOTT`, `BOTS`, `UO`, `VO`, `SSH`, `MLD`, `SIC` | [10.48670/moi-00021](https://doi.org/10.48670/moi-00021) |
 | Global Ocean Biogeochemistry Hindcast | `CHL_MODEL`, `NPP_MODEL`, `NO3`, `PO4`, `O2`, `PH` | [10.48670/moi-00019](https://doi.org/10.48670/moi-00019) |
 | Global Ocean Colour (Copernicus-GlobColour) | satellite `CHL`, `PP`, `DIATO`, `DINO` | [10.48670/moi-00281](https://doi.org/10.48670/moi-00281) |
+| Global Ocean Monthly Mean Sea Surface Wind and Stress | `WSPD`, `UWND`, `VWND`, `TAUX`, `TAUY`, `TAU` | [10.48670/moi-00181](https://doi.org/10.48670/moi-00181) |
+| Global Ocean Hourly Reprocessed Sea Surface Wind and Stress | the same, with `frequency = "hourly"` | [10.48670/moi-00185](https://doi.org/10.48670/moi-00185) |
+
+`BOTS` is derived from GLORYS’s salinity field rather than published by
+it, so it carries that product’s citation like any other variable taken
+from it.
+
+The two wind products are separate records with separate DOIs. A study
+using monthly wind cites the first; one using hourly wind, or a daily
+field aggregated from it, cites the second.
 
 Analysis-and-forecast products, used with `mode = "forecast"`:
 

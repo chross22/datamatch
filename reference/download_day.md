@@ -11,7 +11,7 @@ worker when it is serialised.
 ## Usage
 
 ``` r
-download_day(item, dataset_id, vars, bounding_box, depth)
+download_day(item, dataset_id, vars, bounding_box, depth, hourly = FALSE)
 ```
 
 ## Arguments
@@ -35,6 +35,13 @@ download_day(item, dataset_id, vars, bounding_box, depth)
 - depth:
 
   length-2 depth range in metres
+
+- hourly:
+
+  whether the dataset is hourly, in which case the request covers the
+  whole day rather than one instant. A bare date means midnight to
+  midnight, which on an hourly dataset selects the first hour and
+  silently discards the other 23.
 
 ## Value
 

@@ -9,7 +9,7 @@ implied, so a call need not repeat identifiers that are already known."></head><
 
     <a class="navbar-brand me-2" href="../index.html">datamatch</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -19,6 +19,10 @@ implied, so a call need not repeat identifiers that are already known."></head><
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/datamatch.html">Get started</a></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/sources.html">Choosing a data source</a></li>
+  </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -46,7 +50,7 @@ implied, so a call need not repeat identifiers that are already known.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">infer_dataset</span><span class="op">(</span></span>
 <span>  <span class="va">vars</span>,</span>
 <span>  mode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"reanalysis"</span>, <span class="st">"forecast"</span><span class="op">)</span>,</span>
-<span>  frequency <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"monthly"</span>, <span class="st">"daily"</span><span class="op">)</span></span>
+<span>  frequency <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"monthly"</span>, <span class="st">"daily"</span>, <span class="st">"hourly"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -63,7 +67,7 @@ implied, so a call need not repeat identifiers that are already known.</p>
 
 
 <dt id="arg-frequency">frequency<a class="anchor" aria-label="anchor" href="#arg-frequency"></a></dt>
-<dd><p><code>"monthly"</code> or <code>"daily"</code></p></dd>
+<dd><p><code>"monthly"</code>, <code>"daily"</code>, or <code>"hourly"</code></p></dd>
 
 </dl></div>
     <div class="section level2">

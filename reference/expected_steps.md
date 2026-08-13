@@ -8,7 +8,7 @@ days.
 ## Usage
 
 ``` r
-expected_steps(keys, from, to)
+expected_steps(keys, from, to, per_day = 24)
 ```
 
 ## Arguments
@@ -25,6 +25,12 @@ expected_steps(keys, from, to)
 - to:
 
   target period
+
+- per_day:
+
+  how many sub-daily steps a whole day holds, from
+  [`sub_daily_steps()`](https://chross22.github.io/datamatch/reference/sub_daily_steps.md).
+  24 for an hourly series, 8 for a three-hourly one.
 
 ## Value
 

@@ -14,12 +14,12 @@ detect_temporal_resolution(x)
 
 - x:
 
-  an object with YEAR/MONTH/DAY columns, typically the `source` side of
-  a match
+  an object with YEAR/MONTH/DAY columns, and HOUR when the data is
+  hourly; typically the `source` side of a match
 
 ## Value
 
-one of "day", "month", or "year"
+one of "hour", "day", "month", or "year"
 
 ## Details
 

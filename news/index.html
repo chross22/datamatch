@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">datamatch</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -17,6 +17,10 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/datamatch.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/sources.html">Choosing a data source</a></li>
+  </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -33,6 +37,65 @@
       <small>Source: <a href="https://github.com/chross22/datamatch/blob/master/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.2.0" id="datamatch-020">datamatch 0.2.0<a class="anchor" aria-label="anchor" href="#datamatch-020"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-2-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-2-0"></a></h3>
+<ul><li>
+<p><strong>CCMP winds, through <code><a href="../reference/accessCCMP.html">accessCCMP()</a></code>.</strong> The Cross-Calibrated Multi-Platform ocean surface wind analysis from Remote Sensing Systems: <code>WSPD</code>, <code>UWND</code>, <code>VWND</code> and <code>NOBS</code>, six-hourly from January 1993 to within days of the present. No account is needed — the registration RSS asks for covers their FTP service, and the HTTPS archive is open.</p>
+<p>It is the longest and finest-in-time wind record the package can reach. The Copernicus L4 wind is monthly from mid-1994 or hourly only from 2007, with nothing daily between; CCMP is six-hourly throughout.</p>
+<p>Two costs. <strong>It carries no wind stress</strong>, which the Copernicus product does, and stress cannot be recovered from these winds without choosing a drag coefficient — so where stress is the covariate, use Copernicus. And <strong>there is no server-side subsetting</strong>: RSS publishes static files, so a day is one 33 MB global file however small the bounding box, and a year is roughly 12 GB of transfer. Subsets are cached, and a request for more than 30 days says what it is about to download first.</p>
+<p>CCMP is stored on a <strong>0–360 longitude grid</strong>, alone among the sources here. <code>bounding_box</code> is given negative west as everywhere else, converted on the way in, and the returned coordinates are negative west too — so a CCMP result overlays the others without adjustment.</p>
+</li>
+<li>
+<p><strong>HYCOM, through <code><a href="../reference/accessHYCOM.html">accessHYCOM()</a></code>.</strong> Reads the HYCOM + NCODA GOFS 3.1 reanalysis (<code>GLBv0.08</code> <code>expt_53.X</code>, 1994–2015) from the Naval Research Laboratory’s THREDDS server, in the same <code>sf</code> shape as everything else.</p>
+<p>It is worth having for two things GLORYS cannot give. HYCOM publishes <code>salinity_bottom</code> and <code>water_temp_bottom</code> as <strong>fields</strong>, so <code>BOTS</code> is an ordinary request rather than a derivation from the full depth column. And it is an <strong>independent model</strong>, so agreement with Copernicus is evidence in a way either alone is not.</p>
+<p>HYCOM publishes instantaneous fields every three hours and no mean at all, so none is invented: <code>frequency = "daily"</code> takes one <strong>snapshot</strong> per day at <code>hour</code>, and <code>frequency = "3hourly"</code> returns every step with an <code>HOUR</code> column. A real mean is <code><a href="../reference/upscale_time.html">upscale_time()</a></code>’s job. The archive also has gaps — some steps are simply absent — so a daily request at a missing hour skips that day and says so.</p>
+</li>
+<li>
+<p><strong>Any FVCOM endpoint, through <code><a href="../reference/fvcom_archive.html">fvcom_archive()</a></code>.</strong> FVCOM is a model rather than a data product, so there is no global archive of it: groups run it for their own coastlines and publish on their own servers, and <code><a href="../reference/fvcom_archives.html">fvcom_archives()</a></code> ships only what one server publishes for the Northeast US.</p>
+<p><code>fvcom_archive(url)</code> describes any other FVCOM endpoint — opening it once to read the mesh size, period, and which fields that run actually saved — and the result is passed to <code>accessFVCOM(archive = )</code>. This works because the reader depends on FVCOM’s structure rather than on the region. A URL that is wrong, blocked, or not FVCOM fails there with the reason instead of part-way through a fetch.</p>
+</li>
+<li>
+<p><strong>FVCOM, through <code><a href="../reference/accessFVCOM.html">accessFVCOM()</a></code>.</strong> Reads NECOFS — the Northeast Coastal Ocean Forecast System — from the UMass Dartmouth THREDDS server over OPeNDAP, and returns the same <code>sf</code> shape <code><a href="../reference/accessEnvDat.html">accessEnvDat()</a></code> does, so <code><a href="../reference/matchData.html">matchData()</a></code> and everything downstream work unchanged. <code><a href="../reference/fvcom_variables.html">fvcom_variables()</a></code> and <code><a href="../reference/fvcom_archives.html">fvcom_archives()</a></code> say what can be read; currently the 30-year GOM3 hindcast, 1978–2013, monthly means.</p>
+<p>Variables reuse the Copernicus names for the same quantities, so a covariate lands in a column of the same name from either source. <strong>They are not interchangeable for that reason</strong> — one is a regional model on a triangular mesh, the other a global reanalysis. Which was used is worth recording.</p>
+<p>Two things behave unlike the Copernicus path, both because FVCOM is an unstructured mesh:</p>
+<ul><li>
+<strong>Scalars are on mesh nodes and velocities on element centroids</strong>, which are two different sets of points (48,451 and 90,415 on GOM3). Fetching both in one call is an error rather than a silent interpolation of one onto the other, in the same spirit as refusing to mix two Copernicus grids.</li>
+<li>
+<strong><code>BOTS</code> costs nothing.</strong> FVCOM’s sigma coordinate makes the deepest layer the sea floor at every node, so bottom salinity is a layer index rather than the derivation it needs against GLORYS. A sigma layer is not a depth, though: the deepest sits at 98.9% of the local column.</li>
+</ul><p>Only the monthly means are offered. The hourly hindcast carries 342,348 time steps, and <code>nc_open()</code> reads the whole time coordinate before returning, so the request exceeds the server’s DAP timeout — the failure takes over ten minutes to arrive and says only <code>NetCDF: DAP failure</code>. Sub-monthly FVCOM would mean reading the per-file datasets behind the aggregation, a month at a time. Reading FVCOM needs <code>ncdf4</code>, a <code>Suggests</code>, and a route to a plain-HTTP service on port 8080.</p>
+</li>
+<li>
+<p><strong>Surface wind and stress.</strong> Six new variables from the Copernicus L4 wind product — <code>WSPD</code> (speed), <code>UWND</code>/<code>VWND</code> (components), <code>TAUX</code>/<code>TAUY</code> (stress components) and <code>TAU</code> (stress magnitude). Wind is its own product on its own 0.25° grid, running from June 1994, so it is a separate <code><a href="../reference/accessEnvDat.html">accessEnvDat()</a></code> call from <code>SST</code> as usual.</p>
+<p>Stress rather than speed is what sets mixing and Ekman pumping, and the two are not interchangeable: stress is roughly quadratic in speed. Note also that the monthly <code>WSPD</code> is averaged as a <em>speed</em>, so it exceeds the magnitude of the mean vector wherever direction varied within the month.</p>
+</li>
+<li>
+<p><strong><code>frequency = "hourly"</code>.</strong> Copernicus publishes its L4 wind hourly or monthly and nothing between, so there is no daily wind to fetch. Hourly is the way to a sub-monthly wind field, and <code>upscale_time(to = "day")</code> aggregates it — which keeps the choice of summary, mean or maximum, with the caller.</p>
+<p>Hourly results carry an <code>HOUR</code> column, and <code><a href="../reference/matchData.html">matchData()</a></code> joins on it, so observations matched against hourly data need an hour of their own, on UTC. A day is one download at either step, so hourly costs no extra requests — it costs 24 times the rows.</p>
+<p><code>frequency = "daily"</code> is refused for the wind variables, and <code>"hourly"</code> for everything else, both before anything is downloaded. <code>WSPD</code> and <code>TAU</code> are magnitudes the hourly product does not carry, so they are monthly only.</p>
+</li>
+<li><p><strong><code>upscale_time(to = "day")</code>.</strong> The time axis now goes hour → day → month → year rather than starting at day.</p></li>
+<li>
+<p><strong>Bottom salinity, as <code>BOTS</code>.</strong> GLORYS12V1 publishes potential temperature at the sea floor but no salinity counterpart, so in reanalysis mode this is <em>derived</em>: the full salinity column is fetched and the deepest wet level in each cell kept. The depth that value came from is returned as <code>BOTS_depth</code> rather than left to be assumed — the deepest wet model level is not the sea floor, and in deep water can sit well above it.</p>
+<p>Because it needs the whole depth column, <code>BOTS</code> must be fetched on its own; mixing it with a surface variable is an error rather than a quiet second download. It is also much more expensive than a surface variable, downloading roughly fifty levels to keep one, and <code><a href="../reference/accessEnvDat.html">accessEnvDat()</a></code> says so when it starts.</p>
+<p>In forecast mode none of this applies. The analysis-and-forecast product publishes <code>sob</code> outright, so <code>BOTS</code> is an ordinary variable there, fetches alongside <code>BOTT</code>, and returns no <code>BOTS_depth</code>. The two are the same quantity but not the same number, so a record spanning both modes has a seam in it.</p>
+</li>
+<li><p><code>variable_dictionary("wind")</code> filters the catalog to the wind variables, and <code>variable_dataset(frequency = "hourly")</code> reports which have an hourly dataset.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-2-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-2-0"></a></h3>
+<ul><li><p><strong><code><a href="../reference/upscale_time.html">upscale_time()</a></code> and <code><a href="../reference/downscale_time.html">downscale_time()</a></code> did not record the step they produced.</strong> The result’s resolution was left to be inferred from its own time stamps, which fails when there are too few periods to tell: one day of hourly data aggregated to daily is a single day in a single month, indistinguishable by inspection from monthly data. <code><a href="../reference/detect_temporal_resolution.html">detect_temporal_resolution()</a></code> fell back to monthly, and <code><a href="../reference/matchData.html">matchData()</a></code> would then join by month and quietly ignore the day. Both now record the target step, which they know exactly.</p></li>
+<li>
+<p><strong>A <code>yearday</code> column could be matched on as though it were the year.</strong> <code><a href="../reference/matchData.html">matchData()</a></code> finds a table’s time columns by prefix, and <code>yearday</code> begins with <code>year</code>. With no plain <code>year</code> column beside it to win the tiebreak, it was renamed to <code>YEAR</code> without complaint, and every row went into a period no <code>source</code> covers — so the join came back all <code>NA</code> behind a warning about uncovered periods, which reads like a gap in the data rather than a mistake.</p>
+<p>Day-of-year names — <code>yearday</code>, <code>dayofyear</code>, <code>jday</code>, <code>doy</code> and the usual variants — are now never matched on, for any time column. A table carrying one and no real year or day column gets the missing-column error instead.</p>
+</li>
+<li>
+<p><strong>The missing-column error now names the columns it passed over.</strong> The lookup stays a prefix match, so <code>obs_month</code> and <code>survey_year</code> are still not recognised. Rather than only saying what it looked for, the error lists the similar names that are present and asks for the intended one to be renamed. Suggesting is not selecting: widening the rule to a contains match would have swept up <code>jday</code> and <code>yearday</code> alongside <code>obs_month</code>, trading a clear error for a wrong answer.</p>
+<p><code><a href="../reference/matchData.html">matchData()</a></code>’s own documentation had claimed <code>obs_month</code> would be recognised, which was never true. It now describes the prefix rule the code implements.</p>
+</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="datamatch-010">datamatch 0.1.0<a class="anchor" aria-label="anchor" href="#datamatch-010"></a></h2>
 <div class="section level3">

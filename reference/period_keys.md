@@ -22,7 +22,7 @@ period_keys(flat, to)
 
 - to:
 
-  `"month"` or `"year"`
+  `"day"`, `"month"`, or `"year"`
 
 ## Value
 

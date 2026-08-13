@@ -1,12 +1,20 @@
 # Package index
 
-## Fetching Copernicus data
+## Fetching data
 
-Download environmental data by variable name, and fill the gaps
-satellite products leave behind.
+Four sources behind one interface, sharing one set of variable names,
+and all returning the same shape. A value of the same name from two of
+them is not the same number - each function’s help says what its source
+is and is not good for.
 
 - [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
   : Access environmental data from Copernicus Marine Service
+- [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md)
+  : Access FVCOM output from the NECOFS hindcast
+- [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md)
+  : Access HYCOM output from the GOFS 3.1 reanalysis
+- [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+  : Access CCMP ocean surface winds
 - [`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md)
   : Fill satellite gaps with the model equivalent
 - [`forecast_variables()`](https://chross22.github.io/datamatch/reference/forecast_variables.md)
@@ -84,8 +92,8 @@ returns the data it drew.
 
 ## Catalogs and lookup
 
-What is available, which dataset a variable comes from, and where it is
-documented.
+What each source offers, which dataset or archive a variable comes from,
+and where it is documented.
 
 - [`variable_dictionary()`](https://chross22.github.io/datamatch/reference/variable_dictionary.md)
   [`print(`*`<datamatch_dictionary>`*`)`](https://chross22.github.io/datamatch/reference/variable_dictionary.md)
@@ -94,6 +102,28 @@ documented.
   : Look up the dataset a set of variables comes from
 - [`copernicus_variables()`](https://chross22.github.io/datamatch/reference/copernicus_variables.md)
   : Catalog of Copernicus variables under familiar names
+- [`fvcom_variables()`](https://chross22.github.io/datamatch/reference/fvcom_variables.md)
+  : Catalog of FVCOM variables under the same names as the Copernicus
+  ones
+- [`fvcom_dictionary()`](https://chross22.github.io/datamatch/reference/fvcom_dictionary.md)
+  : Printable dictionary of FVCOM variables
+- [`fvcom_archives()`](https://chross22.github.io/datamatch/reference/fvcom_archives.md)
+  : FVCOM archives this package ships with
+- [`fvcom_archive()`](https://chross22.github.io/datamatch/reference/fvcom_archive.md)
+  : Describe any FVCOM archive, so it can be read like a built-in one
+- [`hycom_variables()`](https://chross22.github.io/datamatch/reference/hycom_variables.md)
+  : Catalog of HYCOM variables under the same names as the Copernicus
+  ones
+- [`hycom_dictionary()`](https://chross22.github.io/datamatch/reference/hycom_dictionary.md)
+  : Printable dictionary of HYCOM variables
+- [`hycom_archives()`](https://chross22.github.io/datamatch/reference/hycom_archives.md)
+  : HYCOM archives this package can read
+- [`ccmp_variables()`](https://chross22.github.io/datamatch/reference/ccmp_variables.md)
+  : Catalog of CCMP wind variables
+- [`ccmp_dictionary()`](https://chross22.github.io/datamatch/reference/ccmp_dictionary.md)
+  : Printable dictionary of CCMP variables
+- [`ccmp_versions()`](https://chross22.github.io/datamatch/reference/ccmp_versions.md)
+  : CCMP versions this package can read
 - [`product_url()`](https://chross22.github.io/datamatch/reference/product_url.md)
   : Copernicus Marine product page for a product identifier
 - [`as_markdown()`](https://chross22.github.io/datamatch/reference/as_markdown.md)
