@@ -66,6 +66,7 @@ indices.
   - [Reading FVCOM from anywhere else](#reading-fvcom-from-anywhere-else)
 - [HYCOM, and bottom fields for free](#hycom-and-bottom-fields-for-free) — GOFS 3.1, 1994–2015
   - [Three-hourly, and no mean to fetch](#three-hourly-and-no-mean-to-fetch)
+- [CCMP, the long wind record](#ccmp-the-long-wind-record) — six-hourly winds, 1993–present
 - [Static and basin-scale covariates](#static-and-basin-scale-covariates)
   - [Seafloor terrain](#seafloor-terrain) — depth, slope, aspect, and TPI
   - [Climate indices](#climate-indices) — NAO, AO, AMO, PDO, LCR, AMOC
@@ -514,6 +515,8 @@ fvcom_dictionary()                           # the FVCOM catalog, for accessFVCO
 fvcom_archives()                             # which FVCOM archives are built in
 hycom_dictionary()                           # the HYCOM catalog, for accessHYCOM()
 hycom_archives()                             # which HYCOM archives can be read
+ccmp_dictionary()                            # the CCMP catalog, for accessCCMP()
+ccmp_versions()                              # which CCMP versions can be read
 variable_dataset(c("SST", "CHL"))            # which dataset each comes from
 as.data.frame(variable_dictionary())$description  # full descriptions
 ```
@@ -946,6 +949,59 @@ simply absent, so a `"daily"` request at an hour that is missing skips that day
 and warns. And **the first request against a year is slow**, tens of seconds,
 because it opens that year's dataset; later days within the same year cost a
 second or two, and everything is cached.
+
+## CCMP, the long wind record
+
+`accessCCMP()` reads the Cross-Calibrated Multi-Platform ocean surface wind
+analysis from Remote Sensing Systems. No account is needed — the registration
+RSS asks for covers their FTP service, and the HTTPS archive is open:
+
+```{r ccmp, eval = FALSE}
+bb <- list(xmin = -70, xmax = -66, ymin = 41, ymax = 44)
+
+wind <- accessCCMP(vars = c("UWND", "VWND", "WSPD"),
+                   dates = unique(observations$date), bounding_box = bb)
+
+matched <- matchData(observations, wind)
+```
+
+It is the longest and finest-in-time wind record here — **six-hourly from
+January 1993 to within days of the present**, where the Copernicus L4 wind is
+monthly from mid-1994 or hourly only from 2007, with nothing daily between:
+
+| | Copernicus L4 | CCMP v3.1 |
+|---|---|---|
+| Record | monthly 1994–, hourly 2007– | six-hourly 1993–present |
+| Grid | 0.25° monthly, 0.125° hourly | 0.25° |
+| Winds | `WSPD`, `UWND`, `VWND` | `WSPD`, `UWND`, `VWND` |
+| Stress | `TAUX`, `TAUY`, `TAU` | **none** |
+| Subsetting | server-side | **whole globe per day** |
+
+The last two rows are the trade. **CCMP carries no wind stress**, and stress —
+not speed — is what drives mixing and Ekman pumping. It cannot be recovered from
+these winds without choosing a drag coefficient, which is a modelling decision
+this package will not make for you. Where stress is the covariate, use the
+Copernicus wind.
+
+And **CCMP has no server-side subsetting**: RSS publishes static files, so a day
+is one 33 MB global file however small the box. A year is roughly 12 GB of
+transfer to keep a few megabytes. Subsets are cached, so it is paid once, and a
+request for more than 30 days says what it is about to download before starting.
+
+`ccmp_variables()` lists the four: `WSPD`, `UWND`, `VWND` and `NOBS`.
+
+`NOBS` is worth fetching alongside the winds when coverage is in doubt — it
+counts the satellite retrievals behind each cell, and zero means the value is
+the model background rather than an observation.
+
+Like HYCOM, CCMP is an analysis at fixed hours with no mean in the archive, so
+`frequency = "daily"` takes a snapshot at `hour` and `"6hourly"` returns all
+four steps; `upscale_time(to = "day")` is how a real mean is made.
+
+> One trap handled for you: CCMP is stored on a **0–360 longitude grid**, alone
+> among the sources here. Pass `bounding_box` negative west as everywhere else —
+> it is converted on the way in, and the coordinates come back negative west, so
+> the result overlays the other sources without adjustment.
 
 ## Static and basin-scale covariates
 

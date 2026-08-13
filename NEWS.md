@@ -2,6 +2,29 @@
 
 ## New features
 
+* **CCMP winds, through `accessCCMP()`.** The Cross-Calibrated Multi-Platform
+  ocean surface wind analysis from Remote Sensing Systems: `WSPD`, `UWND`,
+  `VWND` and `NOBS`, six-hourly from January 1993 to within days of the present.
+  No account is needed — the registration RSS asks for covers their FTP service,
+  and the HTTPS archive is open.
+
+  It is the longest and finest-in-time wind record the package can reach. The
+  Copernicus L4 wind is monthly from mid-1994 or hourly only from 2007, with
+  nothing daily between; CCMP is six-hourly throughout.
+
+  Two costs. **It carries no wind stress**, which the Copernicus product does,
+  and stress cannot be recovered from these winds without choosing a drag
+  coefficient — so where stress is the covariate, use Copernicus. And **there is
+  no server-side subsetting**: RSS publishes static files, so a day is one 33 MB
+  global file however small the bounding box, and a year is roughly 12 GB of
+  transfer. Subsets are cached, and a request for more than 30 days says what it
+  is about to download first.
+
+  CCMP is stored on a **0–360 longitude grid**, alone among the sources here.
+  `bounding_box` is given negative west as everywhere else, converted on the way
+  in, and the returned coordinates are negative west too — so a CCMP result
+  overlays the others without adjustment.
+
 * **HYCOM, through `accessHYCOM()`.** Reads the HYCOM + NCODA GOFS 3.1
   reanalysis (`GLBv0.08` `expt_53.X`, 1994–2015) from the Naval Research
   Laboratory's THREDDS server, in the same `sf` shape as everything else.
