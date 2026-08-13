@@ -15,6 +15,7 @@ reference:
   - accessFVCOM
   - accessHYCOM
   - accessCCMP
+  - accessERDDAP
   - fill_satellite_gaps
   - forecast_variables
 
@@ -87,5 +88,8 @@ reference:
   - ccmp_variables
   - ccmp_dictionary
   - ccmp_versions
+  - erddap_datasets
+  - erddap_dataset
+  - erddap_dictionary
   - product_url
   - as_markdown
