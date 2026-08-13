@@ -12,8 +12,8 @@ names:
 | Source | Function | Gives | Steps | Record |
 |----|----|----|----|----|
 | [Copernicus Marine](#quick-start) | [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md) | physics, biogeochemistry, ocean colour, wind and stress | monthly, daily, hourly | 1993– |
-| [FVCOM / NECOFS](#fvcom-a-regional-model-on-an-unstructured-mesh) | [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md) | coastal model on a triangular mesh | monthly | 1978–2013 |
-| [HYCOM](#hycom-and-bottom-fields-for-free) | [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md) | independent global model, sea-floor fields | 3-hourly | 1994–2015 |
+| [FVCOM / NECOFS](#fvcom-a-regional-model-on-an-unstructured-mesh) | [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md) | coastal model on a triangular mesh | monthly, hourly | 1978–2013, then 2025– |
+| [HYCOM](#hycom-and-bottom-fields-for-free) | [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md) | independent global model, sea-floor fields | 3-hourly | 1994–2024 |
 | [CCMP](#ccmp-the-long-wind-record) | [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md) | surface winds | 6-hourly | 1993–present |
 
 All four return the same `sf` shape, so
@@ -33,6 +33,19 @@ matched <- matchData(matched,      accessCCMP(vars = "WSPD", ...))
 > column name is what makes them interchangeable *mechanically* — so
 > everything downstream works unchanged — and is exactly why it is worth
 > recording which one you used.
+> [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+> writes a `<var>_source` column saying which, and
+> [`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
+> reads it back.
+
+**How to read the rest of this.** The sections up to [Looking at the
+data](#looking-at-the-data) use Copernicus throughout, because it has
+the widest variable list and the setup everything else builds on — but
+nearly all of it (resampling, matching, plotting, the time-step rules)
+applies to all four sources. The other three get their own sections
+further down, and the [“Choosing a data
+source”](https://chross22.github.io/datamatch/articles/sources.html)
+vignette compares them side by side if that is what you came for.
 
 **Contents**
 
@@ -77,11 +90,11 @@ matched <- matchData(matched,      accessCCMP(vars = "WSPD", ...))
 - [Looking at the data](#looking-at-the-data) — maps, coverage, series,
   and matched points
 
-**Other sources and covariates**
+**The other three sources, and other covariates**
 
 - [FVCOM, a regional model on an unstructured
-  mesh](#fvcom-a-regional-model-on-an-unstructured-mesh) — NECOFS on the
-  GOM3 mesh, 1978–2013
+  mesh](#fvcom-a-regional-model-on-an-unstructured-mesh) — NECOFS,
+  1978–2013 and 2025–
   - [Bottom salinity is free here](#bottom-salinity-is-free-here)
   - [Nodes and elements are two different sets of
     points](#nodes-and-elements-are-two-different-sets-of-points)
@@ -89,7 +102,7 @@ matched <- matchData(matched,      accessCCMP(vars = "WSPD", ...))
   - [Reading FVCOM from anywhere
     else](#reading-fvcom-from-anywhere-else)
 - [HYCOM, and bottom fields for free](#hycom-and-bottom-fields-for-free)
-  — GOFS 3.1, 1994–2015
+  — GOFS 3.1, 1994–2024
   - [Three-hourly, and no mean to
     fetch](#three-hourly-and-no-mean-to-fetch)
 - [CCMP, the long wind record](#ccmp-the-long-wind-record) — six-hourly
@@ -723,7 +736,10 @@ Products do not share a grid, so how resolution is handled matters:
 | Physics reanalysis | 0.083° (~9 km) | monthly or daily, from 1993 | gap-free |
 | Biogeochemistry reanalysis | 0.25° (~28 km) | monthly or daily, from 1993 | gap-free |
 | Satellite ocean colour | 4 km | monthly, from 1997 | **cloud gaps** |
-| Surface wind | 0.25° monthly, 0.125° hourly | monthly from 1994, hourly from 2007; **no daily** | gap-free |
+| Surface wind (Copernicus) | 0.25° monthly, 0.125° hourly | monthly from 1994, hourly from 2007; **no daily** | gap-free |
+| CCMP wind | 0.25° | six-hourly, 1993 to the present | gap-free |
+| FVCOM (NECOFS) | unstructured mesh | monthly 1978–2013; hourly 2025– | gap-free within the mesh |
+| HYCOM | 0.08° | three-hourly, 1994–2024 across archives | occasional missing steps |
 | Analysis-and-forecast | 0.083° / 0.25° | monthly or daily, to ~10 days ahead | gap-free |
 
 Satellite is the finest source, and the only observed one. It is also
@@ -1126,9 +1142,11 @@ mean_sst <- upscale_time(steps, to = "day")
 A snapshot is an instant, not a daily mean.
 
 [`fvcom_archives()`](https://chross22.github.io/datamatch/reference/fvcom_archives.md)
-names what is built in. Reading it needs the `ncdf4` package, a
-`Suggests`, and a network route to a plain-HTTP service on port 8080,
-which some institutional networks block.
+names what is built in: the GOM3 hindcast (monthly, 1978–2013) and the
+GOM7 forecast archive (hourly, 2025–), with nothing between them.
+Reading it needs the `ncdf4` package, a `Suggests`, and a network route
+to a plain-HTTP service on port 8080, which some institutional networks
+block.
 
 ### Reading FVCOM from anywhere else
 
@@ -1179,8 +1197,11 @@ FVCOM is somebody else’s model, so cite it:
 ## HYCOM, and bottom fields for free
 
 [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md)
-reads the HYCOM + NCODA GOFS 3.1 reanalysis (`GLBv0.08` `expt_53.X`,
-1994–2015) from the Naval Research Laboratory’s THREDDS server:
+reads HYCOM + NCODA GOFS 3.1 from the Naval Research Laboratory’s
+THREDDS server. The default archive is the reanalysis (`GLBv0.08`
+`expt_53.X`, 1994–2015); operational archives carry the record to
+September 2024, and [Reaching past 2015](#reaching-past-2015) covers the
+crossing:
 
 ``` r
 

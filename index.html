@@ -87,15 +87,15 @@
 <td><a href="#fvcom-a-regional-model-on-an-unstructured-mesh">FVCOM / NECOFS</a></td>
 <td><code><a href="reference/accessFVCOM.html">accessFVCOM()</a></code></td>
 <td>coastal model on a triangular mesh</td>
-<td>monthly</td>
-<td>1978–2013</td>
+<td>monthly, hourly</td>
+<td>1978–2013, then 2025–</td>
 </tr>
 <tr>
 <td><a href="#hycom-and-bottom-fields-for-free">HYCOM</a></td>
 <td><code><a href="reference/accessHYCOM.html">accessHYCOM()</a></code></td>
 <td>independent global model, sea-floor fields</td>
 <td>3-hourly</td>
-<td>1994–2015</td>
+<td>1994–2024</td>
 </tr>
 <tr>
 <td><a href="#ccmp-the-long-wind-record">CCMP</a></td>
@@ -112,8 +112,9 @@
 <span><span class="va">matched</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/matchData.html">matchData</a></span><span class="op">(</span><span class="va">matched</span>,      <span class="fu"><a href="reference/accessHYCOM.html">accessHYCOM</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"BOTS"</span>, <span class="va">...</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">matched</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/matchData.html">matchData</a></span><span class="op">(</span><span class="va">matched</span>,      <span class="fu"><a href="reference/accessCCMP.html">accessCCMP</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"WSPD"</span>, <span class="va">...</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <blockquote>
-<p><strong>One name, several sources, and they are not the same number.</strong> <code>SST</code> from Copernicus, FVCOM and HYCOM are three different models, and <code>WSPD</code> from Copernicus and CCMP two different analyses. Sharing the column name is what makes them interchangeable <em>mechanically</em> — so everything downstream works unchanged — and is exactly why it is worth recording which one you used.</p>
+<p><strong>One name, several sources, and they are not the same number.</strong> <code>SST</code> from Copernicus, FVCOM and HYCOM are three different models, and <code>WSPD</code> from Copernicus and CCMP two different analyses. Sharing the column name is what makes them interchangeable <em>mechanically</em> — so everything downstream works unchanged — and is exactly why it is worth recording which one you used. <code><a href="reference/matchData.html">matchData()</a></code> writes a <code>&lt;var&gt;_source</code> column saying which, and <code><a href="reference/source_of.html">source_of()</a></code> reads it back.</p>
 </blockquote>
+<p><strong>How to read the rest of this.</strong> The sections up to <a href="#looking-at-the-data">Looking at the data</a> use Copernicus throughout, because it has the widest variable list and the setup everything else builds on — but nearly all of it (resampling, matching, plotting, the time-step rules) applies to all four sources. The other three get their own sections further down, and the <a href="https://chross22.github.io/datamatch/articles/sources.html">“Choosing a data source”</a> vignette compares them side by side if that is what you came for.</p>
 <details><summary><b>Contents</b>
 </summary><p><strong>Getting started</strong></p>
 <ul>
@@ -173,10 +174,10 @@
 <li>
 <a href="#looking-at-the-data">Looking at the data</a> — maps, coverage, series, and matched points</li>
 </ul>
-<p><strong>Other sources and covariates</strong></p>
+<p><strong>The other three sources, and other covariates</strong></p>
 <ul>
 <li>
-<a href="#fvcom-a-regional-model-on-an-unstructured-mesh">FVCOM, a regional model on an unstructured mesh</a> — NECOFS on the GOM3 mesh, 1978–2013
+<a href="#fvcom-a-regional-model-on-an-unstructured-mesh">FVCOM, a regional model on an unstructured mesh</a> — NECOFS, 1978–2013 and 2025–
 <ul>
 <li><a href="#bottom-salinity-is-free-here">Bottom salinity is free here</a></li>
 <li><a href="#nodes-and-elements-are-two-different-sets-of-points">Nodes and elements are two different sets of points</a></li>
@@ -185,7 +186,7 @@
 </ul>
 </li>
 <li>
-<a href="#hycom-and-bottom-fields-for-free">HYCOM, and bottom fields for free</a> — GOFS 3.1, 1994–2015
+<a href="#hycom-and-bottom-fields-for-free">HYCOM, and bottom fields for free</a> — GOFS 3.1, 1994–2024
 <ul>
 <li><a href="#three-hourly-and-no-mean-to-fetch">Three-hourly, and no mean to fetch</a></li>
 </ul>
@@ -846,11 +847,29 @@
 <td><strong>cloud gaps</strong></td>
 </tr>
 <tr>
-<td>Surface wind</td>
+<td>Surface wind (Copernicus)</td>
 <td>0.25° monthly, 0.125° hourly</td>
 <td>monthly from 1994, hourly from 2007; <strong>no daily</strong>
 </td>
 <td>gap-free</td>
+</tr>
+<tr>
+<td>CCMP wind</td>
+<td>0.25°</td>
+<td>six-hourly, 1993 to the present</td>
+<td>gap-free</td>
+</tr>
+<tr>
+<td>FVCOM (NECOFS)</td>
+<td>unstructured mesh</td>
+<td>monthly 1978–2013; hourly 2025–</td>
+<td>gap-free within the mesh</td>
+</tr>
+<tr>
+<td>HYCOM</td>
+<td>0.08°</td>
+<td>three-hourly, 1994–2024 across archives</td>
+<td>occasional missing steps</td>
 </tr>
 <tr>
 <td>Analysis-and-forecast</td>
@@ -1121,7 +1140,7 @@
 <span>                     bounding_box <span class="op">=</span> <span class="va">bb</span>, archive <span class="op">=</span> <span class="st">"GOM7"</span>, frequency <span class="op">=</span> <span class="st">"hourly"</span><span class="op">)</span></span>
 <span><span class="va">mean_sst</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/upscale_time.html">upscale_time</a></span><span class="op">(</span><span class="va">steps</span>, to <span class="op">=</span> <span class="st">"day"</span><span class="op">)</span></span></code></pre></div>
 <p>A snapshot is an instant, not a daily mean.</p>
-<p><code><a href="reference/fvcom_archives.html">fvcom_archives()</a></code> names what is built in. Reading it needs the <code>ncdf4</code> package, a <code>Suggests</code>, and a network route to a plain-HTTP service on port 8080, which some institutional networks block.</p>
+<p><code><a href="reference/fvcom_archives.html">fvcom_archives()</a></code> names what is built in: the GOM3 hindcast (monthly, 1978–2013) and the GOM7 forecast archive (hourly, 2025–), with nothing between them. Reading it needs the <code>ncdf4</code> package, a <code>Suggests</code>, and a network route to a plain-HTTP service on port 8080, which some institutional networks block.</p>
 </div>
 <div class="section level3">
 <h3 id="reading-fvcom-from-anywhere-else">Reading FVCOM from anywhere else<a class="anchor" aria-label="anchor" href="#reading-fvcom-from-anywhere-else"></a>
@@ -1149,7 +1168,7 @@
 <div class="section level2">
 <h2 id="hycom-and-bottom-fields-for-free">HYCOM, and bottom fields for free<a class="anchor" aria-label="anchor" href="#hycom-and-bottom-fields-for-free"></a>
 </h2>
-<p><code><a href="reference/accessHYCOM.html">accessHYCOM()</a></code> reads the HYCOM + NCODA GOFS 3.1 reanalysis (<code>GLBv0.08</code> <code>expt_53.X</code>, 1994–2015) from the Naval Research Laboratory’s THREDDS server:</p>
+<p><code><a href="reference/accessHYCOM.html">accessHYCOM()</a></code> reads HYCOM + NCODA GOFS 3.1 from the Naval Research Laboratory’s THREDDS server. The default archive is the reanalysis (<code>GLBv0.08</code> <code>expt_53.X</code>, 1994–2015); operational archives carry the record to September 2024, and <a href="#reaching-past-2015">Reaching past 2015</a> covers the crossing:</p>
 <div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bb</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>xmin <span class="op">=</span> <span class="op">-</span><span class="fl">70</span>, xmax <span class="op">=</span> <span class="op">-</span><span class="fl">66</span>, ymin <span class="op">=</span> <span class="fl">41</span>, ymax <span class="op">=</span> <span class="fl">44</span><span class="op">)</span></span>
 <span></span>

@@ -15,11 +15,19 @@ gigabytes.
 | Source | Copernicus Marine | NECOFS / any FVCOM | HYCOM GOFS 3.1 | RSS CCMP v3.1 |
 | Kind | global reanalysis, forecast, satellite | regional coastal model | global model | wind analysis |
 | Grid | 0.083°–4 km, regular | unstructured mesh | 0.08° regular | 0.25° regular |
-| Steps | monthly, daily, hourly | monthly | 3-hourly | 6-hourly |
-| Record | 1993– | 1978–2013 | 1994–2015 | 1993–present |
+| Steps | monthly, daily, hourly | monthly (GOM3), hourly (GOM7) | 3-hourly | 6-hourly |
+| Record | 1993– | 1978–2013, then 2025– | 1994–2024 across archives | 1993–present |
 | Bottom salinity | derived | free | free | — |
-| Wind stress | yes | yes (model forcing) | — | — |
+| Wind stress | yes | GOM3 only | — | — |
 | Subsetting | server-side | client-side | server-side | **whole globe** |
+
+Two of those records are chains rather than one run, and the gaps matter
+more than the endpoints. **FVCOM has nothing between 2014 and 2024** —
+the GOM3 hindcast stops in 2013 and the GOM7 forecast archive starts in
+2025, on a different mesh. **HYCOM reaches 2024 only by crossing from
+the reanalysis into a series of operational experiments**, which is a
+seam in how the values were produced. `hycom_covering(date)` says which
+archives hold a given day.
 
 ``` r
 
@@ -76,12 +84,14 @@ is for something Copernicus does not do well.
 holding 1,742 GLORYS cells holds 6,579 GOM3 nodes, concentrated where
 the bathymetry is complicated. If your question is about a shelf, a
 bank, or a channel rather than a basin, that resolution is the reason.
-It ends in 2013.
+The hindcast ends in 2013; the GOM7 forecast archive picks up in 2025 on
+a different mesh, with nothing in between.
 
 **Reach for HYCOM for bottom fields, or for a second opinion.** It
 publishes `salinity_bottom` and `water_temp_bottom` as real fields where
 Copernicus has no bottom salinity at all, and being an independent model
-it makes agreement meaningful.
+it makes agreement meaningful. The reanalysis covers 1994–2015;
+operational archives carry it to September 2024.
 
 **Reach for CCMP for winds over a long record.** Six-hourly from 1993 to
 within days of the present, where the Copernicus wind is monthly from
@@ -116,12 +126,13 @@ depth is reported rather than left to assume.
 
 ## Sub-daily data, and means that are not means
 
-Three of the four publish below daily, and none of them publishes a
+All four publish below daily somewhere, and none of them publishes a
 daily mean:
 
 | Source          | Native step | `frequency`                              |
 |-----------------|-------------|------------------------------------------|
 | Copernicus wind | hourly      | `"hourly"`                               |
+| FVCOM `GOM7`    | hourly      | `"hourly"`, or `"daily"` for a snapshot  |
 | HYCOM           | 3-hourly    | `"3hourly"`, or `"daily"` for a snapshot |
 | CCMP            | 6-hourly    | `"6hourly"`, or `"daily"` for a snapshot |
 

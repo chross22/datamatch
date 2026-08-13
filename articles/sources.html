@@ -115,15 +115,15 @@ several gigabytes.</p>
 <tr class="even">
 <td>Steps</td>
 <td>monthly, daily, hourly</td>
-<td>monthly</td>
+<td>monthly (GOM3), hourly (GOM7)</td>
 <td>3-hourly</td>
 <td>6-hourly</td>
 </tr>
 <tr class="odd">
 <td>Record</td>
 <td>1993–</td>
-<td>1978–2013</td>
-<td>1994–2015</td>
+<td>1978–2013, then 2025–</td>
+<td>1994–2024 across archives</td>
 <td>1993–present</td>
 </tr>
 <tr class="even">
@@ -136,7 +136,7 @@ several gigabytes.</p>
 <tr class="odd">
 <td>Wind stress</td>
 <td>yes</td>
-<td>yes (model forcing)</td>
+<td>GOM3 only</td>
 <td>—</td>
 <td>—</td>
 </tr>
@@ -149,6 +149,14 @@ several gigabytes.</p>
 </tr>
 </tbody>
 </table>
+<p>Two of those records are chains rather than one run, and the gaps
+matter more than the endpoints. <strong>FVCOM has nothing between 2014
+and 2024</strong> — the GOM3 hindcast stops in 2013 and the GOM7
+forecast archive starts in 2025, on a different mesh. <strong>HYCOM
+reaches 2024 only by crossing from the reanalysis into a series of
+operational experiments</strong>, which is a seam in how the values were
+produced. <code>hycom_covering(date)</code> says which archives hold a
+given day.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/variable_dictionary.html">variable_dictionary</a></span><span class="op">(</span><span class="op">)</span>   <span class="co"># Copernicus</span></span>
 <span><span class="fu"><a href="../reference/fvcom_dictionary.html">fvcom_dictionary</a></span><span class="op">(</span><span class="op">)</span>      <span class="co"># FVCOM</span></span>
@@ -194,12 +202,14 @@ Everything else here is for something Copernicus does not do well.</p>
 of Maine box holding 1,742 GLORYS cells holds 6,579 GOM3 nodes,
 concentrated where the bathymetry is complicated. If your question is
 about a shelf, a bank, or a channel rather than a basin, that resolution
-is the reason. It ends in 2013.</p>
+is the reason. The hindcast ends in 2013; the GOM7 forecast archive
+picks up in 2025 on a different mesh, with nothing in between.</p>
 <p><strong>Reach for HYCOM for bottom fields, or for a second
 opinion.</strong> It publishes <code>salinity_bottom</code> and
 <code>water_temp_bottom</code> as real fields where Copernicus has no
 bottom salinity at all, and being an independent model it makes
-agreement meaningful.</p>
+agreement meaningful. The reanalysis covers 1994–2015; operational
+archives carry it to September 2024.</p>
 <p><strong>Reach for CCMP for winds over a long record.</strong>
 Six-hourly from 1993 to within days of the present, where the Copernicus
 wind is monthly from mid-1994 or hourly only from 2007. But it carries
@@ -233,7 +243,7 @@ well above it, so the depth is reported rather than left to assume.</p>
 <div class="section level2">
 <h2 id="sub-daily-data-and-means-that-are-not-means">Sub-daily data, and means that are not means<a class="anchor" aria-label="anchor" href="#sub-daily-data-and-means-that-are-not-means"></a>
 </h2>
-<p>Three of the four publish below daily, and none of them publishes a
+<p>All four publish below daily somewhere, and none of them publishes a
 daily mean:</p>
 <table class="table">
 <thead><tr class="header">
@@ -248,12 +258,19 @@ daily mean:</p>
 <td><code>"hourly"</code></td>
 </tr>
 <tr class="even">
+<td>FVCOM <code>GOM7</code>
+</td>
+<td>hourly</td>
+<td>
+<code>"hourly"</code>, or <code>"daily"</code> for a snapshot</td>
+</tr>
+<tr class="odd">
 <td>HYCOM</td>
 <td>3-hourly</td>
 <td>
 <code>"3hourly"</code>, or <code>"daily"</code> for a snapshot</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>CCMP</td>
 <td>6-hourly</td>
 <td>
