@@ -56,8 +56,8 @@ Reads an unstructured-mesh FVCOM archive over OPeNDAP and returns it as an
 
 NECOFS is a regional coastal model on a triangular mesh that refines toward
 the coast. Over the Gulf of Maine it resolves structure the global reanalyses
-cannot: a box that holds about 2,700 GLORYS cells holds some 19,000 GOM3
-nodes, concentrated where the bathymetry is complicated.
+cannot: over -70 to -66 E and 41 to 44 N, GLORYS resolves 1,742 cells where
+GOM3 carries 6,579 nodes, concentrated where the bathymetry is complicated.
 
 That resolution is the reason to use it, and its limits are the reason not to.
 It is one regional model rather than a reanalysis assimilating observations

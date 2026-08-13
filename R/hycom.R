@@ -652,7 +652,7 @@ accessHYCOM <- function(vars, years = NULL, months = NULL, bounding_box,
   out <- sf::st_as_sf(dplyr::bind_rows(lapply(paths[usable], readRDS)),
                       coords = c("x", "y"), crs = sf::st_crs(4326))
   attr(out, "datamatch_step") <- if (frequency == "3hourly") "hour" else "day"
-  out
+  stamp_source(out, "hycom", archive)
 }
 
 #' Printable dictionary of HYCOM variables

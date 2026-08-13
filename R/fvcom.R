@@ -162,8 +162,18 @@ fvcom_archives <- function() {
       frequency = "hourly",
       start = as.Date("2025-01-01"),
       end = Sys.Date(),
+      # As of the 2025-03 file onward. Operational output remeshes: the
+      # 2025-01 file carries 198,594 nodes and 356,280 elements. These are
+      # descriptive only - the reader takes the mesh from each file it opens,
+      # precisely because it moves.
       nodes = 207081L,
       elements = 371290L,
+      mesh_varies = TRUE,
+      # The operational run saves fewer fields than the hindcast: no surface
+      # forcing and no wind stress. Declared so a request for one is refused
+      # before a connection is opened rather than failing at the read.
+      variables = c("SST", "BOTT", "SSS", "BOTS", "SSH", "DEPTH",
+                    "UO", "VO", "UBAR", "VBAR"),
       label = "NECOFS Gulf of Maine forecast archive, GOM7 mesh, hourly",
       reference = fvcom_reference()
     )
@@ -367,13 +377,14 @@ fvcom_mesh_coordinates <- function(archive_name, spec, mesh) {
                              paste0(archive_name, "_", mesh, "_mesh.rds"))
   if (file.exists(cached)) return(readRDS(cached))
 
-  # A per-month archive's `url` is a template, so some real month has to be named
-  # to read the mesh from. The first one the archive covers will do: the mesh is
-  # the same in every file, which is what makes caching it worthwhile at all.
+  # Only an aggregation may be cached this way. A per-month archive can change
+  # mesh between files - NECOFS GOM7 carries 198,594 nodes in January 2025 and
+  # 207,081 from March - so a mesh read once and reused would attach one month's
+  # coordinates to another month's values, silently and wrongly. Those archives
+  # read their mesh per file instead; see accessFVCOM().
   if (identical(spec$layout, "per_month")) {
-    spec$url <- sprintf(spec$url, as.integer(format(spec$start, "%Y")),
-                        as.integer(format(spec$start, "%Y")),
-                        as.integer(format(spec$start, "%m")))
+    stop("A per-month archive's mesh is read per file, not cached: it can ",
+         "change between months.", call. = FALSE)
   }
 
   handle <- fvcom_open(spec)
@@ -466,8 +477,8 @@ fvcom_read_variable <- function(handle, entry, step, layers, keep) {
 #' @section What this is, and when to prefer it:
 #' NECOFS is a regional coastal model on a triangular mesh that refines toward
 #' the coast. Over the Gulf of Maine it resolves structure the global reanalyses
-#' cannot: a box that holds about 2,700 GLORYS cells holds some 19,000 GOM3
-#' nodes, concentrated where the bathymetry is complicated.
+#' cannot: over -70 to -66 E and 41 to 44 N, GLORYS resolves 1,742 cells where
+#' GOM3 carries 6,579 nodes, concentrated where the bathymetry is complicated.
 #'
 #' That resolution is the reason to use it, and its limits are the reason not to.
 #' It is one regional model rather than a reanalysis assimilating observations
@@ -706,16 +717,24 @@ accessFVCOM <- function(vars, years = NULL, months = NULL, bounding_box,
   }
   step <- if (!sub_daily) "month" else if (frequency == "hourly") "hour" else "day"
 
-  # The mesh is static and cached, so which points are in the box - and
-  # therefore the cache key - is known without contacting the server.
-  coords <- fvcom_mesh_coordinates(archive_key, spec, mesh)
-  keep <- fvcom_in_box(coords, bounding_box)
+  # An aggregation has one mesh for the whole archive, so it is read once and
+  # cached, and the cache key can be built from the resulting indices. A
+  # per-month archive cannot: its mesh may change between files, so the mesh is
+  # read inside the loop and the key is built from the box itself.
+  if (sub_daily) {
+    coords <- NULL
+    keep <- NULL
+    box_key <- paste(round(unlist(bounding_box[c("xmin", "xmax", "ymin",
+                                                 "ymax")]), 6), collapse = ",")
+  } else {
+    coords <- fvcom_mesh_coordinates(archive_key, spec, mesh)
+    keep <- fvcom_in_box(coords, bounding_box)
+    box_key <- paste(paste(range(keep), collapse = "-"), length(keep), sep = "|")
+  }
 
   # Keyed on the month asked for rather than on the archive's own timestamp, so
   # a cache hit needs no time axis and no connection.
-  key <- short_hash(paste(paste(sort(vars), collapse = ","),
-                          paste(range(keep), collapse = "-"),
-                          length(keep), step,
+  key <- short_hash(paste(paste(sort(vars), collapse = ","), box_key, step,
                           if (identical(step, "day")) hour else "all",
                           sep = "|"))
   paths <- vapply(wanted, function(period) {
@@ -744,6 +763,11 @@ accessFVCOM <- function(vars, years = NULL, months = NULL, bounding_box,
         next
       }
 
+      # This file's own mesh. Read per file because it can differ between
+      # months, which is why it is not cached for these archives.
+      month_coords <- fvcom_coordinates(handle, mesh)
+      month_keep <- fvcom_in_box(month_coords, bounding_box)
+
       times <- fvcom_hourly_times(handle)
       hours <- as.integer(format(times, "%H", tz = "UTC"))
       days <- as.integer(format(times, "%d", tz = "UTC"))
@@ -755,10 +779,10 @@ accessFVCOM <- function(vars, years = NULL, months = NULL, bounding_box,
 
       layers <- handle$dim$siglay$len %||% 1L
       frames <- lapply(steps, function(s) {
-        frame <- coords[keep, , drop = FALSE]
+        frame <- month_coords[month_keep, , drop = FALSE]
         for (name in vars) {
           frame[[name]] <- fvcom_read_variable(handle, entries[[name]], s,
-                                               layers, keep)
+                                               layers, month_keep)
         }
         frame$YEAR <- parts[1]
         frame$MONTH <- parts[2]
@@ -829,7 +853,7 @@ accessFVCOM <- function(vars, years = NULL, months = NULL, bounding_box,
   out <- sf::st_as_sf(dplyr::bind_rows(frames), coords = c("x", "y"),
                       crs = sf::st_crs(4326))
   attr(out, "datamatch_step") <- step
-  out
+  stamp_source(out, "fvcom", archive_key)
 }
 
 #' Time steps of one sub-daily FVCOM file, as UTC instants

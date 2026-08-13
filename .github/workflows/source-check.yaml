@@ -1,0 +1,83 @@
+# Weekly check that the non-Copernicus sources still resolve, and the only place
+# the readers are exercised against real servers.
+#
+# The network tests are opt-in (see tests/testthat/helper-network.R) because
+# they are slow, depend on four services that are sometimes down, and one of
+# them downloads 33 MB. Running them on every push would make the main check
+# flaky in a way that teaches people to ignore it. Running them nowhere would
+# mean the readers are never tested end to end, which was the worse problem.
+#
+# So they run here, weekly, where a failure is a signal about the services
+# rather than about the commit that happened to trigger it.
+name: source-check
+
+on:
+  schedule:
+    # Mondays, early UTC.
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-sources:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      DATAMATCH_NETWORK_TESTS: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: |
+            any::jsonlite
+            any::ncdf4
+            any::pkgload
+            any::testthat
+          needs: check
+
+      - name: Check the source catalogs against the live services
+        id: catalogs
+        continue-on-error: true
+        run: Rscript inst/scripts/check_sources.R --markdown sources.md
+
+      - name: Run the network tests
+        id: network
+        continue-on-error: true
+        run: |
+          Rscript -e 'pkgload::load_all(quiet = TRUE); \
+            out <- testthat::test_dir("tests/testthat", stop_on_failure = FALSE); \
+            df <- as.data.frame(out); \
+            if (sum(df$failed) + sum(df$error) > 0) quit(status = 1)'
+
+      - name: Open an issue when something has drifted
+        if: steps.catalogs.outcome == 'failure' || steps.network.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let body = 'The weekly source check reported a problem.\n\n';
+            try {
+              body += fs.readFileSync('sources.md', 'utf8');
+            } catch (e) {
+              body += '_The catalog check produced no report; see the run log._';
+            }
+            body += '\n\nChoosing a replacement archive or version is a judgement ' +
+                    'about which run to track, so this check does not guess one.\n\n' +
+                    `[Run log](${context.serverUrl}/${context.repo.owner}/` +
+                    `${context.repo.repo}/actions/runs/${context.runId})`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Source check: an archive has drifted (${new Date().toISOString().slice(0, 10)})`,
+              body: body,
+              labels: ['data-sources']
+            });

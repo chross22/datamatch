@@ -108,9 +108,7 @@ test_that("the version catalog describes what it serves", {
 # ---- network ----------------------------------------------------------------
 
 test_that("a real fetch returns negative-west coordinates", {
-  skip_on_cran()
-  skip_if_not_installed("ncdf4")
-  skip_if_offline()
+  skip_if_no_network()
 
   bb <- list(xmin = -70, xmax = -66, ymin = 41, ymax = 44)
   wind <- try(accessCCMP(vars = c("UWND", "VWND", "WSPD"),
@@ -133,9 +131,7 @@ test_that("a real fetch returns negative-west coordinates", {
 })
 
 test_that("six-hourly carries four steps and aggregates to a daily mean", {
-  skip_on_cran()
-  skip_if_not_installed("ncdf4")
-  skip_if_offline()
+  skip_if_no_network()
 
   bb <- list(xmin = -70, xmax = -66, ymin = 41, ymax = 44)
   steps <- try(accessCCMP(vars = c("UWND", "VWND"), frequency = "6hourly",

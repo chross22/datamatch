@@ -10,7 +10,11 @@
 #' }
 #' @export
 covariate_columns <- function(env_dat) {
-  setdiff(names(env_dat), c(time_columns(), attr(env_dat, "sf_column")))
+  candidates <- setdiff(names(env_dat),
+                        c(time_columns(), attr(env_dat, "sf_column")))
+  # Provenance columns describe the data rather than measuring anything, so they
+  # must not be aggregated, regridded or plotted as though they were covariates.
+  candidates[!is_provenance_column(candidates)]
 }
 
 #' Fill satellite gaps with the model equivalent

@@ -159,9 +159,7 @@ test_that("the FVCOM dictionary prints without claiming a Copernicus product", {
 # ---- network ----------------------------------------------------------------
 
 test_that("a real fetch returns the documented shape", {
-  skip_on_cran()
-  skip_if_not_installed("ncdf4")
-  skip_if_offline()
+  skip_if_no_network()
 
   bb <- list(xmin = -69, xmax = -68.5, ymin = 43, ymax = 43.5)
   fv <- try(accessFVCOM(vars = c("SST", "BOTT", "BOTS"), years = 2010,
@@ -219,9 +217,7 @@ test_that("a spec refuses variables its run did not save", {
 })
 
 test_that("fvcom_archive describes a real endpoint and rejects a non-FVCOM one", {
-  skip_on_cran()
-  skip_if_not_installed("ncdf4")
-  skip_if_offline()
+  skip_if_no_network()
 
   spec <- try(fvcom_archive(fvcom_archives()$GOM3$url, label = "GOM3 monthly"),
               silent = TRUE)

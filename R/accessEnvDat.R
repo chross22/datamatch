@@ -852,5 +852,5 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars,
   # survey dates, typically - looks identical to monthly data. Guessing monthly
   # there would make matchData() join by month and quietly ignore the day.
   attr(out, "datamatch_step") <- step
-  out
+  stamp_source(out, "copernicus", dataset_id)
 }

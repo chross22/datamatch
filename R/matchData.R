@@ -10,6 +10,25 @@
 #' covariate grid, tag positions against a model field, moorings against
 #' satellite retrievals, or one gridded product against another.
 #'
+#' @section Which geometries can be matched:
+#' `dat` may hold **points, lines or polygons** — survey stations, tow tracks,
+#' transects, statistical areas. The join is nearest-feature against the whole
+#' geometry, so a tow matches the nearest grid cell to the track rather than to
+#' any one end of it, and an area matches the nearest cell to the area.
+#'
+#' `LON`/`LAT` are then a *representative point* rather than the geometry: for a
+#' line or polygon they come from [sf::st_point_on_surface()], which is
+#' guaranteed to lie on the feature where a centroid need not. The geometry
+#' column itself is untouched, so nothing is lost — but do not read `LON`/`LAT`
+#' as the position of an area.
+#'
+#' A caution about extended geometries: a long tow or a large area may lie
+#' nearer one cell while spanning several, and nearest-feature returns exactly
+#' one. Where a track crosses a front, consider splitting it, or matching its
+#' vertices as points and summarising afterwards.
+#'
+#' `source` should be points, as every access function returns.
+#'
 #' @section Matching in time:
 #' The time period is `source`'s own resolution: hourly data matches on
 #' year/month/day/hour, daily data on year/month/day, monthly data (Copernicus
@@ -36,6 +55,20 @@
 #' already in `dat` is suffixed `.matched`, so nothing of `dat`'s is overwritten
 #' or renamed.
 #'
+#' @section Which source a column came from:
+#' The access functions share variable names on purpose, so `SST` from Copernicus,
+#' FVCOM and HYCOM all arrive in a column called `SST` and everything downstream
+#' works unchanged. The cost is that a table with several sources chained onto it
+#' has no record of which produced what.
+#'
+#' So each joined column gets a companion `<var>_source` naming the source and
+#' archive — `"hycom:GLBv53X"`, `"fvcom:GOM3"` — in the same spirit as the
+#' `<var>_source` column [fill_satellite_gaps()] writes. Pass
+#' `record_source = FALSE` to omit them.
+#'
+#' These are provenance rather than data: [covariate_columns()] excludes them, so
+#' they are not aggregated, regridded or plotted as though they were measurements.
+#'
 #' @param dat <sf object> the points to add columns to: observations, stations,
 #'   tag positions, anything with coordinates and time. Needs year and month
 #'   columns, plus a day column when matching at daily resolution and an hour
@@ -52,6 +85,10 @@
 #' @param temporal_resolution <char> one of `"auto"` (default), `"hour"`,
 #'   `"day"`, `"month"`, or `"year"`. `"auto"` uses the step `accessEnvDat()`
 #'   recorded on `source`, or infers it from `source`'s time steps.
+#' @param record_source <logical> add a `<var>_source` column for each column
+#'   joined, naming which source and archive produced it. On by default, and only
+#'   has an effect when `source` carries the stamp an access function leaves —
+#'   see [source_of()]. Set `FALSE` for the narrower table.
 #' @param speciesDat,envDat deprecated names for `dat` and `source`. Still
 #'   accepted, with a warning.
 #' @return <sf object> `dat` with `source`'s columns joined on, one row per input
@@ -71,6 +108,7 @@
 matchData <- function(dat, source,
                       temporal_resolution = c("auto", "hour", "day", "month",
                                               "year"),
+                      record_source = TRUE,
                       speciesDat = NULL, envDat = NULL) {
 
   # The old names were specific to one use of a function that was never specific
@@ -203,8 +241,36 @@ matchData <- function(dat, source,
   matched_data[[order_key]] <- NULL
   rownames(matched_data) <- NULL
 
-  matched_data$LON <- sf::st_coordinates(matched_data)[, 1]
-  matched_data$LAT <- sf::st_coordinates(matched_data)[, 2]
+  # st_coordinates() returns one row per *vertex*, which equals one row per
+  # feature only for points. On a tow track or a statistical area it returns far
+  # more, and assigning that to a column failed with an opaque
+  # `[[<-.data.frame` error - so anything but points could not be matched at
+  # all, despite the join itself handling them.
+  #
+  # A representative point stands in for the geometry instead. st_point_on_surface
+  # is used rather than the centroid because it is guaranteed to lie *on* the
+  # feature, which a centroid is not for a crescent-shaped area or a curved track.
+  geometry_types <- unique(as.character(sf::st_geometry_type(matched_data)))
+  representative <- if (identical(geometry_types, "POINT")) {
+    sf::st_coordinates(matched_data)
+  } else {
+    sf::st_coordinates(
+      suppressWarnings(sf::st_point_on_surface(sf::st_geometry(matched_data))))
+  }
+  matched_data$LON <- representative[, 1]
+  matched_data$LAT <- representative[, 2]
+
+  # Record which source each joined column came from. The four access functions
+  # deliberately share variable names, so an SST column cannot say on its own
+  # whether it holds a global reanalysis, a regional coastal model or an
+  # independent global model - and once several are chained onto one table, the
+  # only other record of it is the caller's memory of which calls they made.
+  provenance <- source_of(source)
+  if (record_source && !is.na(provenance)) {
+    for (v in source_vars) {
+      matched_data[[paste0(v, "_source")]] <- provenance
+    }
+  }
 
   matched_data
 }

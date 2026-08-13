@@ -818,8 +818,9 @@ catalog uses: `SST`, `SSS`, `BOTT`, `BOTS`, `SSH`, `UO`, `VO`, `UBAR`, `VBAR`,
 `TAUX`, `TAUY`, plus `DEPTH`, `SWRAD` and `NHF`.
 
 **Why reach for it.** It is a coastal model on a triangular mesh that refines
-toward the shore. A Gulf of Maine box holding about 2,700 GLORYS cells holds
-some 19,000 GOM3 nodes, concentrated where the bathymetry is complicated. If the
+toward the shore. Over the box these examples use — -70 to -66 E, 41 to 44 N —
+GLORYS resolves 1,742 cells where GOM3 carries 6,579 nodes, concentrated where
+the bathymetry is complicated. If the
 question is about the shelf rather than the basin, that resolution is the reason.
 
 **Why not.** It is one regional model rather than a reanalysis assimilating
@@ -1547,6 +1548,28 @@ Analysis-and-forecast products, used with `mode = "forecast"`:
 you used need citing. Downloads go through the [Copernicus Marine
 Toolbox](https://toolbox-docs.marine.copernicus.eu/), which publishes no DOI of
 its own — cite the products.
+
+### Ocean and wind models
+
+Each is somebody else's work, and `fvcom_archives()`, `hycom_archives()` and
+`ccmp_versions()` carry these references at runtime:
+
+- **FVCOM / NECOFS** — Chen C, Beardsley RC, Cowles G (2006). An unstructured
+  grid, finite-volume coastal ocean model (FVCOM) system. *Oceanography*
+  **19**(1):78–89. <https://doi.org/10.5670/oceanog.2006.92>
+
+- **HYCOM / GOFS 3.1** — Chassignet EP, Hurlburt HE, Smedstad OM, Halliwell GR,
+  Hogan PJ, Wallcraft AJ, Baraille R, Bleck R (2007). The HYCOM (HYbrid
+  Coordinate Ocean Model) data assimilative system. *Journal of Marine Systems*
+  **65**:60–83. <https://doi.org/10.1016/j.jmarsys.2005.09.016>
+
+- **CCMP** — Mears C, Lee T, Ricciardulli L, Wang X, Wentz F (2022). Improving
+  the Accuracy of the Cross-Calibrated Multi-Platform (CCMP) Ocean Vector Winds.
+  *Remote Sensing* **14**(17):4230. <https://doi.org/10.3390/rs14174230>
+
+Say which archive as well as which model — a value from the HYCOM reanalysis and
+one from an operational experiment are not the same run, and `source_of()`
+records exactly that.
 
 ### Seafloor terrain
 

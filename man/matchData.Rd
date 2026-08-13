@@ -8,6 +8,7 @@ matchData(
   dat,
   source,
   temporal_resolution = c("auto", "hour", "day", "month", "year"),
+  record_source = TRUE,
   speciesDat = NULL,
   envDat = NULL
 )
@@ -32,6 +33,11 @@ when matching hourly.}
 \code{"day"}, \code{"month"}, or \code{"year"}. \code{"auto"} uses the step \code{accessEnvDat()}
 recorded on \code{source}, or infers it from \code{source}'s time steps.}
 
+\item{record_source}{\if{html}{\out{<logical>}} add a \verb{<var>_source} column for each column
+joined, naming which source and archive produced it. On by default, and only
+has an effect when \code{source} carries the stamp an access function leaves —
+see \code{\link[=source_of]{source_of()}}. Set \code{FALSE} for the narrower table.}
+
 \item{speciesDat, envDat}{deprecated names for \code{dat} and \code{source}. Still
 accepted, with a warning.}
 }
@@ -50,6 +56,27 @@ spatiotemporal nearest-feature join between two \code{sf} point objects that car
 covariate grid, tag positions against a model field, moorings against
 satellite retrievals, or one gridded product against another.
 }
+\section{Which geometries can be matched}{
+
+\code{dat} may hold \strong{points, lines or polygons} — survey stations, tow tracks,
+transects, statistical areas. The join is nearest-feature against the whole
+geometry, so a tow matches the nearest grid cell to the track rather than to
+any one end of it, and an area matches the nearest cell to the area.
+
+\code{LON}/\code{LAT} are then a \emph{representative point} rather than the geometry: for a
+line or polygon they come from \code{\link[sf:st_point_on_surface]{sf::st_point_on_surface()}}, which is
+guaranteed to lie on the feature where a centroid need not. The geometry
+column itself is untouched, so nothing is lost — but do not read \code{LON}/\code{LAT}
+as the position of an area.
+
+A caution about extended geometries: a long tow or a large area may lie
+nearer one cell while spanning several, and nearest-feature returns exactly
+one. Where a track crosses a front, consider splitting it, or matching its
+vertices as points and summarising afterwards.
+
+\code{source} should be points, as every access function returns.
+}
+
 \section{Matching in time}{
 
 The time period is \code{source}'s own resolution: hourly data matches on
@@ -78,6 +105,22 @@ worse outcome than a visible gap.
 \code{dat} keeps its own columns. One of \code{source}'s that collides with a name
 already in \code{dat} is suffixed \code{.matched}, so nothing of \code{dat}'s is overwritten
 or renamed.
+}
+
+\section{Which source a column came from}{
+
+The access functions share variable names on purpose, so \code{SST} from Copernicus,
+FVCOM and HYCOM all arrive in a column called \code{SST} and everything downstream
+works unchanged. The cost is that a table with several sources chained onto it
+has no record of which produced what.
+
+So each joined column gets a companion \verb{<var>_source} naming the source and
+archive — \code{"hycom:GLBv53X"}, \code{"fvcom:GOM3"} — in the same spirit as the
+\verb{<var>_source} column \code{\link[=fill_satellite_gaps]{fill_satellite_gaps()}} writes. Pass
+\code{record_source = FALSE} to omit them.
+
+These are provenance rather than data: \code{\link[=covariate_columns]{covariate_columns()}} excludes them, so
+they are not aggregated, regridded or plotted as though they were measurements.
 }
 
 \examples{

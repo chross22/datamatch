@@ -472,3 +472,53 @@ test_that("HOUR is not treated as a covariate to be joined on", {
   expect_equal(matched$HOUR, 3L)
   expect_false("HOUR.matched" %in% names(matched))
 })
+
+# ---- geometries other than points -------------------------------------------
+
+test_that("lines and polygons can be matched, not just points", {
+  src <- sf::st_as_sf(expand.grid(x = c(-70, -69.5), y = c(42, 42.5)),
+                      coords = c("x", "y"), crs = 4326)
+  src$V <- 1:4
+  src$YEAR <- 2020L; src$MONTH <- 1L; src$DAY <- 1L
+
+  # A tow track and a statistical area, which are what survey data actually
+  # looks like. Both used to fail on the LON/LAT assignment, because
+  # st_coordinates() returns one row per vertex rather than per feature.
+  track <- sf::st_sf(
+    YEAR = 2020L, MONTH = 1L, DAY = 1L,
+    geometry = sf::st_sfc(sf::st_linestring(rbind(c(-70, 42), c(-69.5, 42.5))),
+                          crs = 4326))
+  area <- sf::st_sf(
+    YEAR = 2020L, MONTH = 1L, DAY = 1L,
+    geometry = sf::st_sfc(sf::st_polygon(list(rbind(
+      c(-70, 42), c(-69.5, 42), c(-69.5, 42.5), c(-70, 42.5), c(-70, 42)))),
+      crs = 4326))
+
+  for (geometry in list(track, area)) {
+    matched <- matchData(geometry, src)
+
+    expect_equal(nrow(matched), 1)
+    expect_false(is.na(matched$V))
+    # One representative point per feature, not one per vertex.
+    expect_length(matched$LON, 1)
+    expect_length(matched$LAT, 1)
+    # And it lies within the feature's own bounding box.
+    box <- sf::st_bbox(geometry)
+    expect_gte(matched$LON, box[["xmin"]])
+    expect_lte(matched$LON, box[["xmax"]])
+  }
+})
+
+test_that("points still report their own coordinates exactly", {
+  src <- sf::st_as_sf(data.frame(x = -70, y = 42, V = 1, YEAR = 2020L,
+                                 MONTH = 1L, DAY = 1L),
+                      coords = c("x", "y"), crs = 4326)
+  obs <- sf::st_as_sf(data.frame(x = -69.9, y = 42.1, YEAR = 2020L,
+                                 MONTH = 1L, DAY = 1L),
+                      coords = c("x", "y"), crs = 4326)
+
+  # The representative-point path must not perturb ordinary point data.
+  matched <- matchData(obs, src)
+  expect_equal(matched$LON, -69.9)
+  expect_equal(matched$LAT, 42.1)
+})

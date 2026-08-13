@@ -109,9 +109,7 @@ test_that("the archive catalog describes what it serves", {
 # ---- network ----------------------------------------------------------------
 
 test_that("a real fetch returns the documented shape", {
-  skip_on_cran()
-  skip_if_not_installed("ncdf4")
-  skip_if_offline()
+  skip_if_no_network()
 
   bb <- list(xmin = -69, xmax = -68.5, ymin = 43, ymax = 43.5)
   hy <- try(accessHYCOM(vars = c("SST", "BOTT", "BOTS"),
@@ -132,9 +130,7 @@ test_that("a real fetch returns the documented shape", {
 })
 
 test_that("three-hourly carries an HOUR column and aggregates to a daily mean", {
-  skip_on_cran()
-  skip_if_not_installed("ncdf4")
-  skip_if_offline()
+  skip_if_no_network()
 
   bb <- list(xmin = -69, xmax = -68.5, ymin = 43, ymax = 43.5)
   steps <- try(accessHYCOM(vars = "SST", frequency = "3hourly",
