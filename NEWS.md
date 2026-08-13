@@ -2,6 +2,25 @@
 
 ## Bug fixes
 
+* **A `yearday` column could be matched on as though it were the year.**
+  `matchData()` finds a table's time columns by prefix, and `yearday` begins with
+  `year`. With no plain `year` column beside it to win the tiebreak, it was
+  renamed to `YEAR` without complaint, and every row went into a period no
+  `source` covers — so the join came back all `NA` behind a warning about
+  uncovered periods, which reads like a gap in the data rather than a mistake.
+
+  Day-of-year names — `yearday`, `dayofyear`, `jday`, `doy` and the usual
+  variants — are now never matched on, for any time column. A table carrying one
+  and no real year or day column gets the missing-column error instead.
+
+* **The missing-column error now names the columns it passed over.** The lookup
+  stays a prefix match, so `obs_month` and `survey_year` are still not
+  recognised. Rather than only saying what it looked for, the error lists the
+  similar names that are present and asks for the intended one to be renamed.
+  Suggesting is not selecting: widening the rule to a contains match would have
+  swept up `jday` and `yearday` alongside `obs_month`, trading a clear error for
+  a wrong answer.
+
 * **Variables could be silently mislabelled in multi-variable downloads.** This
   can affect results already in hand, so it is worth checking rather than just
   reading.

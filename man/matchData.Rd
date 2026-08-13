@@ -16,7 +16,12 @@ matchData(
 \item{dat}{\if{html}{\out{<sf object>}} the points to add columns to: observations, stations,
 tag positions, anything with coordinates and time. Needs year and month
 columns, plus a day column when matching at daily resolution. Columns whose
-names begin with those words are recognised, so \code{Year} or \code{obs_month} work.}
+names \emph{begin} with those words are recognised, whatever their case, so
+\code{Year} and \code{month_utc} work but \code{obs_month} does not — rename it, or pass it
+as \code{MONTH}. Day-of-year names (\code{yearday}, \code{dayofyear}, \code{jday}, \code{doy} and the
+like) are never used, even though some of them do begin with \code{year} or
+\code{day}: they hold an ordinal day rather than a year or a day of the month. An
+unrecognised name is named in the error, so nothing has to be guessed at.}
 
 \item{source}{\if{html}{\out{<sf object>}} the points to take values from, typically a grid
 from \code{\link[=accessEnvDat]{accessEnvDat()}}. Must carry \code{YEAR}/\code{MONTH}/\code{DAY}.}

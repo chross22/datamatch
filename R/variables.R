@@ -2,6 +2,30 @@
 # only exists from R 4.4 onward.
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
+#' Column names that mean day-of-year, not year or day-of-month
+#'
+#' `standardize_time_columns()` finds a table's time columns by prefix, which
+#' sweeps in names that look right and mean something else: `yearday` begins with
+#' `year`, `dayofyear` with `day`. Both hold an ordinal day, so accepting either
+#' would put every row in a period no `source` covers - an all-NA join behind a
+#' vague warning rather than an error.
+#'
+#' Names here are never candidates for any time column. They are still reported
+#' as near misses when nothing else matches, so a caller who did mean one of them
+#' is told to rename it rather than left guessing.
+#'
+#' Compared lower-case, so casing in the data does not matter. Extend it when
+#' another convention turns up; the only effect of a name being listed is that
+#' `matchData()` declines to guess.
+#'
+#' @return <char> lower-case day-of-year column names
+#' @keywords internal
+day_of_year_names <- c(
+  "yearday", "year_day", "yday",
+  "dayofyear", "day_of_year", "doy",
+  "jday", "j_day", "julian", "julianday", "julian_day"
+)
+
 #' Catalog of Copernicus variables under familiar names
 #'
 #' Maps short names people actually use (`SST`, `CHL`, ...) onto the Copernicus

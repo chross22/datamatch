@@ -176,12 +176,80 @@ test_that("matchData works on species data with no day column at monthly resolut
 
 test_that("matchData resolves an exact day column ahead of a prefix match", {
   observations <- make_observations()
+  observations$day_night <- c("D", "N", "D")
+  env <- make_env()
+
+  # Both "DAY" and "day_night" start with "day"; the exact match must win rather
+  # than the lookup failing as ambiguous. "day_night" is used rather than a
+  # day-of-year name because those are excluded before the tiebreak is reached.
+  expect_no_error(matchData(observations, env))
+})
+
+# Time column lookup is a prefix match, on purpose ---------------------------
+
+test_that("a prefixed time column is not recognised, but is named in the error", {
+  observations <- make_observations(month_col = "obs_month")
+  env <- make_env()
+
+  # "obs_month" does not begin with "month", so it is not picked up. The error
+  # has to point at it, or the user is left guessing which column was wanted.
+  expect_error(matchData(observations, env), "no column for 'MONTH'")
+  expect_error(matchData(observations, env), "obs_month")
+})
+
+test_that("a suffixed time column still works, since the match ignores case", {
+  observations <- make_observations(month_col = "month_utc")
+  env <- make_env()
+
+  expect_no_error(matchData(observations, env))
+})
+
+test_that("a day-of-year column is never used as the day of the month", {
+  observations <- make_observations(day_col = "jday")
+  observations$jday <- c(1, 15, 32)
+  env <- make_env()
+
+  # "jday" is day-of-year. Taken as DAY it would group every row into a period
+  # no source covers, and the join would come back all NA behind only a vague
+  # warning. Erroring is the honest outcome; the message may suggest it, but
+  # the rename is the user's to make.
+  expect_error(matchData(observations, env), "no column for 'DAY'")
+  expect_error(matchData(observations, env), "jday")
+})
+
+test_that("a yearday column is never used as the year", {
+  observations <- make_observations(year_col = "yearday")
+  observations$yearday <- c(1, 15, 32)
+  env <- make_env()
+
+  # "yearday" does begin with "year", so the prefix rule alone would accept it.
+  expect_error(matchData(observations, env), "no column for 'YEAR'")
+  expect_error(matchData(observations, env), "yearday")
+})
+
+test_that("an exact day column still wins over a day-of-year column beside it", {
+  observations <- make_observations()
   observations$dayofyear <- c(1, 15, 32)
   env <- make_env()
 
-  # Both "DAY" and "dayofyear" start with "day"; the exact match must win rather
-  # than the lookup failing as ambiguous.
-  expect_no_error(matchData(observations, env))
+  result <- matchData(observations, env)
+
+  # Excluding day-of-year names must not disturb the ordinary case: DAY is used,
+  # and "dayofyear" survives as one of `dat`'s own columns.
+  expect_equal(result$thetao[result$id == 2], 115)
+  expect_true("dayofyear" %in% names(result))
+})
+
+test_that("the missing-column error stays plain when nothing looks close", {
+  observations <- make_observations()
+  observations$MONTH <- NULL
+  env <- make_env()
+
+  message <- tryCatch(matchData(observations, env),
+                      error = function(e) conditionMessage(e))
+
+  expect_match(message, "no column for 'MONTH'")
+  expect_false(grepl("similar name", message, fixed = TRUE))
 })
 
 test_that("matchData keeps observations in periods with no env data, as NA", {

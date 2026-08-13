@@ -33,7 +33,12 @@
 #' @param dat <sf object> the points to add columns to: observations, stations,
 #'   tag positions, anything with coordinates and time. Needs year and month
 #'   columns, plus a day column when matching at daily resolution. Columns whose
-#'   names begin with those words are recognised, so `Year` or `obs_month` work.
+#'   names *begin* with those words are recognised, whatever their case, so
+#'   `Year` and `month_utc` work but `obs_month` does not — rename it, or pass it
+#'   as `MONTH`. Day-of-year names (`yearday`, `dayofyear`, `jday`, `doy` and the
+#'   like) are never used, even though some of them do begin with `year` or
+#'   `day`: they hold an ordinal day rather than a year or a day of the month. An
+#'   unrecognised name is named in the error, so nothing has to be guessed at.
 #' @param source <sf object> the points to take values from, typically a grid
 #'   from [accessEnvDat()]. Must carry `YEAR`/`MONTH`/`DAY`.
 #' @param temporal_resolution <char> one of `"auto"` (default), `"day"`,
@@ -253,17 +258,45 @@ standardize_time_columns <- function(dat, match_keys) {
       names(dat |> dplyr::select(dplyr::starts_with(prefix, ignore.case = TRUE))),
       geom_col
     )
+    # Day-of-year columns are never a candidate for anything. "yearday" begins
+    # with "year" and would otherwise be taken as the year itself; "dayofyear"
+    # begins with "day". Either way the value is an ordinal day, so every row
+    # would land in a period no source covers, and the join would come back all
+    # NA behind a warning about uncovered periods rather than an error. Refusing
+    # them costs a rename in the rare case one really is meant; accepting them
+    # costs a wrong answer that looks like a data gap.
+    candidates <- candidates[!tolower(candidates) %in% day_of_year_names]
+
     # An exact match wins over a mere prefix match, so a dataset carrying both
-    # "day" and "jday" resolves to "day" rather than failing as ambiguous.
+    # "day" and "day_night" resolves to "day" rather than failing as ambiguous.
     exact <- candidates[tolower(candidates) == prefix]
     if (length(exact) == 1) {
       candidates <- exact
     }
 
     if (length(candidates) == 0) {
+      # The rule is a prefix match, not a contains match, so "obs_month" is not
+      # recognised either. Widening it would pick that up at the cost of "jday",
+      # which as the only candidate would be renamed without complaint - the
+      # same silent failure the exclusion above exists to prevent, and one the
+      # exact-match tiebreak cannot catch, since it only fires when a real "day"
+      # column is present to beat the near miss.
+      #
+      # So near misses are named here instead of being used. The user makes the
+      # call, and the rename is visible in their own code.
+      near <- setdiff(names(dat)[grepl(prefix, tolower(names(dat)), fixed = TRUE)],
+                      geom_col)
+      hint <- if (length(near) > 0) {
+        paste0("\nThese have a similar name but were not used: ",
+               paste(near, collapse = ", "),
+               ".\nRename the intended one to '", key,
+               "', if one of them is what you mean.")
+      } else {
+        ""
+      }
       stop("`dat` has no column for '", key, "' (looked for names starting with '",
            prefix, "'). It is required to match at this temporal resolution.",
-           call. = FALSE)
+           hint, call. = FALSE)
     }
     if (length(candidates) > 1) {
       stop("`dat` has multiple candidate '", key, "' columns: ",
