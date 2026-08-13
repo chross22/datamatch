@@ -37,6 +37,8 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="articles/sources.html">Choosing a data source</a></li>
+    <li><a class="dropdown-item" href="articles/working-with-data.html">Working with what comes back</a></li>
+    <li><a class="dropdown-item" href="articles/covariates.html">Static and basin-scale covariates</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -121,27 +123,19 @@
 <blockquote>
 <p><strong>One name, several sources, and they are not the same number.</strong> <code>SST</code> from Copernicus, FVCOM and HYCOM are three different models, and <code>WSPD</code> from Copernicus and CCMP two different analyses. Sharing the column name is what makes them interchangeable <em>mechanically</em> — so everything downstream works unchanged — and is exactly why it is worth recording which one you used. <code><a href="reference/matchData.html">matchData()</a></code> writes a <code>&lt;var&gt;_source</code> column saying which, and <code><a href="reference/source_of.html">source_of()</a></code> reads it back.</p>
 </blockquote>
-<p><strong>How to read the rest of this.</strong> The sections up to <a href="#looking-at-the-data">Looking at the data</a> use Copernicus throughout, because it has the widest variable list and the setup everything else builds on — but nearly all of it (resampling, matching, plotting, the time-step rules) applies to all four sources. The other three get their own sections further down, and the <a href="https://chross22.github.io/datamatch/articles/sources.html">“Choosing a data source”</a> vignette compares them side by side if that is what you came for.</p>
+<p><strong>How to read the rest of this.</strong> <a href="#quick-start">Quick start</a> and <a href="#variable-names">Variable names</a> use Copernicus throughout, because it has the widest variable list and the setup everything else builds on — but nearly all of it (matching, resampling, plotting, the time-step rules) applies to every source. The other four get their own sections under <a href="#fvcom-a-regional-model-on-an-unstructured-mesh">The five sources</a>, and the <a href="https://chross22.github.io/datamatch/articles/sources.html">“Choosing a data source”</a> vignette compares them side by side if that is what you came for.</p>
 <details><summary><b>Contents</b>
 </summary><p><strong>Getting started</strong></p>
 <ul>
 <li><a href="#installation">Installation</a></li>
 <li>
-<a href="#set-up">Set up</a> — the Copernicus client, sign-in, and where downloads are cached</li>
+<a href="#set-up">Set up</a> — only Copernicus needs an account</li>
 <li>
 <a href="#quick-start">Quick start</a>
 <ul>
-<li>
-<a href="#one-call-per-product">One call per product</a> — why <code>SST</code> and <code>CHL</code> are two fetches</li>
-<li>
-<a href="#monthly-daily-or-hourly">Monthly, daily, or hourly</a> — monthly by default; every day of a period, or particular dates
-<ul>
-<li><a href="#every-day-in-a-period">Every day in a period</a></li>
-<li><a href="#particular-days">Particular days</a></li>
-</ul>
-</li>
-<li>
-<a href="#downloads-run-in-parallel">Downloads run in parallel</a> — <code>n_workers</code>, and what is already cached</li>
+<li><a href="#one-call-per-product">One call per product</a></li>
+<li><a href="#monthly-daily-or-hourly">Monthly, daily, or hourly</a></li>
+<li><a href="#downloads-run-in-parallel">Downloads run in parallel</a></li>
 </ul>
 </li>
 </ul>
@@ -150,81 +144,39 @@
 <li>
 <a href="#variable-names">Variable names</a> — request <code>SST</code> rather than <code>thetao</code>
 <ul>
-<li>
-<a href="#satellite-or-model">Satellite or model?</a> — two sources for chlorophyll, and why they are not interchangeable</li>
-<li>
-<a href="#winds">Winds</a> — speed, components, and stress; hourly or monthly, never daily
-<ul>
-<li><a href="#there-is-no-daily-wind">There is no daily wind</a></li>
+<li><a href="#satellite-or-model">Satellite or model?</a></li>
+<li><a href="#winds">Winds</a></li>
+<li><a href="#bottom-salinity">Bottom salinity</a></li>
 </ul>
 </li>
-<li>
-<a href="#bottom-salinity">Bottom salinity</a> — derived from the depth column, because the reanalysis omits it</li>
-</ul>
-</li>
-<li>
-<a href="#spatial-and-temporal-resolution">Spatial and temporal resolution</a> — what each product resolves, and where the gaps are</li>
+<li><a href="#spatial-and-temporal-resolution">Spatial and temporal resolution</a></li>
 <li>
 <a href="#forecasts">Forecasts</a> — the same variables, ten days ahead</li>
 </ul>
-<p><strong>Working with what comes back</strong></p>
+<p><strong>The five sources</strong></p>
 <ul>
 <li>
-<a href="#resampling">Resampling</a> — moving between grids and time steps
-<ul>
-<li><a href="#aggregating-loses-detail-which-is-the-safe-direction">Aggregating loses detail, which is the safe direction</a></li>
-<li><a href="#interpolating-adds-cells-not-information">Interpolating adds cells, not information</a></li>
-</ul>
-</li>
+<a href="#fvcom-a-regional-model-on-an-unstructured-mesh">FVCOM, a regional model on an unstructured mesh</a> — NECOFS, 1978–2013 and 2025–</li>
 <li>
-<a href="#filling-satellite-gaps">Filling satellite gaps</a> — substituting the model where cloud blocked the view</li>
-<li>
-<a href="#looking-at-the-data">Looking at the data</a> — maps, coverage, series, and matched points</li>
-</ul>
-<p><strong>The other three sources, and other covariates</strong></p>
-<ul>
-<li>
-<a href="#fvcom-a-regional-model-on-an-unstructured-mesh">FVCOM, a regional model on an unstructured mesh</a> — NECOFS, 1978–2013 and 2025–
-<ul>
-<li><a href="#bottom-salinity-is-free-here">Bottom salinity is free here</a></li>
-<li><a href="#nodes-and-elements-are-two-different-sets-of-points">Nodes and elements are two different sets of points</a></li>
-<li><a href="#monthly-means-only">Monthly means only</a></li>
-<li><a href="#reading-fvcom-from-anywhere-else">Reading FVCOM from anywhere else</a></li>
-</ul>
-</li>
-<li>
-<a href="#hycom-and-bottom-fields-for-free">HYCOM, and bottom fields for free</a> — GOFS 3.1, 1994–2024
-<ul>
-<li><a href="#three-hourly-and-no-mean-to-fetch">Three-hourly, and no mean to fetch</a></li>
-</ul>
-</li>
+<a href="#hycom-and-bottom-fields-for-free">HYCOM, and bottom fields for free</a> — GOFS 3.1, 1994–2024</li>
 <li>
 <a href="#ccmp-the-long-wind-record">CCMP, the long wind record</a> — six-hourly winds, 1993–present</li>
 <li>
 <a href="#mur-and-viirs-through-erddap">MUR and VIIRS, through ERDDAP</a> — 0.01° satellite SST, and chlorophyll</li>
-<li>
-<a href="#static-and-basin-scale-covariates">Static and basin-scale covariates</a>
-<ul>
-<li>
-<a href="#seafloor-terrain">Seafloor terrain</a> — depth, slope, aspect, and TPI</li>
-<li>
-<a href="#climate-indices">Climate indices</a> — NAO, AO, AMO, PDO, LCR, AMOC
-<ul>
-<li><a href="#the-overturning-circulation">The overturning circulation</a></li>
-<li><a href="#the-labrador-current-retroflection-index">The Labrador Current retroflection index</a></li>
-</ul>
-</li>
-</ul>
-</li>
 </ul>
 <p><strong>Putting it to use</strong></p>
 <ul>
 <li>
-<a href="#putting-it-together">Putting it together</a> — a full worked example, four sources onto one table</li>
+<a href="#working-with-what-comes-back">Working with what comes back</a> — resampling, gap filling, plots</li>
 <li>
-<a href="#matching">Matching</a> — a general spatiotemporal join, not just observations</li>
+<a href="#static-and-basin-scale-covariates">Static and basin-scale covariates</a> — seafloor terrain and climate indices</li>
 <li>
-<a href="#looking-things-up">Looking things up</a> — dictionaries, catalogs, and small helpers</li>
+<a href="#putting-it-together">Putting it together</a> — a full worked example</li>
+<li>
+<a href="#matching">Matching</a> — a general spatiotemporal join</li>
+<li>
+<a href="#function-reference">Function reference</a> — everything the package exports</li>
+<li><a href="#vignettes">Vignettes</a></li>
 <li>
 <a href="#troubleshooting">Troubleshooting</a> — what the error messages mean</li>
 <li><a href="#related-packages">Related packages</a></li>
@@ -364,45 +316,8 @@
 <div class="section level3">
 <h3 id="downloads-run-in-parallel">Downloads run in parallel<a class="anchor" aria-label="anchor" href="#downloads-run-in-parallel"></a>
 </h3>
-<p><strong><code>n_workers</code> controls this, and it defaults to 4</strong> — parallel downloading is on without being asked for. A Copernicus subset request spends nearly all of its time waiting on the API rather than on your machine, so several requests in flight take barely longer than one.</p>
-<p>Two months of daily SST and SSS over a one-degree box — 59 downloads — each run cold-cache, all three back to back in one session:</p>
-<table class="table">
-<thead><tr>
-<th><code>n_workers</code></th>
-<th>Elapsed</th>
-<th></th>
-</tr></thead>
-<tbody>
-<tr>
-<td>1</td>
-<td>295 s</td>
-<td></td>
-</tr>
-<tr>
-<td>4 (the default)</td>
-<td>80 s</td>
-<td><strong>3.7× faster</strong></td>
-</tr>
-<tr>
-<td>6</td>
-<td>51 s</td>
-<td><strong>5.8× faster</strong></td>
-</tr>
-</tbody>
-</table>
-<p>All three returned identical data. The gain scales with workers rather than with cores, because the wait is the network rather than your machine. How much you see depends on the API’s mood as much as anything, so treat these as the shape of it rather than a promise.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># The default. 15 years x 12 months is 180 downloads, four at a time</span></span>
-<span><span class="fu"><a href="reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"SST"</span>, years <span class="op">=</span> <span class="fl">2003</span><span class="op">:</span><span class="fl">2017</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>, bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"SST"</span>, years <span class="op">=</span> <span class="fl">2003</span><span class="op">:</span><span class="fl">2017</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>, bounding_box <span class="op">=</span> <span class="va">bb</span>,</span>
-<span>             n_workers <span class="op">=</span> <span class="fl">8</span><span class="op">)</span>   <span class="co"># more at once</span></span>
-<span><span class="fu"><a href="reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"SST"</span>, years <span class="op">=</span> <span class="fl">2003</span><span class="op">:</span><span class="fl">2017</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>, bounding_box <span class="op">=</span> <span class="va">bb</span>,</span>
-<span>             n_workers <span class="op">=</span> <span class="fl">1</span><span class="op">)</span>   <span class="co"># one at a time</span></span></code></pre></div>
-<p><strong>This is not a daily-only feature.</strong> Any fetch spanning more than one time step is more than one download, so a long monthly record benefits as much as a daily one — the 180 downloads above are monthly.</p>
-<p>Two things it deliberately does not do. It does not re-download what you already have: files in the cache are read straight from disk, and a fully cached call starts no workers at all. And it does not parallelise across calls — each <code><a href="reference/accessEnvDat.html">accessEnvDat()</a></code> call is one dataset, so fetching SST and CHL is two calls, run one after the other with each parallel inside itself.</p>
-<p>The limit is the service, not your cores, so raising <code>n_workers</code> far past 8 mostly earns rate limiting. A day that fails does not abandon the others: every day is attempted, the ones that succeeded stay cached, and the error names each day that failed — so re-running the same call retries only those.</p>
-<p><code>variable_dataset(c("SST", "CHL"))</code> tells you which product each variable comes from, so you can plan the calls before making them. See <a href="#putting-it-together">Putting it together</a> for the same pattern with seafloor and basin-scale covariates added.</p>
+<p><code>n_workers</code> defaults to 4, so a fetch spanning many time steps downloads several at once — a Copernicus request spends nearly all its time waiting on the API rather than on your machine. Files already cached are read from disk and start no workers at all, and a day that fails does not abandon the others.</p>
+<p>→ <a href="https://chross22.github.io/datamatch/articles/working-with-data.html#downloads-run-in-parallel">Working with what comes back</a> has the timings and what raising it actually buys.</p>
 </div>
 </div>
 <div class="section level2">
@@ -410,7 +325,7 @@
 </h2>
 <p>Copernicus variable codes are terse and easy to misremember. <code>thetao</code> is temperature, <code>mlotst</code> is mixed layer depth, <code>zos</code> is sea surface height. Get one wrong and you get a failed download rather than an obvious mistake.</p>
 <p>So you can request variables by name instead. The dictionary lists what is available, and which product and dataset each comes from:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/chross22/datamatch" class="external-link">datamatch</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/variable_dictionary.html">variable_dictionary</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -495,7 +410,7 @@
 <span><span class="co">#&gt; omitted - they are inferred from the names.</span></span>
 <span><span class="co">#&gt; Full descriptions: as.data.frame(variable_dictionary())$description</span></span></code></pre></div>
 <p><code><a href="reference/as_markdown.html">as_markdown()</a></code> renders either dictionary as a pipe table, for pasting into documentation:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/as_markdown.html">as_markdown</a></span><span class="op">(</span><span class="fu"><a href="reference/variable_dictionary.html">variable_dictionary</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
 <thead><tr>
@@ -658,7 +573,7 @@
 </tbody>
 </table>
 <p>Pass those names to <code><a href="reference/accessEnvDat.html">accessEnvDat()</a></code> and the result comes back with them as column names, rather than the Copernicus codes:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span></span>
 <span>  vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SST"</span>, <span class="st">"SSS"</span>, <span class="st">"MLD"</span><span class="op">)</span>,</span>
 <span>  years <span class="op">=</span> <span class="fl">2003</span><span class="op">:</span><span class="fl">2017</span>,</span>
@@ -669,7 +584,7 @@
 <span><span class="co">#&gt; "SST" "SSS" "MLD" "YEAR" "MONTH" "DAY" "geometry"</span></span></code></pre></div>
 <p><strong><code>product_id</code> and <code>dataset_id</code> can be omitted</strong> when every variable is in the dictionary. The catalog already knows where they live. Raw Copernicus codes work the same way, so <code>vars = c("thetao", "so")</code> infers its dataset too.</p>
 <p>Variables from different datasets cannot be fetched in one request. Mixing them is refused before anything is downloaded, rather than failing obscurely at the API:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SST"</span>, <span class="st">"CHL"</span><span class="op">)</span>, <span class="va">...</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Error: These variables come from different Copernicus datasets and cannot be</span></span>
 <span><span class="co">#&gt;   fetched together:</span></span>
@@ -680,55 +595,15 @@
 <div class="section level3">
 <h3 id="satellite-or-model">Satellite or model?<a class="anchor" aria-label="anchor" href="#satellite-or-model"></a>
 </h3>
-<p>Copernicus serves chlorophyll and primary production from two very different sources, and both are available:</p>
-<table class="table">
-<colgroup>
-<col width="25%">
-<col width="25%">
-<col width="25%">
-<col width="25%">
-</colgroup>
-<thead><tr>
-<th>Name</th>
-<th>Source</th>
-<th>Resolution</th>
-<th>Trade-off</th>
-</tr></thead>
-<tbody>
-<tr>
-<td>
-<code>CHL</code>, <code>PP</code>
-</td>
-<td>Copernicus-GlobColour, satellite</td>
-<td>4 km</td>
-<td>Observed, finer — but surface-only and gappy under persistent cloud</td>
-</tr>
-<tr>
-<td>
-<code>CHL_MODEL</code>, <code>NPP_MODEL</code>
-</td>
-<td>Biogeochemistry reanalysis</td>
-<td>0.25°</td>
-<td>Gap-free and depth-resolved — but simulated, and coarser</td>
-</tr>
-</tbody>
-</table>
-<p>The plain names default to satellite, since the values are observed rather than simulated. Switch to the model versions where cloud gaps would matter more than resolution.</p>
-<p>One caution: <strong>satellite <code>PP</code> and model <code>NPP_MODEL</code> are not the same quantity.</strong> <code>PP</code> is depth-integrated (mg/m2/day), <code>NPP_MODEL</code> volumetric (mg/m3/day). Substituting one for the other is a units error, not a resolution difference.</p>
-<p>Phytoplankton functional types come from the same satellite plankton dataset as <code>CHL</code>, so they can be fetched together:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span></span>
-<span>  vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CHL"</span>, <span class="st">"DIATO"</span>, <span class="st">"DINO"</span><span class="op">)</span>,   <span class="co"># one request, one dataset</span></span>
-<span>  years <span class="op">=</span> <span class="fl">2003</span><span class="op">:</span><span class="fl">2017</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>,</span>
-<span>  bounding_box <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>xmin <span class="op">=</span> <span class="op">-</span><span class="fl">76</span>, xmax <span class="op">=</span> <span class="op">-</span><span class="fl">65</span>, ymin <span class="op">=</span> <span class="fl">35</span>, ymax <span class="op">=</span> <span class="fl">45</span><span class="op">)</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p><code>DIATO</code> and <code>DINO</code> are diatom and dinophyte chlorophyll — the spring-bloom species large copepods prefer, and the later stratified-water group respectively.</p>
+<p>Chlorophyll and primary production come from two very different places. <code>CHL</code> and <code>PP</code> are Copernicus-GlobColour satellite retrievals — observed, 4 km, and gappy under cloud. <code>CHL_MODEL</code> and <code>NPP_MODEL</code> are the biogeochemistry reanalysis — gap-free and depth-resolved, but simulated and coarser. The plain names default to satellite.</p>
+<p>One caution: <strong>satellite <code>PP</code> and model <code>NPP_MODEL</code> are not the same quantity.</strong> <code>PP</code> is depth-integrated (mg/m2/day), <code>NPP_MODEL</code> volumetric (mg/m3/day).</p>
+<p>→ <a href="https://chross22.github.io/datamatch/articles/sources.html#satellite-or-model">Choosing a data source</a> covers the trade in full.</p>
 </div>
 <div class="section level3">
 <h3 id="winds">Winds<a class="anchor" aria-label="anchor" href="#winds"></a>
 </h3>
 <p>Six wind variables come from the Copernicus L4 wind product — scatterometer retrievals blended with an ECMWF model background. They are fetched like anything else:</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">wind</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"WSPD"</span>, <span class="st">"UWND"</span>, <span class="st">"VWND"</span>, <span class="st">"TAU"</span><span class="op">)</span>,</span>
 <span>                     years <span class="op">=</span> <span class="fl">2003</span><span class="op">:</span><span class="fl">2017</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>, bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
@@ -771,7 +646,7 @@
 <h4 id="there-is-no-daily-wind">There is no daily wind<a class="anchor" aria-label="anchor" href="#there-is-no-daily-wind"></a>
 </h4>
 <p>Copernicus publishes this wind monthly or hourly and <strong>nothing between</strong>, so <code>frequency = "daily"</code> is refused for it rather than quietly substituted. Fetch hourly and aggregate, which also leaves the choice of summary with you:</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">hourly</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"UWND"</span>, <span class="st">"VWND"</span><span class="op">)</span>, frequency <span class="op">=</span> <span class="st">"hourly"</span>,</span>
 <span>                       dates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">observations</span><span class="op">$</span><span class="va">date</span><span class="op">)</span>, bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
 <span></span>
@@ -785,40 +660,8 @@
 <div class="section level3">
 <h3 id="bottom-salinity">Bottom salinity<a class="anchor" aria-label="anchor" href="#bottom-salinity"></a>
 </h3>
-<p><code>BOTS</code> pairs with <code>BOTT</code>, but it is not fetched the same way, because <strong>GLORYS12V1 does not publish it.</strong> The reanalysis has temperature at the sea floor and no salinity counterpart. So it is derived: the full salinity column is fetched and the deepest wet level in each cell kept.</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">bots</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"BOTS"</span>, years <span class="op">=</span> <span class="fl">2010</span><span class="op">:</span><span class="fl">2014</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>,</span>
-<span>                     bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
-<span><span class="co">#&gt; BOTS is not published by this product. Deriving it from the full 'so' column</span></span>
-<span><span class="co">#&gt; and keeping the deepest wet level in each cell; the depth used comes back as</span></span>
-<span><span class="co">#&gt; BOTS_depth.</span></span></code></pre></div>
-<p>The depth each value came from is returned as <code>BOTS_depth</code> rather than left to be assumed. That matters because the deepest wet <em>model level</em> is not the sea floor: level spacing coarsens with depth, so in deep water the value can sit a long way above the bottom. In shelf water it is within a few metres.</p>
-<p>Two consequences, both deliberate:</p>
-<ul>
-<li>
-<strong>It must be fetched on its own.</strong> The whole depth column is a different request from the single level <code>SST</code> wants, so mixing them is an error rather than a quiet second download. Call twice and chain <code><a href="reference/matchData.html">matchData()</a></code>.</li>
-<li>
-<strong>It costs far more.</strong> Roughly fifty levels are downloaded over the same box to keep one, so a large box is much slower than the same box of <code>SST</code>.</li>
-</ul>
-<p>In forecast mode none of this applies. The analysis-and-forecast product publishes sea-floor salinity outright, so <code>BOTS</code> is an ordinary variable there, fetches alongside <code>BOTT</code>, and returns no <code>BOTS_depth</code>:</p>
-<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BOTT"</span>, <span class="st">"BOTS"</span><span class="op">)</span>, years <span class="op">=</span> <span class="fl">2026</span>, months <span class="op">=</span> <span class="fl">8</span>,</span>
-<span>             bounding_box <span class="op">=</span> <span class="va">bb</span>, mode <span class="op">=</span> <span class="st">"forecast"</span><span class="op">)</span></span></code></pre></div>
-<p>The two are the same quantity by construction but not the same number — one is the deepest level of a 50-level grid, the other Copernicus’s own diagnostic — so a record spanning both modes has a seam in it.</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/variable_dictionary.html">variable_dictionary</a></span><span class="op">(</span><span class="st">"biogeochemical"</span><span class="op">)</span>        <span class="co"># filter by product</span></span>
-<span><span class="fu"><a href="reference/variable_dictionary.html">variable_dictionary</a></span><span class="op">(</span><span class="st">"wind"</span><span class="op">)</span>                  <span class="co"># or just the winds</span></span>
-<span><span class="fu"><a href="reference/fvcom_dictionary.html">fvcom_dictionary</a></span><span class="op">(</span><span class="op">)</span>                           <span class="co"># the FVCOM catalog, for accessFVCOM()</span></span>
-<span><span class="fu"><a href="reference/fvcom_archives.html">fvcom_archives</a></span><span class="op">(</span><span class="op">)</span>                             <span class="co"># which FVCOM archives are built in</span></span>
-<span><span class="fu"><a href="reference/hycom_dictionary.html">hycom_dictionary</a></span><span class="op">(</span><span class="op">)</span>                           <span class="co"># the HYCOM catalog, for accessHYCOM()</span></span>
-<span><span class="fu"><a href="reference/hycom_archives.html">hycom_archives</a></span><span class="op">(</span><span class="op">)</span>                             <span class="co"># which HYCOM archives can be read</span></span>
-<span><span class="fu"><a href="reference/hycom_covering.html">hycom_covering</a></span><span class="op">(</span><span class="st">"2019-06-15"</span><span class="op">)</span>                 <span class="co"># which of them span a given date</span></span>
-<span><span class="fu"><a href="reference/ccmp_dictionary.html">ccmp_dictionary</a></span><span class="op">(</span><span class="op">)</span>                            <span class="co"># the CCMP catalog, for accessCCMP()</span></span>
-<span><span class="fu"><a href="reference/ccmp_versions.html">ccmp_versions</a></span><span class="op">(</span><span class="op">)</span>                              <span class="co"># which CCMP versions can be read</span></span>
-<span><span class="fu"><a href="reference/erddap_dictionary.html">erddap_dictionary</a></span><span class="op">(</span><span class="op">)</span>                          <span class="co"># MUR and VIIRS, for accessERDDAP()</span></span>
-<span><span class="fu"><a href="reference/erddap_datasets.html">erddap_datasets</a></span><span class="op">(</span><span class="op">)</span>                            <span class="co"># which ERDDAP datasets ship</span></span>
-<span><span class="fu"><a href="reference/variable_dataset.html">variable_dataset</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SST"</span>, <span class="st">"CHL"</span><span class="op">)</span><span class="op">)</span>            <span class="co"># which dataset each comes from</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="reference/variable_dictionary.html">variable_dictionary</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">description</span>  <span class="co"># full descriptions</span></span></code></pre></div>
+<p><code>BOTS</code> costs a different amount depending on where it comes from. GLORYS12V1 publishes no sea-floor salinity, so in reanalysis mode it is <strong>derived</strong> — the full depth column is fetched and the deepest wet level kept, which means it must be fetched on its own and returns a <code>BOTS_depth</code> column. In forecast mode, and from FVCOM, HYCOM and their sigma or bottom fields, it is an ordinary request.</p>
+<p>→ <a href="https://chross22.github.io/datamatch/articles/sources.html#bottom-salinity-four-ways">Choosing a data source</a> shows all four ways side by side.</p>
 </div>
 </div>
 <div class="section level2">
@@ -900,99 +743,10 @@
 <p><code><a href="reference/upscale_grid.html">upscale_grid()</a></code> and <code><a href="reference/downscale_grid.html">downscale_grid()</a></code> are how you act on that decision.</p>
 </div>
 <div class="section level2">
-<h2 id="resampling">Resampling<a class="anchor" aria-label="anchor" href="#resampling"></a>
-</h2>
-<p>Four functions, one pair per axis, plus one for gaps. Each takes a <code>method</code>, because there is no single right way to change resolution:</p>
-<table class="table">
-<colgroup>
-<col width="50%">
-<col width="50%">
-</colgroup>
-<thead><tr>
-<th>Function</th>
-<th>What it does</th>
-</tr></thead>
-<tbody>
-<tr>
-<td><code><a href="reference/upscale_grid.html">upscale_grid()</a></code></td>
-<td>Aggregates onto a coarser grid — <code>mean</code>, <code>median</code>, <code>min</code>, <code>max</code>, <code>sum</code>, <code>mode</code>
-</td>
-</tr>
-<tr>
-<td><code><a href="reference/downscale_grid.html">downscale_grid()</a></code></td>
-<td>Interpolates onto a finer grid — <code>nearest</code>, <code>bilinear</code>, <code>cubic</code>, <code>idw</code>
-</td>
-</tr>
-<tr>
-<td><code><a href="reference/upscale_time.html">upscale_time()</a></code></td>
-<td>Aggregates onto a coarser time step — hourly to daily, daily to monthly, monthly to annual</td>
-</tr>
-<tr>
-<td><code><a href="reference/downscale_time.html">downscale_time()</a></code></td>
-<td>Interpolates onto a finer time step — <code>step</code>, <code>linear</code>, <code>spline</code>
-</td>
-</tr>
-<tr>
-<td><code><a href="reference/fill_satellite_gaps.html">fill_satellite_gaps()</a></code></td>
-<td>Substitutes another covariate wherever the first is missing</td>
-</tr>
-</tbody>
-</table>
-<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">chl</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"CHL"</span>, years <span class="op">=</span> <span class="fl">2010</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>, bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
-<span><span class="va">sst</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"SST"</span>, years <span class="op">=</span> <span class="fl">2010</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>, bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Satellite CHL (4 km) onto the physics grid, so the two can be modelled together</span></span>
-<span><span class="va">chl_on_sst</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/upscale_grid.html">upscale_grid</a></span><span class="op">(</span><span class="va">chl</span>, to <span class="op">=</span> <span class="va">sst</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Or onto a stated resolution</span></span>
-<span><span class="va">chl_quarter</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/upscale_grid.html">upscale_grid</a></span><span class="op">(</span><span class="va">chl</span>, to <span class="op">=</span> <span class="fl">0.25</span>, method <span class="op">=</span> <span class="st">"median"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Daily data to monthly means; monthly back out to daily</span></span>
-<span><span class="va">monthly</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/upscale_time.html">upscale_time</a></span><span class="op">(</span><span class="va">daily_sst</span>, to <span class="op">=</span> <span class="st">"month"</span><span class="op">)</span></span>
-<span><span class="va">daily</span>   <span class="op">&lt;-</span> <span class="fu"><a href="reference/downscale_time.html">downscale_time</a></span><span class="op">(</span><span class="va">monthly</span>, to <span class="op">=</span> <span class="st">"day"</span><span class="op">)</span></span></code></pre></div>
-<p>The target is either a resolution or <strong>another object whose grid to adopt</strong>. The second form is what puts two products on one grid.</p>
-<p>A resolution is anchored to the origin, not to your data’s corner. So two products upscaled to 0.25° land on the <em>same</em> cells, instead of half a cell apart.</p>
-<p><strong>The right treatment differs by covariate</strong>, which is why this is per-covariate rather than one setting for everything. Ocean-colour chlorophyll is a 4 km optical retrieval riddled with cloud gaps. Physics is a 0.083° model with no gaps at all.</p>
-<p>Averaging chlorophyll up to the physics grid summarises values that were really measured. Interpolating physics down to 4 km invents structure. Those are not the same operation, and no single choice can be right for both.</p>
-<div class="section level3">
-<h3 id="aggregating-loses-detail-which-is-the-safe-direction">Aggregating loses detail, which is the safe direction<a class="anchor" aria-label="anchor" href="#aggregating-loses-detail-which-is-the-safe-direction"></a>
-</h3>
-<p><code>mean</code> is the default. The others exist because “the value of this coarse cell” is not one question:</p>
-<ul>
-<li>
-<code>median</code> resists the retrieval outliers at satellite cloud edges.</li>
-<li>
-<code>min</code> of depth is the shallowest point a cell contains, not its average.</li>
-<li>
-<code>sum</code> is for per-cell totals. It is meaningless for a concentration.</li>
-<li>
-<code>sd</code> over a period is variability, which is a covariate in its own right.</li>
-</ul>
-<p>Pass one method for everything, or a named vector per variable:</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/upscale_grid.html">upscale_grid</a></span><span class="op">(</span><span class="va">env</span>, to <span class="op">=</span> <span class="fl">0.25</span>, method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>CHL <span class="op">=</span> <span class="st">"median"</span>, DEPTH <span class="op">=</span> <span class="st">"min"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><strong>Partly-covered periods and cells come back <code>NA</code> by default.</strong> A mean over the four days of January you happened to fetch is not a January mean, and nothing in the number itself says so.</p>
-<p><code>min_coverage</code> defaults to 0.5. It measures against the steps a period <em>has</em> (31 for January), not the steps you downloaded. Set <code>min_coverage = 0</code> to aggregate whatever is present. Set <code>keep_counts = TRUE</code> to see what was behind each value.</p>
-</div>
-<div class="section level3">
-<h3 id="interpolating-adds-cells-not-information">Interpolating adds cells, not information<a class="anchor" aria-label="anchor" href="#interpolating-adds-cells-not-information"></a>
-</h3>
-<p>This is the direction to be careful in. A 0.25° field rendered at 4 km has 4 km <em>cells</em>, but it still resolves nothing below 0.25°. None of these methods consult any other data source, so there is nowhere for real fine-scale structure to come from.</p>
-<p>That is why the defaults are the blunt ones. <code>nearest</code> and <code>step</code> replicate the source value, leaving the result visibly blocky at the source resolution, so the output looks like what it is. <code>bilinear</code>, <code>cubic</code>, <code>linear</code>, and <code>spline</code> return smooth fields that look like finely-resolved measurements and are not.</p>
-<p>There is a further trap specific to the time axis:</p>
-<blockquote>
-<p><strong><code>linear</code> and <code>spline</code> do not preserve the period mean.</strong> Interpolate twelve monthly means to daily values, average those days back up, and you will not recover the months you started from — in the package’s own tests a March mean of 15.0 comes back as 14.83. Any budget or total computed from such a series inherits that error. <code>step</code> preserves it exactly.</p>
-</blockquote>
-<p><code>idw</code> is the exception worth reaching for. Alone among the spatial methods, it fills across holes rather than propagating them. That makes it useful on gappy satellite data, where <code><a href="reference/fill_satellite_gaps.html">fill_satellite_gaps()</a></code> is not an option.</p>
-<p>Resampled output keeps the <code>YEAR</code>/<code>MONTH</code>/<code>DAY</code> stamping convention, so <code><a href="reference/matchData.html">matchData()</a></code> reads its resolution back correctly and can be used on the result directly.</p>
-</div>
-</div>
-<div class="section level2">
 <h2 id="forecasts">Forecasts<a class="anchor" aria-label="anchor" href="#forecasts"></a>
 </h2>
 <p>The same variables can be requested from the analysis-and-forecast products, which run to about ten days ahead:</p>
-<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span></span>
 <span>  vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SST"</span>, <span class="st">"MLD"</span><span class="op">)</span>,</span>
 <span>  years <span class="op">=</span> <span class="fl">2026</span>, months <span class="op">=</span> <span class="fl">8</span>,</span>
@@ -1009,52 +763,10 @@
 <p>Satellite variables have no forecast — ocean colour is observation, and there is no observation of the future. Asking for <code>CHL</code> in forecast mode says so and points at <code>CHL_MODEL</code>.</p>
 </div>
 <div class="section level2">
-<h2 id="filling-satellite-gaps">Filling satellite gaps<a class="anchor" aria-label="anchor" href="#filling-satellite-gaps"></a>
-</h2>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">chl_sat</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"CHL"</span>, years <span class="op">=</span> <span class="fl">2010</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>, bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
-<span><span class="va">chl_mod</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"CHL_MODEL"</span>, years <span class="op">=</span> <span class="fl">2010</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>, bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">filled</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/fill_satellite_gaps.html">fill_satellite_gaps</a></span><span class="op">(</span><span class="va">chl_sat</span>, <span class="va">chl_mod</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>CHL <span class="op">=</span> <span class="st">"CHL_MODEL"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">filled</span><span class="op">$</span><span class="va">CHL_source</span><span class="op">)</span></span>
-<span><span class="co">#&gt; satellite     model   missing</span></span>
-<span><span class="co">#&gt;      8214      1902         0</span></span></code></pre></div>
-<p>The two sources measure the same quantity in different ways. They are not interchangeable. So the seam is left visible rather than smoothed over. Nothing is rescaled by default, and a <code>&lt;var&gt;_source</code> column records where each value came from.</p>
-<p><code>rescale = TRUE</code> matches the model’s mean and variance to the satellite’s over the cells where both exist. That reduces the step, at the cost of altering the model values.</p>
-</div>
-<div class="section level2">
-<h2 id="looking-at-the-data">Looking at the data<a class="anchor" aria-label="anchor" href="#looking-at-the-data"></a>
-</h2>
-<p>Four plots, in the order they are usually wanted. All use base graphics, so they need no extra packages. Each returns the data it drew, so the numbers behind a picture are always available.</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SST"</span>, <span class="st">"CHL"</span><span class="op">)</span>, years <span class="op">=</span> <span class="fl">2010</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>,</span>
-<span>                    bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="reference/plot_env.html">plot_env</a></span><span class="op">(</span><span class="va">env</span><span class="op">)</span>                                <span class="co"># first variable, first time step</span></span>
-<span><span class="fu"><a href="reference/plot_env.html">plot_env</a></span><span class="op">(</span><span class="va">env</span>, <span class="st">"CHL"</span>, time <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>MONTH <span class="op">=</span> <span class="fl">6</span><span class="op">)</span><span class="op">)</span>    <span class="co"># June chlorophyll</span></span></code></pre></div>
-<p><code><a href="reference/plot_env.html">plot_env()</a></code> maps one variable for one time step. It is the first thing worth doing after a download. It is also the fastest way to catch a bounding box that landed somewhere unintended, a variable that is entirely <code>NA</code>, or a depth range that returned the wrong level.</p>
-<p>Data are drawn as a raster, so gaps read as holes rather than absent dots. The time step is named in the title, so a map is never ambiguous about which month it shows.</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/plot_coverage.html">plot_coverage</a></span><span class="op">(</span><span class="va">env</span><span class="op">)</span></span></code></pre></div>
-<p><code><a href="reference/plot_coverage.html">plot_coverage()</a></code> is the one to run before trusting a satellite series. It plots the fraction of cells carrying a value in each time step. On ocean colour the shape is stark: near-complete in summer, a quarter of the grid in winter.</p>
-<p>That picture decides three things. Whether a monthly mean is worth having. Whether <code><a href="reference/fill_satellite_gaps.html">fill_satellite_gaps()</a></code> is worth the seam it introduces. And where to set <code>min_coverage</code> when aggregating.</p>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/plot_series.html">plot_series</a></span><span class="op">(</span><span class="va">env</span><span class="op">)</span>                     <span class="co"># one panel per variable</span></span>
-<span><span class="fu"><a href="reference/plot_series.html">plot_series</a></span><span class="op">(</span><span class="va">env</span>, <span class="st">"SST"</span>, fun <span class="op">=</span> <span class="va">max</span><span class="op">)</span>   <span class="co"># the warmest cell each month</span></span></code></pre></div>
-<p><code><a href="reference/plot_series.html">plot_series()</a></code> reduces each time step to one number over the study area. That is how a seasonal cycle, a trend, or a step change at a product boundary becomes visible.</p>
-<p>The interquartile range across cells is shaded behind the line. A mean alone hides the difference between a uniformly warm month and one that is warm inshore and cold offshore.</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">matched</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/matchData.html">matchData</a></span><span class="op">(</span><span class="va">observations</span>, <span class="va">env</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="reference/plot_matched.html">plot_matched</a></span><span class="op">(</span><span class="va">matched</span><span class="op">[</span><span class="va">matched</span><span class="op">$</span><span class="va">MONTH</span> <span class="op">==</span> <span class="fl">7</span>, <span class="op">]</span>, <span class="st">"SST"</span><span class="op">)</span></span></code></pre></div>
-<p><code><a href="reference/plot_matched.html">plot_matched()</a></code> shows what the join actually produced. Observations that matched nothing are drawn as open circles rather than dropped. A cluster of them is usually the real finding: observations outside the environmental data’s extent, or in a period it does not cover.</p>
-<p>Subset to one period first, as above. The colour scale spans everything passed in. Plot a whole year of a seasonal variable and the seasons mix together, so the map reads as noise. A warm February inshore point and a cool August offshore one can take the same colour.</p>
-</div>
-<div class="section level2">
 <h2 id="fvcom-a-regional-model-on-an-unstructured-mesh">FVCOM, a regional model on an unstructured mesh<a class="anchor" aria-label="anchor" href="#fvcom-a-regional-model-on-an-unstructured-mesh"></a>
 </h2>
 <p>Copernicus is not the only source. <code><a href="reference/accessFVCOM.html">accessFVCOM()</a></code> reads NECOFS — the Northeast Coastal Ocean Forecast System, built on FVCOM at UMass Dartmouth — and returns the same shape of object, so everything downstream works unchanged:</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bb</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>xmin <span class="op">=</span> <span class="op">-</span><span class="fl">70</span>, xmax <span class="op">=</span> <span class="op">-</span><span class="fl">66</span>, ymin <span class="op">=</span> <span class="fl">41</span>, ymax <span class="op">=</span> <span class="fl">44</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">fv</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessFVCOM.html">accessFVCOM</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SST"</span>, <span class="st">"BOTT"</span>, <span class="st">"BOTS"</span><span class="op">)</span>, years <span class="op">=</span> <span class="fl">2010</span><span class="op">:</span><span class="fl">2013</span>,</span>
@@ -1077,7 +789,7 @@
 <h3 id="nodes-and-elements-are-two-different-sets-of-points">Nodes and elements are two different sets of points<a class="anchor" aria-label="anchor" href="#nodes-and-elements-are-two-different-sets-of-points"></a>
 </h3>
 <p>Scalars sit on mesh nodes; velocities and stresses sit on element centroids — 48,451 and 90,415 of them on GOM3. So the two kinds cannot be fetched together, and asking is an error rather than a silent interpolation of one onto the other:</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/accessFVCOM.html">accessFVCOM</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SST"</span>, <span class="st">"UBAR"</span><span class="op">)</span>, <span class="va">...</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Error: These variables sit on different parts of the FVCOM mesh and cannot be</span></span>
 <span><span class="co">#&gt;   read together:</span></span>
@@ -1140,7 +852,7 @@
 </table>
 <p>Three things change at once — the mesh, the step, and whether the output is retrospective — so they are separate archives rather than one stitched series. Between 2014 and 2024 this server publishes neither, which is a gap in NECOFS rather than in this package.</p>
 <p><code>GOM7</code> is hourly, so <code>frequency</code> chooses what to take:</p>
-<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># One snapshot a day at 12 UTC - the default, because a month of hourly GOM7 is</span></span>
 <span><span class="co"># 720 reads of a 207,081-node field</span></span>
 <span><span class="va">daily</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessFVCOM.html">accessFVCOM</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SST"</span>, <span class="st">"BOTS"</span><span class="op">)</span>, years <span class="op">=</span> <span class="fl">2025</span>, months <span class="op">=</span> <span class="fl">6</span>,</span>
@@ -1158,7 +870,7 @@
 </h3>
 <p><strong>FVCOM is a model, not a data product.</strong> There is no global FVCOM archive to point at. Groups run it for their own coastlines and publish on their own servers, and what ships here is one server’s Northeast US output — so the built-in list is a convenience, not the limit.</p>
 <p>Any other FVCOM endpoint is reached by describing it once:</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">elsewhere</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/fvcom_archive.html">fvcom_archive</a></span><span class="op">(</span><span class="st">"http://example.org/thredds/dodsC/some_fvcom_run"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">elsewhere</span><span class="op">)</span>     <span class="co"># mesh size, period, and which fields that run actually saved</span></span>
@@ -1166,7 +878,7 @@
 <span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessFVCOM.html">accessFVCOM</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"SST"</span>, years <span class="op">=</span> <span class="fl">2010</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>,</span>
 <span>                   bounding_box <span class="op">=</span> <span class="va">bb</span>, archive <span class="op">=</span> <span class="va">elsewhere</span><span class="op">)</span></span></code></pre></div>
 <p>This works because everything <code><a href="reference/accessFVCOM.html">accessFVCOM()</a></code> does depends on FVCOM’s <em>structure</em> rather than on the region: values on mesh nodes and element centroids, sigma layers, <code>lon</code>/<code>lat</code> and <code>lonc</code>/<code>latc</code>, an <code>Itime</code> day count. What differs between deployments — the mesh, the period, which fields were saved — is read from the file. <code><a href="reference/fvcom_archive.html">fvcom_archive()</a></code> opens the endpoint once and reports all of it, so a URL that is wrong, blocked, or not FVCOM fails there with the reason rather than part-way through a fetch:</p>
-<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/fvcom_archive.html">fvcom_archive</a></span><span class="op">(</span><span class="st">"https://tds.hycom.org/thredds/dodsC/GLBv0.08/expt_53.X/data/1994"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Error: This does not look like FVCOM output: it has no 'node' dimension.</span></span></code></pre></div>
 <p>One caution carries over: point it at an aggregation of <em>hourly</em> output and it may not open at all, for the reason above. Prefer a monthly aggregation, or a single file, over a long hourly one.</p>
@@ -1180,7 +892,7 @@
 <h2 id="hycom-and-bottom-fields-for-free">HYCOM, and bottom fields for free<a class="anchor" aria-label="anchor" href="#hycom-and-bottom-fields-for-free"></a>
 </h2>
 <p><code><a href="reference/accessHYCOM.html">accessHYCOM()</a></code> reads HYCOM + NCODA GOFS 3.1 from the Naval Research Laboratory’s THREDDS server. The default archive is the reanalysis (<code>GLBv0.08</code> <code>expt_53.X</code>, 1994–2015); operational archives carry the record to September 2024, and <a href="#reaching-past-2015">Reaching past 2015</a> covers the crossing:</p>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bb</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>xmin <span class="op">=</span> <span class="op">-</span><span class="fl">70</span>, xmax <span class="op">=</span> <span class="op">-</span><span class="fl">66</span>, ymin <span class="op">=</span> <span class="fl">41</span>, ymax <span class="op">=</span> <span class="fl">44</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">bottom</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessHYCOM.html">accessHYCOM</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BOTT"</span>, <span class="st">"BOTS"</span><span class="op">)</span>, years <span class="op">=</span> <span class="fl">2010</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>,</span>
@@ -1215,7 +927,7 @@
 </tbody>
 </table>
 <p>A snapshot is not a mean. A 12:00 UTC field on a tidal shelf sea is one instant of that day. For a real mean, fetch the steps and aggregate — which keeps the operation visible and the choice of summary yours:</p>
-<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">steps</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessHYCOM.html">accessHYCOM</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"SST"</span>, frequency <span class="op">=</span> <span class="st">"3hourly"</span>,</span>
 <span>                     dates <span class="op">=</span> <span class="st">"2010-06-15"</span>, bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
 <span></span>
@@ -1225,7 +937,7 @@
 <h3 id="reaching-past-2015">Reaching past 2015<a class="anchor" aria-label="anchor" href="#reaching-past-2015"></a>
 </h3>
 <p>The default archive is the <strong>reanalysis</strong> (<code>GLBv53X</code>, 1994–2015): one internally consistent run, which is why it is the default. HYCOM continues to the present, but as a chain of shorter <strong>operational</strong> experiments — the model as it was running at the time:</p>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/hycom_covering.html">hycom_covering</a></span><span class="op">(</span><span class="st">"2019-06-15"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "GLBv930" "GLBy930"</span></span>
 <span></span>
@@ -1240,7 +952,7 @@
 <h2 id="ccmp-the-long-wind-record">CCMP, the long wind record<a class="anchor" aria-label="anchor" href="#ccmp-the-long-wind-record"></a>
 </h2>
 <p><code><a href="reference/accessCCMP.html">accessCCMP()</a></code> reads the Cross-Calibrated Multi-Platform ocean surface wind analysis from Remote Sensing Systems. No account is needed — the registration RSS asks for covers their FTP service, and the HTTPS archive is open:</p>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bb</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>xmin <span class="op">=</span> <span class="op">-</span><span class="fl">70</span>, xmax <span class="op">=</span> <span class="op">-</span><span class="fl">66</span>, ymin <span class="op">=</span> <span class="fl">41</span>, ymax <span class="op">=</span> <span class="fl">44</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">wind</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessCCMP.html">accessCCMP</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"UWND"</span>, <span class="st">"VWND"</span>, <span class="st">"WSPD"</span><span class="op">)</span>,</span>
@@ -1301,7 +1013,7 @@
 <h2 id="mur-and-viirs-through-erddap">MUR and VIIRS, through ERDDAP<a class="anchor" aria-label="anchor" href="#mur-and-viirs-through-erddap"></a>
 </h2>
 <p><code><a href="reference/accessERDDAP.html">accessERDDAP()</a></code> reads satellite products from NOAA’s ERDDAP servers — <strong>no account needed</strong>, and subset server-side:</p>
-<div class="sourceCode" id="cb41"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bb</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>xmin <span class="op">=</span> <span class="op">-</span><span class="fl">70</span>, xmax <span class="op">=</span> <span class="op">-</span><span class="fl">66</span>, ymin <span class="op">=</span> <span class="fl">41</span>, ymax <span class="op">=</span> <span class="fl">44</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">sst</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessERDDAP.html">accessERDDAP</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SST"</span>, <span class="st">"SST_ERROR"</span><span class="op">)</span>,</span>
@@ -1353,188 +1065,49 @@
 <li>
 <strong>A satellite SST is not a model SST.</strong> MUR measures the <em>foundation</em> temperature, below the daily warming layer; a model <code>SST</code> is its topmost level. On a calm sunny afternoon they differ by a degree or more. Both arrive in a column called <code>SST</code>, which is why <code><a href="reference/matchData.html">matchData()</a></code> records <code>&lt;var&gt;_source</code>.</li>
 <li>
-<strong>MUR is gap-free by construction.</strong> It is an analysis, so cloud is interpolated over rather than left <code>NA</code> — fetch <code>SST_ERROR</code> alongside if that interpolation matters. <code>VIIRSCHL</code> is likewise DINEOF gap-filled; <code>VIIRSCHL2018</code> is the raw retrieval and is gappy under cloud, which is what <a href="#filling-satellite-gaps"><code>fill_satellite_gaps()</code></a> is for.</li>
+<strong>MUR is gap-free by construction.</strong> It is an analysis, so cloud is interpolated over rather than left <code>NA</code> — fetch <code>SST_ERROR</code> alongside if that interpolation matters. <code>VIIRSCHL</code> is likewise DINEOF gap-filled; <code>VIIRSCHL2018</code> is the raw retrieval and is gappy under cloud, which is what <a href="https://chross22.github.io/datamatch/articles/working-with-data.html#filling-satellite-gaps"><code>fill_satellite_gaps()</code></a> is for.</li>
 <li>
 <strong>There is no global VIIRS SST here.</strong> The VIIRS SST on these servers covers the US West Coast only. MUR is the SST to use instead — it is a blended analysis taking VIIRS among its inputs, at finer resolution and over a longer record.</li>
 </ul>
 <p><code><a href="reference/erddap_datasets.html">erddap_datasets()</a></code> lists what ships and <code><a href="reference/erddap_dictionary.html">erddap_dictionary()</a></code> tabulates the variables. ERDDAP hosts thousands more; <code>erddap_dataset(server, dataset_id)</code> describes any of them for <code><a href="reference/accessERDDAP.html">accessERDDAP()</a></code>, the same way <code><a href="reference/fvcom_archive.html">fvcom_archive()</a></code> does for FVCOM.</p>
 </div>
 <div class="section level2">
+<h2 id="working-with-what-comes-back">Working with what comes back<a class="anchor" aria-label="anchor" href="#working-with-what-comes-back"></a>
+</h2>
+<p>Everything an access function returns is the same shape, so the same tools apply whichever source produced it: resampling between grids and time steps, filling satellite gaps, and looking at what arrived.</p>
+<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/upscale_grid.html">upscale_grid</a></span><span class="op">(</span><span class="va">chl</span>, to <span class="op">=</span> <span class="va">sst</span><span class="op">)</span>             <span class="co"># onto another product's grid</span></span>
+<span><span class="fu"><a href="reference/downscale_grid.html">downscale_grid</a></span><span class="op">(</span><span class="va">sst</span>, to <span class="op">=</span> <span class="fl">0.05</span><span class="op">)</span>          <span class="co"># onto a finer one</span></span>
+<span><span class="fu"><a href="reference/upscale_time.html">upscale_time</a></span><span class="op">(</span><span class="va">hourly</span>, to <span class="op">=</span> <span class="st">"day"</span><span class="op">)</span>        <span class="co"># hour -&gt; day -&gt; month -&gt; year</span></span>
+<span><span class="fu"><a href="reference/downscale_time.html">downscale_time</a></span><span class="op">(</span><span class="va">monthly</span>, to <span class="op">=</span> <span class="st">"day"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="reference/fill_satellite_gaps.html">fill_satellite_gaps</a></span><span class="op">(</span><span class="va">chl_sat</span>, <span class="va">chl_mod</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>CHL <span class="op">=</span> <span class="st">"CHL_MODEL"</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="reference/plot_env.html">plot_env</a></span><span class="op">(</span><span class="va">env</span><span class="op">)</span>                           <span class="co"># a map of one variable, one step</span></span>
+<span><span class="fu"><a href="reference/plot_coverage.html">plot_coverage</a></span><span class="op">(</span><span class="va">env</span><span class="op">)</span>                      <span class="co"># how much of the grid carries a value</span></span>
+<span><span class="fu"><a href="reference/plot_series.html">plot_series</a></span><span class="op">(</span><span class="va">env</span><span class="op">)</span>                        <span class="co"># the study area reduced to a series</span></span>
+<span><span class="fu"><a href="reference/plot_matched.html">plot_matched</a></span><span class="op">(</span><span class="va">matched</span>, <span class="st">"SST"</span><span class="op">)</span>            <span class="co"># what the join actually produced</span></span></code></pre></div>
+<p>Two rules worth carrying even if you read no further. <strong>Aggregating loses detail, which is the safe direction; interpolating adds cells, not information</strong> — so the defaults are the blunt methods that look like what they are. And <strong><code>linear</code> and <code>spline</code> do not preserve the period mean</strong>, so a budget computed from an interpolated series inherits that error; <code>step</code> does preserve it.</p>
+<p>→ <a href="https://chross22.github.io/datamatch/articles/working-with-data.html"><strong>Working with what comes back</strong></a> covers the methods, when each is right, <code>min_coverage</code>, and what each plot is for.</p>
+</div>
+<div class="section level2">
 <h2 id="static-and-basin-scale-covariates">Static and basin-scale covariates<a class="anchor" aria-label="anchor" href="#static-and-basin-scale-covariates"></a>
 </h2>
-<p>Not everything useful is a gridded Copernicus variable on a monthly time step. Two other kinds are available, and they behave differently from the Copernicus data and from each other.</p>
-<div class="section level3">
-<h3 id="seafloor-terrain">Seafloor terrain<a class="anchor" aria-label="anchor" href="#seafloor-terrain"></a>
-</h3>
-<p>This does not vary by month or year. So it is fetched once for a study area and attached to every time step. It comes from NOAA ETOPO via <code>marmap</code>, a suggested package rather than a hard dependency:</p>
-<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">bathy</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/fetch_bathymetry.html">fetch_bathymetry</a></span><span class="op">(</span></span>
-<span>  bounding_box <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>xmin <span class="op">=</span> <span class="op">-</span><span class="fl">70</span>, xmax <span class="op">=</span> <span class="op">-</span><span class="fl">66</span>, ymin <span class="op">=</span> <span class="fl">41</span>, ymax <span class="op">=</span> <span class="fl">44</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
+<p>Two kinds of covariate are not gridded fields on a time step, and neither is attached with <code><a href="reference/matchData.html">matchData()</a></code>:</p>
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bathy</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/fetch_bathymetry.html">fetch_bathymetry</a></span><span class="op">(</span>bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
+<span><span class="va">observations</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/attach_bathymetry.html">attach_bathymetry</a></span><span class="op">(</span><span class="va">observations</span>, <span class="va">bathy</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"DEPTH"</span>, <span class="st">"SLOPE"</span>, <span class="st">"TPI"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">observations</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/attach_bathymetry.html">attach_bathymetry</a></span><span class="op">(</span><span class="va">observations</span>, <span class="va">bathy</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"DEPTH"</span>, <span class="st">"SLOPE"</span>, <span class="st">"TPI"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><code><a href="reference/bathymetry_variables.html">bathymetry_variables()</a></code> lists them: <code>DEPTH</code>, <code>SLOPE</code>, <code>ASPECT</code>, and <code>TPI</code>.</p>
-<p><code>TPI</code>, the topographic position index, is a cell’s depth relative to the mean of the eight around it. It answers a question depth cannot. A 100 m bank top and a 100 m basin floor are the same depth and very different places. TPI is positive on the first, negative on the second, and near zero on both flat bottom and uniform slopes.</p>
-<p>It is scale-dependent by construction. It describes position within the immediate neighbourhood, so its meaning follows the resolution of the grid it was computed on.</p>
-<p><code><a href="reference/attach_bathymetry.html">attach_bathymetry()</a></code> takes either a plain data frame with coordinate columns or an <code>sf</code> object, so it works on observations and on <code><a href="reference/accessEnvDat.html">accessEnvDat()</a></code> output alike.</p>
-</div>
-<div class="section level3">
-<h3 id="climate-indices">Climate indices<a class="anchor" aria-label="anchor" href="#climate-indices"></a>
-</h3>
-<p>These are monthly, and have <strong>no spatial dimension</strong>. One value describes the whole basin, so every observation in a month receives the same number:</p>
-<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">observations</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/attach_climate_index.html">attach_climate_index</a></span><span class="op">(</span><span class="va">observations</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NAO"</span>, <span class="st">"AMO"</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="reference/index_dictionary.html">index_dictionary</a></span><span class="op">(</span><span class="op">)</span>          <span class="co"># NAO, AO, AMO, PDO, LCR, AMOC</span></span></code></pre></div>
-<p>That makes them a different kind of covariate from local temperature. They tell you about <em>when</em> — what year and season it was. They tell you nothing about <em>where</em> within a region conditions are better.</p>
-<p>So they are useful for interannual questions (“was this a warm-regime year?”) and useless for spatial ones. A model given only indices cannot produce a map.</p>
-<p>Six are available, and they are not interchangeable.</p>
-<table class="table">
-<colgroup>
-<col width="20%">
-<col width="20%">
-<col width="20%">
-<col width="20%">
-<col width="20%">
-</colgroup>
-<thead><tr>
-<th>Name</th>
-<th>What it measures</th>
-<th>Units</th>
-<th>Timescale</th>
-<th>Record</th>
-</tr></thead>
-<tbody>
-<tr>
-<td><code>NAO</code></td>
-<td>Pressure difference, Icelandic Low to Azores High</td>
-<td>standardized anomaly</td>
-<td>Year to year</td>
-<td>1950–</td>
-</tr>
-<tr>
-<td><code>AO</code></td>
-<td>Strength of the polar vortex</td>
-<td>standardized anomaly</td>
-<td>Year to year</td>
-<td>1950–</td>
-</tr>
-<tr>
-<td><code>AMO</code></td>
-<td>Detrended North Atlantic SST anomaly</td>
-<td>degrees C</td>
-<td>Multidecadal</td>
-<td>1948–</td>
-</tr>
-<tr>
-<td><code>PDO</code></td>
-<td>Leading mode of North Pacific SST</td>
-<td>standardized anomaly</td>
-<td>Decadal</td>
-<td>1948–</td>
-</tr>
-<tr>
-<td><code>LCR</code></td>
-<td>Retroflection of the Labrador Current</td>
-<td>fraction</td>
-<td>Year to year</td>
-<td>1993–2014</td>
-</tr>
-<tr>
-<td><code>AMOC</code></td>
-<td>Overturning transport at 26.5°N</td>
-<td>Sv</td>
-<td>Year to year</td>
-<td>2004–</td>
-</tr>
-</tbody>
-</table>
-<p>Most are <strong>standardized anomalies</strong> — in standard deviations, not anything physical. Only <code>AMO</code> (degrees C) and <code>AMOC</code> (Sverdrups) carry real units, so a coefficient fitted to one of those is not comparable with one fitted to <code>NAO</code>. <code><a href="reference/index_dictionary.html">index_dictionary()</a></code> carries the units at runtime.</p>
-<p><strong><code>NAO</code></strong> is the usual first choice in the Northwest Atlantic. It sets the strength and track of the westerlies, and with them heat flux and mixing over the shelves. Its winter values carry most of the signal. Summer values are noisier and mean less.</p>
-<p><strong><code>AO</code></strong> is the hemispheric version of the same thing: polar vortex strength rather than an Atlantic-specific pressure dipole. In winter it correlates strongly with <code>NAO</code>. Including both usually buys little and costs collinearity, so pick one unless you have a reason.</p>
-<p><strong><code>AMO</code></strong> is a slow background state, not a year-to-year signal. It varies over decades. Within a study period of ten or twenty years it may act more like a trend than a covariate. One caution: it is <em>derived from</em> North Atlantic SST, so using it to predict local SST is partly circular.</p>
-<p><strong><code>PDO</code></strong> is North Pacific and included for completeness. It has limited relevance to Atlantic shelf systems, and a relationship found with it is worth treating sceptically.</p>
-<p>The last two are different in kind, and get their own sections below.</p>
-<div class="section level4">
-<h4 id="the-overturning-circulation">The overturning circulation<a class="anchor" aria-label="anchor" href="#the-overturning-circulation"></a>
-</h4>
-<p><code>AMOC</code> is the strength of the Atlantic overturning in Sverdrups, measured directly by the RAPID mooring array at 26.5°N. Alone among these it is a measurement rather than a pattern derived from pressure or SST.</p>
-<div class="sourceCode" id="cb44"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">amoc</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/fetch_climate_index.html">fetch_climate_index</a></span><span class="op">(</span><span class="st">"AMOC"</span><span class="op">)</span>      <span class="co"># monthly, April 2004 onward</span></span>
-<span><span class="va">observations</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/attach_climate_index.html">attach_climate_index</a></span><span class="op">(</span><span class="va">observations</span>, <span class="st">"AMOC"</span><span class="op">)</span></span></code></pre></div>
-<p>Being real is also its limitation, in two ways. It <strong>starts in April 2004</strong>, so it cannot reach back over a longer survey record. And it is measured <strong>far south of the shelf</strong>: it describes the basin-scale circulation the Labrador and slope currents sit within, not conditions on the Gulf of Maine or Scotian Shelf. A weakening AMOC is associated with a warming Northwest Atlantic shelf, but that is a chain of several links, so check the sign of any relationship against <code>LCR</code> and <code>AMO</code> rather than assuming it.</p>
-<p>Two practical notes. RAPID publishes this only as NetCDF, so it needs the <code>ncdf4</code> package — a <code>Suggests</code>, installed with <code>install.packages("ncdf4")</code>. And the published series is twelve-hourly, averaged to monthly here; the file is over a megabyte, so it is cached like the Copernicus downloads.</p>
-<blockquote>
-<p>Moat BI, Smeed DA, Rayner D, Johns WE, Smith R, Volkov D, Elipot S, Petit T, Kajtar J, Baringer MO, Collins J (2026). Atlantic meridional overturning circulation observed by the RAPID-MOCHA-WBTS array at 26°N from 2004 to 2024 (v2024.1a). British Oceanographic Data Centre, NERC, UK. <a href="https://doi.org/10.5285/48d0bf43-0598-ceb2-e063-7086abc062f1" class="external-link uri">https://doi.org/10.5285/48d0bf43-0598-ceb2-e063-7086abc062f1</a></p>
-</blockquote>
-</div>
-<div class="section level4">
-<h4 id="staying-current">Staying current<a class="anchor" aria-label="anchor" href="#staying-current"></a>
-</h4>
-<p>Four of the six indices are still growing. Downloads are cached, and the cache expires on an interval matched to how often each provider actually publishes, so a living index re-downloads on its own without being asked:</p>
-<div class="sourceCode" id="cb45"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/climate_index_status.html">climate_index_status</a></span><span class="op">(</span><span class="op">)</span>      <span class="co"># what is cached, how old, what is due</span></span>
-<span><span class="fu"><a href="reference/refresh_climate_index.html">refresh_climate_index</a></span><span class="op">(</span><span class="op">)</span>     <span class="co"># force a re-fetch of everything still growing</span></span>
-<span><span class="fu"><a href="reference/refresh_climate_index.html">refresh_climate_index</a></span><span class="op">(</span><span class="st">"AMOC"</span><span class="op">)</span></span></code></pre></div>
-<table class="table">
-<thead><tr>
-<th>Updates</th>
-<th>Cache reused for</th>
-<th>Indices</th>
-</tr></thead>
-<tbody>
-<tr>
-<td>Monthly</td>
-<td>7 days</td>
-<td>
-<code>NAO</code>, <code>AO</code>, <code>AMO</code>, <code>PDO</code>
-</td>
-</tr>
-<tr>
-<td>Roughly yearly</td>
-<td>30 days</td>
-<td><code>AMOC</code></td>
-</tr>
-<tr>
-<td>Never</td>
-<td>forever</td>
-<td><code>LCR</code></td>
-</tr>
-</tbody>
-</table>
-<p><code>LCR</code> finished at 2014, so re-downloading it cannot produce anything new and it is skipped rather than fetched again.</p>
-<p>Two behaviours are worth knowing, because both are deliberate.</p>
-<p><strong>Staleness is judged from the data, not the cache.</strong> A fresh download of a file the provider stopped updating is still stale. If a series ends further behind the present than its source’s usual publishing lag, you are told, along with the command to force a refresh and the note that if refreshing changes nothing then the provider has not published either.</p>
-<p><strong>A failed download falls back to the cached copy, with a warning.</strong> A provider being briefly unreachable should not become an error here when usable data is already on disk. The warning is what keeps the old copy from being mistaken for a current one.</p>
-</div>
-<div class="section level4">
-<h4 id="the-labrador-current-retroflection-index">The Labrador Current retroflection index<a class="anchor" aria-label="anchor" href="#the-labrador-current-retroflection-index"></a>
-</h4>
-<p><code>LCR</code> is the odd one out among the five, and often the most directly useful. The other four are atmospheric or SST patterns. This one describes a <em>current</em>: how much of the Labrador Current turns eastward at the Grand Banks instead of continuing southwest along the shelf.</p>
-<p>Positive values mean stronger retroflection. That means less cold, fresh, oxygen-rich Labrador water reaching the Scotian Shelf and Gulf of Maine. For shelf water properties that is a shorter causal chain than the NAO, which acts on them only indirectly through winds.</p>
-<div class="sourceCode" id="cb46"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">lcr</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/fetch_climate_index.html">fetch_climate_index</a></span><span class="op">(</span><span class="st">"LCR"</span><span class="op">)</span>        <span class="co"># monthly, 1993-2014</span></span>
-<span><span class="va">observations</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/attach_climate_index.html">attach_climate_index</a></span><span class="op">(</span><span class="va">observations</span>, <span class="st">"LCR"</span><span class="op">)</span></span></code></pre></div>
-<p>It is the published output of one study rather than an operational product, so <strong>cite it when you use it</strong>:</p>
-<blockquote>
-<p>Jutras M, Dufour CO, Mucci A, Talbot LC (2023) Large-scale control of the retroflection of the Labrador Current. <em>Nature Communications</em> <strong>14</strong>:2623. <a href="https://doi.org/10.1038/s41467-023-38321-y" class="external-link uri">https://doi.org/10.1038/s41467-023-38321-y</a></p>
-</blockquote>
-<p><code><a href="reference/index_dictionary.html">index_dictionary()</a></code> prints that citation, and <code>as.data.frame(index_dictionary())$reference</code> carries it at runtime.</p>
-<p>Three limits worth knowing.</p>
-<p>It <strong>covers 1993–2014 only</strong>, so it cannot be attached to recent observations.</p>
-<p>The series is fetched from the paper’s published source data, not recomputed. The authors derived it by seeding 966 virtual particles per week across a line at (53°N, 56.7°W)–(54.3°N, 52.0°W). Each was tracked for three years through GLORYS12V1 velocities with <a href="https://parcels-code.org/" class="external-link">OceanParcels</a>. The index is the difference between the counts crossing hydrographic sections on the Labrador and Scotian Shelves.</p>
-<p>Extending the record past 2014 means redoing that computation, not calling a different function.</p>
-<p><strong>The values are the raw index, not the normalized one plotted in the paper.</strong> The published source data runs roughly −0.09 to 0.18, consistent with a fraction of the seeded particles. Figure 3a of the paper shows a detrended, smoothed series normalized to [−1, 1], spanning about −0.6 to +0.5.</p>
-<p>Both describe the same quantity, but the numbers are not comparable. Don’t read a value here against that figure. To get the paper’s variant, apply its chain yourself: detrend, 12-month rolling mean, rescale to [−1, 1], subtract the 1993–2015 mean.</p>
-<p>One interaction to know. <code><a href="reference/attach_climate_index.html">attach_climate_index()</a></code> joins on year and month, and <code>upscale_time(to = "year")</code> stamps its output <code>MONTH = 1</code>. So attaching an index to annual data would give every year January’s value. Aggregate the index to a year first instead.</p>
-</div>
-</div>
+<span><span class="va">observations</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/attach_climate_index.html">attach_climate_index</a></span><span class="op">(</span><span class="va">observations</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NAO"</span>, <span class="st">"AMO"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><strong>Seafloor terrain</strong> — <code>DEPTH</code>, <code>SLOPE</code>, <code>ASPECT</code>, <code>TPI</code> from NOAA ETOPO — does not vary in time, so it is fetched once and attached to every step. <strong>Climate indices</strong> — <code>NAO</code>, <code>AO</code>, <code>AMO</code>, <code>PDO</code>, <code>LCR</code>, <code>AMOC</code> — have no spatial dimension at all: one value describes the whole basin in a month, so they tell you about <em>when</em>, never about <em>where</em>.</p>
+<p><code><a href="reference/bathymetry_variables.html">bathymetry_variables()</a></code> and <code><a href="reference/index_dictionary.html">index_dictionary()</a></code> list what is available.</p>
+<p>→ <a href="https://chross22.github.io/datamatch/articles/covariates.html"><strong>Static and basin-scale covariates</strong></a> covers what TPI actually measures, which index to choose and why they are not interchangeable, the <code>LCR</code> and <code>AMOC</code> caveats, and how the index cache expires on each provider’s publishing cadence.</p>
 </div>
 <div class="section level2">
 <h2 id="putting-it-together">Putting it together<a class="anchor" aria-label="anchor" href="#putting-it-together"></a>
 </h2>
 <p>A worked example: physical, biological, seafloor, and basin-scale covariates onto one table of species observations. The whole thing is a pipeline of joins. Each step adds columns and never changes the number of rows.</p>
-<div class="sourceCode" id="cb47"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/chross22/datamatch" class="external-link">datamatch</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">bb</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>xmin <span class="op">=</span> <span class="op">-</span><span class="fl">70</span>, xmax <span class="op">=</span> <span class="op">-</span><span class="fl">66</span>, ymin <span class="op">=</span> <span class="fl">41</span>, ymax <span class="op">=</span> <span class="fl">44</span><span class="op">)</span></span>
@@ -1558,24 +1131,24 @@
 <span><span class="va">matched</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/attach_bathymetry.html">attach_bathymetry</a></span><span class="op">(</span><span class="va">matched</span>, <span class="va">bathy</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"DEPTH"</span>, <span class="st">"SLOPE"</span>, <span class="st">"TPI"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">matched</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/attach_climate_index.html">attach_climate_index</a></span><span class="op">(</span><span class="va">matched</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NAO"</span>, <span class="st">"LCR"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>The result carries one row per original observation with every covariate attached:</p>
-<div class="sourceCode" id="cb48"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" tabindex="-1"></a>YEAR MONTH count   SST   SSS   MLD   CHL   NO3  DEPTH  SLOPE    TPI   NAO   LCR</span>
-<span id="cb48-2"><a href="#cb48-2" tabindex="-1"></a><span class="dv">2010</span>     <span class="dv">1</span>     <span class="dv">2</span>  <span class="fl">6.41</span> <span class="fl">32.80</span>  <span class="fl">84.2</span>  <span class="fl">0.84</span>  <span class="fl">4.12</span>  <span class="fl">105.5</span>   <span class="fl">1.83</span>   <span class="fl">77.2</span>  <span class="fl">0.31</span>  <span class="fl">0.05</span></span>
-<span id="cb48-3"><a href="#cb48-3" tabindex="-1"></a><span class="dv">2010</span>     <span class="dv">1</span>     <span class="dv">1</span>  <span class="fl">5.98</span> <span class="fl">32.94</span>  <span class="fl">91.7</span>  <span class="fl">0.79</span>  <span class="fl">4.55</span>  <span class="fl">294.7</span>   <span class="fl">0.42</span> <span class="sc">-</span><span class="fl">114.7</span>  <span class="fl">0.31</span>  <span class="fl">0.05</span></span></code></pre></div>
+<div class="sourceCode" id="cb33"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" tabindex="-1"></a>YEAR MONTH count   SST   SSS   MLD   CHL   NO3  DEPTH  SLOPE    TPI   NAO   LCR</span>
+<span id="cb33-2"><a href="#cb33-2" tabindex="-1"></a><span class="dv">2010</span>     <span class="dv">1</span>     <span class="dv">2</span>  <span class="fl">6.41</span> <span class="fl">32.80</span>  <span class="fl">84.2</span>  <span class="fl">0.84</span>  <span class="fl">4.12</span>  <span class="fl">105.5</span>   <span class="fl">1.83</span>   <span class="fl">77.2</span>  <span class="fl">0.31</span>  <span class="fl">0.05</span></span>
+<span id="cb33-3"><a href="#cb33-3" tabindex="-1"></a><span class="dv">2010</span>     <span class="dv">1</span>     <span class="dv">1</span>  <span class="fl">5.98</span> <span class="fl">32.94</span>  <span class="fl">91.7</span>  <span class="fl">0.79</span>  <span class="fl">4.55</span>  <span class="fl">294.7</span>   <span class="fl">0.42</span> <span class="sc">-</span><span class="fl">114.7</span>  <span class="fl">0.31</span>  <span class="fl">0.05</span></span></code></pre></div>
 <p>Three things about this that are worth understanding rather than copying.</p>
 <p><strong>The two <code><a href="reference/accessEnvDat.html">accessEnvDat()</a></code> calls are not an inconvenience to work around.</strong> <code>SST</code> and <code>CHL</code> live in different datasets on different grids: 0.083° for the physics, 0.25° for the biogeochemistry. The package refuses to fetch them together rather than quietly reconciling two grids on your behalf. <code><a href="reference/matchData.html">matchData()</a></code> then handles both correctly, because it matches to the nearest cell whatever its size.</p>
 <p><strong><code><a href="reference/matchData.html">matchData()</a></code> chains.</strong> Its output is an <code>sf</code> object with the same time columns it consumed. So you can feed it back in for the next dataset, and the row count is preserved. Order does not matter.</p>
 <p><strong>The joins fail in different ways.</strong> <code><a href="reference/matchData.html">matchData()</a></code> warns and fills <code>NA</code> when an observation falls in a period the environmental data does not cover. <code><a href="reference/attach_climate_index.html">attach_climate_index()</a></code> gives <code>NA</code> outside the index’s record, which for <code>LCR</code> means anything after 2014. Check for both before modelling:</p>
-<div class="sourceCode" id="cb49"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb34"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colSums</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="va">matched</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>You may want everything on a common grid instead, to model the field itself rather than the observations. Regrid first, then match:</p>
-<div class="sourceCode" id="cb50"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">phys_coarse</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/upscale_grid.html">upscale_grid</a></span><span class="op">(</span><span class="va">phys</span>, to <span class="op">=</span> <span class="va">bio</span><span class="op">)</span>    <span class="co"># 0.083° onto the 0.25° BGC grid</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="matching">Matching<a class="anchor" aria-label="anchor" href="#matching"></a>
 </h2>
 <p><code>matchData(dat, source)</code> joins each row of <code>dat</code> to the nearest feature of <code>source</code> within the same time period, and returns <code>dat</code> with <code>source</code>’s columns added.</p>
-<div class="sourceCode" id="cb51"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">matched</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/matchData.html">matchData</a></span><span class="op">(</span><span class="va">observations</span>, <span class="va">env</span><span class="op">)</span></span></code></pre></div>
 <p><strong>Neither side has to be observations or environmental data.</strong> It is a spatiotemporal nearest-feature join between two <code>sf</code> point objects carrying <code>YEAR</code>/<code>MONTH</code>/<code>DAY</code>, so it works equally for stations against a covariate grid, tag positions against a model field, moorings against satellite retrievals, or one gridded product against another. The arguments are named <code>dat</code> and <code>source</code> for that reason.</p>
 <p>Matching happens at <strong><code>source</code>’s</strong> temporal resolution, inferred from its time steps. That matters for monthly products: a monthly mean carries one time step per month while observations fall on arbitrary days, so matching on exact dates would match nothing. Pass <code>temporal_resolution</code> to override.</p>
@@ -1585,23 +1158,207 @@
 </blockquote>
 </div>
 <div class="section level2">
-<h2 id="looking-things-up">Looking things up<a class="anchor" aria-label="anchor" href="#looking-things-up"></a>
+<h2 id="function-reference">Function reference<a class="anchor" aria-label="anchor" href="#function-reference"></a>
 </h2>
-<p>Small helpers for asking the package what it knows, rather than reading the source or guessing:</p>
-<div class="sourceCode" id="cb52"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/variable_dictionary.html">variable_dictionary</a></span><span class="op">(</span><span class="op">)</span>          <span class="co"># printable table of Copernicus variables</span></span>
-<span><span class="fu"><a href="reference/copernicus_variables.html">copernicus_variables</a></span><span class="op">(</span><span class="op">)</span>         <span class="co"># the same catalog as a list, for programmatic use</span></span>
-<span><span class="fu"><a href="reference/forecast_variables.html">forecast_variables</a></span><span class="op">(</span><span class="op">)</span>           <span class="co"># which variables have a forecast equivalent</span></span>
-<span><span class="fu"><a href="reference/variable_dataset.html">variable_dataset</a></span><span class="op">(</span><span class="st">"SST"</span><span class="op">)</span>        <span class="co"># which dataset a variable comes from</span></span>
-<span><span class="fu"><a href="reference/product_url.html">product_url</a></span><span class="op">(</span><span class="st">"GLOBAL_MULTIYEAR_PHY_001_030"</span><span class="op">)</span>   <span class="co"># link to the product page</span></span>
-<span></span>
-<span><span class="fu"><a href="reference/index_dictionary.html">index_dictionary</a></span><span class="op">(</span><span class="op">)</span>             <span class="co"># printable table of climate indices</span></span>
-<span><span class="fu"><a href="reference/climate_indices.html">climate_indices</a></span><span class="op">(</span><span class="op">)</span>              <span class="co"># the same catalog as a list</span></span>
-<span><span class="fu"><a href="reference/bathymetry_variables.html">bathymetry_variables</a></span><span class="op">(</span><span class="op">)</span>         <span class="co"># DEPTH, SLOPE, ASPECT, TPI</span></span>
-<span></span>
-<span><span class="fu"><a href="reference/covariate_columns.html">covariate_columns</a></span><span class="op">(</span><span class="va">env</span><span class="op">)</span>         <span class="co"># which columns of an object are covariates</span></span>
-<span><span class="fu"><a href="reference/grid_resolution.html">grid_resolution</a></span><span class="op">(</span><span class="va">env</span><span class="op">)</span>           <span class="co"># the grid spacing, for deciding which way to resample</span></span></code></pre></div>
-<p>The <code>_dictionary()</code> pair print as tables and are what to read; the plain catalog functions return lists and are what to write code against. <code><a href="reference/as_markdown.html">as_markdown()</a></code> renders either dictionary for pasting into documentation.</p>
+<p>Everything the package exports, in the order you would meet it. The <a href="https://chross22.github.io/datamatch/reference/index.html">pkgdown site</a> has a page for each.</p>
+<p><strong>Fetching</strong> — five sources, one shape out</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<tbody>
+<tr>
+<td><code><a href="reference/accessEnvDat.html">accessEnvDat()</a></code></td>
+<td>Copernicus Marine: physics, biogeochemistry, ocean colour, wind</td>
+</tr>
+<tr>
+<td><code><a href="reference/accessFVCOM.html">accessFVCOM()</a></code></td>
+<td>FVCOM / NECOFS on an unstructured mesh</td>
+</tr>
+<tr>
+<td><code><a href="reference/accessHYCOM.html">accessHYCOM()</a></code></td>
+<td>HYCOM GOFS 3.1, with sea-floor fields</td>
+</tr>
+<tr>
+<td><code><a href="reference/accessCCMP.html">accessCCMP()</a></code></td>
+<td>CCMP six-hourly surface winds</td>
+</tr>
+<tr>
+<td><code><a href="reference/accessERDDAP.html">accessERDDAP()</a></code></td>
+<td>MUR SST and VIIRS chlorophyll, via NOAA ERDDAP</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Matching</strong></p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<tbody>
+<tr>
+<td><code><a href="reference/matchData.html">matchData()</a></code></td>
+<td>the spatiotemporal nearest-feature join</td>
+</tr>
+<tr>
+<td><code><a href="reference/source_of.html">source_of()</a></code></td>
+<td>which source and archive an object came from</td>
+</tr>
+<tr>
+<td><code><a href="reference/covariate_columns.html">covariate_columns()</a></code></td>
+<td>which columns are data rather than time or provenance</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Resampling and gap filling</strong></p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<tbody>
+<tr>
+<td>
+<code><a href="reference/upscale_grid.html">upscale_grid()</a></code>, <code><a href="reference/downscale_grid.html">downscale_grid()</a></code>
+</td>
+<td>between spatial grids</td>
+</tr>
+<tr>
+<td>
+<code><a href="reference/upscale_time.html">upscale_time()</a></code>, <code><a href="reference/downscale_time.html">downscale_time()</a></code>
+</td>
+<td>between time steps</td>
+</tr>
+<tr>
+<td><code><a href="reference/fill_satellite_gaps.html">fill_satellite_gaps()</a></code></td>
+<td>substitute a model where the satellite saw nothing</td>
+</tr>
+<tr>
+<td><code><a href="reference/grid_resolution.html">grid_resolution()</a></code></td>
+<td>the spacing of a grid, for deciding which way to go</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Plotting</strong></p>
+<table class="table"><tbody>
+<tr>
+<td><code><a href="reference/plot_env.html">plot_env()</a></code></td>
+<td>a map of one variable at one time step</td>
+</tr>
+<tr>
+<td><code><a href="reference/plot_coverage.html">plot_coverage()</a></code></td>
+<td>the fraction of cells carrying a value, per step</td>
+</tr>
+<tr>
+<td><code><a href="reference/plot_series.html">plot_series()</a></code></td>
+<td>the study area reduced to a series</td>
+</tr>
+<tr>
+<td><code><a href="reference/plot_matched.html">plot_matched()</a></code></td>
+<td>what the join produced, including what missed</td>
+</tr>
+</tbody></table>
+<p><strong>Other covariates</strong></p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<tbody>
+<tr>
+<td>
+<code><a href="reference/fetch_bathymetry.html">fetch_bathymetry()</a></code>, <code><a href="reference/attach_bathymetry.html">attach_bathymetry()</a></code>, <code><a href="reference/bathymetry_variables.html">bathymetry_variables()</a></code>
+</td>
+<td>seafloor terrain</td>
+</tr>
+<tr>
+<td>
+<code><a href="reference/fetch_climate_index.html">fetch_climate_index()</a></code>, <code><a href="reference/attach_climate_index.html">attach_climate_index()</a></code>, <code><a href="reference/climate_indices.html">climate_indices()</a></code>, <code><a href="reference/index_dictionary.html">index_dictionary()</a></code>
+</td>
+<td>basin-scale indices</td>
+</tr>
+<tr>
+<td>
+<code><a href="reference/climate_index_status.html">climate_index_status()</a></code>, <code><a href="reference/refresh_climate_index.html">refresh_climate_index()</a></code>
+</td>
+<td>what is cached, and forcing a re-fetch</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Catalogs</strong> — what each source offers, and how to reach one it does not ship</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<tbody>
+<tr>
+<td>
+<code><a href="reference/variable_dictionary.html">variable_dictionary()</a></code>, <code><a href="reference/copernicus_variables.html">copernicus_variables()</a></code>, <code><a href="reference/variable_dataset.html">variable_dataset()</a></code>, <code><a href="reference/forecast_variables.html">forecast_variables()</a></code>, <code><a href="reference/product_url.html">product_url()</a></code>
+</td>
+<td>Copernicus</td>
+</tr>
+<tr>
+<td>
+<code><a href="reference/fvcom_variables.html">fvcom_variables()</a></code>, <code><a href="reference/fvcom_dictionary.html">fvcom_dictionary()</a></code>, <code><a href="reference/fvcom_archives.html">fvcom_archives()</a></code>, <code><a href="reference/fvcom_archive.html">fvcom_archive()</a></code>
+</td>
+<td>FVCOM</td>
+</tr>
+<tr>
+<td>
+<code><a href="reference/hycom_variables.html">hycom_variables()</a></code>, <code><a href="reference/hycom_dictionary.html">hycom_dictionary()</a></code>, <code><a href="reference/hycom_archives.html">hycom_archives()</a></code>, <code><a href="reference/hycom_covering.html">hycom_covering()</a></code>
+</td>
+<td>HYCOM</td>
+</tr>
+<tr>
+<td>
+<code><a href="reference/ccmp_variables.html">ccmp_variables()</a></code>, <code><a href="reference/ccmp_dictionary.html">ccmp_dictionary()</a></code>, <code><a href="reference/ccmp_versions.html">ccmp_versions()</a></code>
+</td>
+<td>CCMP</td>
+</tr>
+<tr>
+<td>
+<code><a href="reference/erddap_datasets.html">erddap_datasets()</a></code>, <code><a href="reference/erddap_dictionary.html">erddap_dictionary()</a></code>, <code><a href="reference/erddap_dataset.html">erddap_dataset()</a></code>
+</td>
+<td>ERDDAP</td>
+</tr>
+<tr>
+<td><code><a href="reference/as_markdown.html">as_markdown()</a></code></td>
+<td>render any dictionary as a pipe table</td>
+</tr>
+</tbody>
+</table>
+<p>The <code>_dictionary()</code> functions print as tables and are what to read; the plain catalog functions return lists and are what to write code against. <code><a href="reference/fvcom_archive.html">fvcom_archive()</a></code>, <code><a href="reference/erddap_dataset.html">erddap_dataset()</a></code> and <code><a href="reference/hycom_covering.html">hycom_covering()</a></code> are the escape hatches — the first two reach any endpoint the package does not ship, the third says which HYCOM archive holds a given date.</p>
+</div>
+<div class="section level2">
+<h2 id="vignettes">Vignettes<a class="anchor" aria-label="anchor" href="#vignettes"></a>
+</h2>
+<p>The README is orientation. The detail lives in four articles:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<tbody>
+<tr>
+<td><a href="https://chross22.github.io/datamatch/articles/datamatch.html">Getting started</a></td>
+<td>observations to a modelling table, end to end</td>
+</tr>
+<tr>
+<td><a href="https://chross22.github.io/datamatch/articles/sources.html">Choosing a data source</a></td>
+<td>which of the five to reach for, and what changes when you do</td>
+</tr>
+<tr>
+<td><a href="https://chross22.github.io/datamatch/articles/working-with-data.html">Working with what comes back</a></td>
+<td>resampling, gap filling, and looking at the data</td>
+</tr>
+<tr>
+<td><a href="https://chross22.github.io/datamatch/articles/covariates.html">Static and basin-scale covariates</a></td>
+<td>seafloor terrain and climate indices</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section level2">
 <h2 id="troubleshooting">Troubleshooting<a class="anchor" aria-label="anchor" href="#troubleshooting"></a>
@@ -1609,7 +1366,7 @@
 <p>Errors you might hit, and what they mean.</p>
 <p><strong><code>Could not find the Copernicus Marine client</code></strong></p>
 <p>R cannot see <code>copernicusmarine</code> on its <code>PATH</code>. Common when it lives in a conda environment that RStudio does not inherit. Point at it directly:</p>
-<div class="sourceCode" id="cb53"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>datamatch.copernicusmarine <span class="op">=</span> <span class="st">"~/miniconda3/bin/copernicusmarine"</span><span class="op">)</span></span></code></pre></div>
 <p><strong><code>These variables come from different Copernicus datasets</code></strong></p>
 <p>Expected, not a fault. <code>SST</code> is physics and <code>CHL</code> is biogeochemistry, on different grids. Fetch them separately and chain <code><a href="reference/matchData.html">matchData()</a></code>, as in <a href="#one-call-per-product">One call per product</a>. <code><a href="reference/variable_dataset.html">variable_dataset()</a></code> shows which dataset each variable comes from.</p>
@@ -1738,7 +1495,7 @@
 <p>Say which archive as well as which model — a value from the HYCOM reanalysis and one from an operational experiment are not the same run, and <code><a href="reference/source_of.html">source_of()</a></code> records exactly that.</p>
 </div>
 <div class="section level3">
-<h3 id="seafloor-terrain-1">Seafloor terrain<a class="anchor" aria-label="anchor" href="#seafloor-terrain-1"></a>
+<h3 id="seafloor-terrain">Seafloor terrain<a class="anchor" aria-label="anchor" href="#seafloor-terrain"></a>
 </h3>
 <ul>
 <li>NOAA National Centers for Environmental Information (2022). <em>ETOPO 2022 15 Arc-Second Global Relief Model</em>. <a href="https://doi.org/10.25921/fd45-gt74" class="external-link uri">https://doi.org/10.25921/fd45-gt74</a>
@@ -1749,7 +1506,7 @@
 <p><code><a href="reference/fetch_bathymetry.html">fetch_bathymetry()</a></code> requests the 60 arc-second bedrock grid (<code>ETOPO_2022_v1_60s_bed</code>) through <code>marmap</code>.</p>
 </div>
 <div class="section level3">
-<h3 id="climate-indices-1">Climate indices<a class="anchor" aria-label="anchor" href="#climate-indices-1"></a>
+<h3 id="climate-indices">Climate indices<a class="anchor" aria-label="anchor" href="#climate-indices"></a>
 </h3>
 <p>Two are the published output of specific work and <strong>should be cited when used</strong>:</p>
 <ul>
@@ -1793,7 +1550,7 @@
 <strong>Copernicus catalog check</strong>, monthly, compares the variable catalog against the live Copernicus catalogue, since dataset identifiers are revised too.</li>
 </ul>
 <p>Both run on demand from the Actions tab, and locally:</p>
-<div class="sourceCode" id="cb54"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># from the package root</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/system.html" class="external-link">system</a></span><span class="op">(</span><span class="st">"Rscript inst/scripts/check_citations.R"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/system.html" class="external-link">system</a></span><span class="op">(</span><span class="st">"Rscript inst/scripts/check_catalog.R"</span><span class="op">)</span></span></code></pre></div>
@@ -1802,7 +1559,7 @@
 <div class="section level2">
 <h2 id="citing-datamatch">Citing datamatch<a class="anchor" aria-label="anchor" href="#citing-datamatch"></a>
 </h2>
-<div class="sourceCode" id="cb55"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"datamatch"</span><span class="op">)</span></span></code></pre></div>
 <p>The data products a run fetches carry their own citations; the References section above says which, and each function’s <code><a href="https://rdrr.io/r/utils/help.html" class="external-link">?help</a></code> repeats it.</p>
 </div>

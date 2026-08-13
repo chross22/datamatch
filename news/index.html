@@ -20,6 +20,8 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/sources.html">Choosing a data source</a></li>
+    <li><a class="dropdown-item" href="../articles/working-with-data.html">Working with what comes back</a></li>
+    <li><a class="dropdown-item" href="../articles/covariates.html">Static and basin-scale covariates</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -95,6 +97,19 @@
 <p>In forecast mode none of this applies. The analysis-and-forecast product publishes <code>sob</code> outright, so <code>BOTS</code> is an ordinary variable there, fetches alongside <code>BOTT</code>, and returns no <code>BOTS_depth</code>. The two are the same quantity but not the same number, so a record spanning both modes has a seam in it.</p>
 </li>
 <li><p><code>variable_dictionary("wind")</code> filters the catalog to the wind variables, and <code>variable_dataset(frequency = "hourly")</code> reports which have an hourly dataset.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-0-2-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-2-0"></a></h3>
+<ul><li>
+<p><strong>The README is orientation now, and the depth is in vignettes.</strong> It had grown to 11,600 words — a forty-five minute read — because every capability added a section to it. It is now 9,000, and what left went into two new articles rather than being deleted:</p>
+<ul><li>
+<strong>Working with what comes back</strong> — resampling between grids and time steps, filling satellite gaps, the four plots, and what <code>n_workers</code> actually buys.</li>
+<li>
+<strong>Static and basin-scale covariates</strong> — seafloor terrain and the climate indices, including what TPI measures and why the indices are not interchangeable.</li>
+</ul><p>The deeper parts of “Satellite or model?”, “Bottom salinity” and “Downloads run in parallel” moved into the existing articles, each leaving a short summary and a link behind. Four articles now: getting started, choosing a source, working with the result, and the other covariates.</p>
+</li>
+<li><p><strong>A function reference table.</strong> Every export, grouped by what it is for, in one place in the README. That is what the depth moving out required: the README says what each function is and where to read more, rather than explaining every one at length.</p></li>
+<li><p>The contents list was rebuilt to match, and every internal link checked — two pointed at sections that had moved to a vignette.</p></li>
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-0-2-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-2-0"></a></h3>

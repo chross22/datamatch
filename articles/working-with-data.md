@@ -1,0 +1,268 @@
+# Working with what comes back
+
+Every access function returns the same thing: an `sf` point object with
+one row per cell per time step. This is what to do with it — moving
+between grids and time steps, filling the holes satellite products
+leave, and looking at what arrived before trusting it.
+
+None of it is source-specific. A grid from Copernicus, FVCOM, HYCOM,
+CCMP or ERDDAP resamples and plots the same way.
+
+## Resampling
+
+Four functions, one pair per axis, plus one for gaps. Each takes a
+`method`, because there is no single right way to change resolution:
+
+| Function | What it does |
+|----|----|
+| [`upscale_grid()`](https://chross22.github.io/datamatch/reference/upscale_grid.md) | Aggregates onto a coarser grid — `mean`, `median`, `min`, `max`, `sum`, `mode` |
+| [`downscale_grid()`](https://chross22.github.io/datamatch/reference/downscale_grid.md) | Interpolates onto a finer grid — `nearest`, `bilinear`, `cubic`, `idw` |
+| [`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md) | Aggregates onto a coarser time step — hourly to daily, daily to monthly, monthly to annual |
+| [`downscale_time()`](https://chross22.github.io/datamatch/reference/downscale_time.md) | Interpolates onto a finer time step — `step`, `linear`, `spline` |
+| [`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md) | Substitutes another covariate wherever the first is missing |
+
+``` r
+
+chl <- accessEnvDat(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
+sst <- accessEnvDat(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
+
+# Satellite CHL (4 km) onto the physics grid, so the two can be modelled together
+chl_on_sst <- upscale_grid(chl, to = sst)
+
+# Or onto a stated resolution
+chl_quarter <- upscale_grid(chl, to = 0.25, method = "median")
+
+# Daily data to monthly means; monthly back out to daily
+monthly <- upscale_time(daily_sst, to = "month")
+daily   <- downscale_time(monthly, to = "day")
+```
+
+The target is either a resolution or **another object whose grid to
+adopt**. The second form is what puts two products on one grid.
+
+A resolution is anchored to the origin, not to your data’s corner. So
+two products upscaled to 0.25° land on the *same* cells, instead of half
+a cell apart.
+
+**The right treatment differs by covariate**, which is why this is
+per-covariate rather than one setting for everything. Ocean-colour
+chlorophyll is a 4 km optical retrieval riddled with cloud gaps. Physics
+is a 0.083° model with no gaps at all.
+
+Averaging chlorophyll up to the physics grid summarises values that were
+really measured. Interpolating physics down to 4 km invents structure.
+Those are not the same operation, and no single choice can be right for
+both.
+
+### Aggregating loses detail, which is the safe direction
+
+`mean` is the default. The others exist because “the value of this
+coarse cell” is not one question:
+
+- `median` resists the retrieval outliers at satellite cloud edges.
+- `min` of depth is the shallowest point a cell contains, not its
+  average.
+- `sum` is for per-cell totals. It is meaningless for a concentration.
+- `sd` over a period is variability, which is a covariate in its own
+  right.
+
+Pass one method for everything, or a named vector per variable:
+
+``` r
+
+upscale_grid(env, to = 0.25, method = c(CHL = "median", DEPTH = "min"))
+```
+
+**Partly-covered periods and cells come back `NA` by default.** A mean
+over the four days of January you happened to fetch is not a January
+mean, and nothing in the number itself says so.
+
+`min_coverage` defaults to 0.5. It measures against the steps a period
+*has* (31 for January), not the steps you downloaded. Set
+`min_coverage = 0` to aggregate whatever is present. Set
+`keep_counts = TRUE` to see what was behind each value.
+
+### Interpolating adds cells, not information
+
+This is the direction to be careful in. A 0.25° field rendered at 4 km
+has 4 km *cells*, but it still resolves nothing below 0.25°. None of
+these methods consult any other data source, so there is nowhere for
+real fine-scale structure to come from.
+
+That is why the defaults are the blunt ones. `nearest` and `step`
+replicate the source value, leaving the result visibly blocky at the
+source resolution, so the output looks like what it is. `bilinear`,
+`cubic`, `linear`, and `spline` return smooth fields that look like
+finely-resolved measurements and are not.
+
+There is a further trap specific to the time axis:
+
+> **`linear` and `spline` do not preserve the period mean.** Interpolate
+> twelve monthly means to daily values, average those days back up, and
+> you will not recover the months you started from — in the package’s
+> own tests a March mean of 15.0 comes back as 14.83. Any budget or
+> total computed from such a series inherits that error. `step`
+> preserves it exactly.
+
+`idw` is the exception worth reaching for. Alone among the spatial
+methods, it fills across holes rather than propagating them. That makes
+it useful on gappy satellite data, where
+[`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md)
+is not an option.
+
+Resampled output keeps the `YEAR`/`MONTH`/`DAY` stamping convention, so
+[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+reads its resolution back correctly and can be used on the result
+directly.
+
+## Filling satellite gaps
+
+``` r
+
+chl_sat <- accessEnvDat(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
+chl_mod <- accessEnvDat(vars = "CHL_MODEL", years = 2010, months = 1:12, bounding_box = bb)
+
+filled <- fill_satellite_gaps(chl_sat, chl_mod, c(CHL = "CHL_MODEL"))
+table(filled$CHL_source)
+#> satellite     model   missing
+#>      8214      1902         0
+```
+
+The two sources measure the same quantity in different ways. They are
+not interchangeable. So the seam is left visible rather than smoothed
+over. Nothing is rescaled by default, and a `<var>_source` column
+records where each value came from.
+
+`rescale = TRUE` matches the model’s mean and variance to the
+satellite’s over the cells where both exist. That reduces the step, at
+the cost of altering the model values.
+
+## Looking at the data
+
+Four plots, in the order they are usually wanted. All use base graphics,
+so they need no extra packages. Each returns the data it drew, so the
+numbers behind a picture are always available.
+
+``` r
+
+env <- accessEnvDat(vars = c("SST", "CHL"), years = 2010, months = 1:12,
+                    bounding_box = bb)
+
+plot_env(env)                                # first variable, first time step
+plot_env(env, "CHL", time = c(MONTH = 6))    # June chlorophyll
+```
+
+[`plot_env()`](https://chross22.github.io/datamatch/reference/plot_env.md)
+maps one variable for one time step. It is the first thing worth doing
+after a download. It is also the fastest way to catch a bounding box
+that landed somewhere unintended, a variable that is entirely `NA`, or a
+depth range that returned the wrong level.
+
+Data are drawn as a raster, so gaps read as holes rather than absent
+dots. The time step is named in the title, so a map is never ambiguous
+about which month it shows.
+
+``` r
+
+plot_coverage(env)
+```
+
+[`plot_coverage()`](https://chross22.github.io/datamatch/reference/plot_coverage.md)
+is the one to run before trusting a satellite series. It plots the
+fraction of cells carrying a value in each time step. On ocean colour
+the shape is stark: near-complete in summer, a quarter of the grid in
+winter.
+
+That picture decides three things. Whether a monthly mean is worth
+having. Whether
+[`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md)
+is worth the seam it introduces. And where to set `min_coverage` when
+aggregating.
+
+``` r
+
+plot_series(env)                     # one panel per variable
+plot_series(env, "SST", fun = max)   # the warmest cell each month
+```
+
+[`plot_series()`](https://chross22.github.io/datamatch/reference/plot_series.md)
+reduces each time step to one number over the study area. That is how a
+seasonal cycle, a trend, or a step change at a product boundary becomes
+visible.
+
+The interquartile range across cells is shaded behind the line. A mean
+alone hides the difference between a uniformly warm month and one that
+is warm inshore and cold offshore.
+
+``` r
+
+matched <- matchData(observations, env)
+
+plot_matched(matched[matched$MONTH == 7, ], "SST")
+```
+
+[`plot_matched()`](https://chross22.github.io/datamatch/reference/plot_matched.md)
+shows what the join actually produced. Observations that matched nothing
+are drawn as open circles rather than dropped. A cluster of them is
+usually the real finding: observations outside the environmental data’s
+extent, or in a period it does not cover.
+
+Subset to one period first, as above. The colour scale spans everything
+passed in. Plot a whole year of a seasonal variable and the seasons mix
+together, so the map reads as noise. A warm February inshore point and a
+cool August offshore one can take the same colour.
+
+## Downloads run in parallel
+
+**`n_workers` controls this, and it defaults to 4** — parallel
+downloading is on without being asked for. A Copernicus subset request
+spends nearly all of its time waiting on the API rather than on your
+machine, so several requests in flight take barely longer than one.
+
+Two months of daily SST and SSS over a one-degree box — 59 downloads —
+each run cold-cache, all three back to back in one session:
+
+| `n_workers`     | Elapsed |                 |
+|-----------------|---------|-----------------|
+| 1               | 295 s   |                 |
+| 4 (the default) | 80 s    | **3.7× faster** |
+| 6               | 51 s    | **5.8× faster** |
+
+All three returned identical data. The gain scales with workers rather
+than with cores, because the wait is the network rather than your
+machine. How much you see depends on the API’s mood as much as anything,
+so treat these as the shape of it rather than a promise.
+
+``` r
+
+# The default. 15 years x 12 months is 180 downloads, four at a time
+accessEnvDat(vars = "SST", years = 2003:2017, months = 1:12, bounding_box = bb)
+
+accessEnvDat(vars = "SST", years = 2003:2017, months = 1:12, bounding_box = bb,
+             n_workers = 8)   # more at once
+accessEnvDat(vars = "SST", years = 2003:2017, months = 1:12, bounding_box = bb,
+             n_workers = 1)   # one at a time
+```
+
+**This is not a daily-only feature.** Any fetch spanning more than one
+time step is more than one download, so a long monthly record benefits
+as much as a daily one — the 180 downloads above are monthly.
+
+Two things it deliberately does not do. It does not re-download what you
+already have: files in the cache are read straight from disk, and a
+fully cached call starts no workers at all. And it does not parallelise
+across calls — each
+[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+call is one dataset, so fetching SST and CHL is two calls, run one after
+the other with each parallel inside itself.
+
+The limit is the service, not your cores, so raising `n_workers` far
+past 8 mostly earns rate limiting. A day that fails does not abandon the
+others: every day is attempted, the ones that succeeded stay cached, and
+the error names each day that failed — so re-running the same call
+retries only those.
+
+`variable_dataset(c("SST", "CHL"))` tells you which product each
+variable comes from, so you can plan the calls before making them. See
+[Putting it together](#putting-it-together) for the same pattern with
+seafloor and basin-scale covariates added.

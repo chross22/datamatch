@@ -232,6 +232,34 @@
   variables, and `variable_dataset(frequency = "hourly")` reports which
   have an hourly dataset.
 
+### Documentation
+
+- **The README is orientation now, and the depth is in vignettes.** It
+  had grown to 11,600 words — a forty-five minute read — because every
+  capability added a section to it. It is now 9,000, and what left went
+  into two new articles rather than being deleted:
+
+  - **Working with what comes back** — resampling between grids and time
+    steps, filling satellite gaps, the four plots, and what `n_workers`
+    actually buys.
+  - **Static and basin-scale covariates** — seafloor terrain and the
+    climate indices, including what TPI measures and why the indices are
+    not interchangeable.
+
+  The deeper parts of “Satellite or model?”, “Bottom salinity” and
+  “Downloads run in parallel” moved into the existing articles, each
+  leaving a short summary and a link behind. Four articles now: getting
+  started, choosing a source, working with the result, and the other
+  covariates.
+
+- **A function reference table.** Every export, grouped by what it is
+  for, in one place in the README. That is what the depth moving out
+  required: the README says what each function is and where to read
+  more, rather than explaining every one at length.
+
+- The contents list was rebuilt to match, and every internal link
+  checked — two pointed at sections that had moved to a vignette.
+
 ### Bug fixes
 
 - **[`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md)

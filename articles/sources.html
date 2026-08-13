@@ -35,6 +35,8 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/sources.html">Choosing a data source</a></li>
+    <li><a class="dropdown-item" href="../articles/working-with-data.html">Working with what comes back</a></li>
+    <li><a class="dropdown-item" href="../articles/covariates.html">Static and basin-scale covariates</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -343,6 +345,120 @@ with the data rather than with this package:</p>
 <span><span class="fu"><a href="../reference/index_dictionary.html">index_dictionary</a></span><span class="op">(</span><span class="op">)</span>          <span class="co"># carries the climate index references</span></span></code></pre></div>
 <p>The README’s References section lists the Copernicus product DOIs.
 Cite whichever you actually fetched from.</p>
+</div>
+<div class="section level2">
+<h2 id="satellite-or-model">Satellite or model?<a class="anchor" aria-label="anchor" href="#satellite-or-model"></a>
+</h2>
+<p>Copernicus serves chlorophyll and primary production from two very
+different sources, and both are available:</p>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th>Name</th>
+<th>Source</th>
+<th>Resolution</th>
+<th>Trade-off</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>
+<code>CHL</code>, <code>PP</code>
+</td>
+<td>Copernicus-GlobColour, satellite</td>
+<td>4 km</td>
+<td>Observed, finer — but surface-only and gappy under persistent
+cloud</td>
+</tr>
+<tr class="even">
+<td>
+<code>CHL_MODEL</code>, <code>NPP_MODEL</code>
+</td>
+<td>Biogeochemistry reanalysis</td>
+<td>0.25°</td>
+<td>Gap-free and depth-resolved — but simulated, and coarser</td>
+</tr>
+</tbody>
+</table>
+<p>The plain names default to satellite, since the values are observed
+rather than simulated. Switch to the model versions where cloud gaps
+would matter more than resolution.</p>
+<p>One caution: <strong>satellite <code>PP</code> and model
+<code>NPP_MODEL</code> are not the same quantity.</strong>
+<code>PP</code> is depth-integrated (mg/m2/day), <code>NPP_MODEL</code>
+volumetric (mg/m3/day). Substituting one for the other is a units error,
+not a resolution difference.</p>
+<p>Phytoplankton functional types come from the same satellite plankton
+dataset as <code>CHL</code>, so they can be fetched together:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span></span>
+<span>  vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CHL"</span>, <span class="st">"DIATO"</span>, <span class="st">"DINO"</span><span class="op">)</span>,   <span class="co"># one request, one dataset</span></span>
+<span>  years <span class="op">=</span> <span class="fl">2003</span><span class="op">:</span><span class="fl">2017</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>,</span>
+<span>  bounding_box <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>xmin <span class="op">=</span> <span class="op">-</span><span class="fl">76</span>, xmax <span class="op">=</span> <span class="op">-</span><span class="fl">65</span>, ymin <span class="op">=</span> <span class="fl">35</span>, ymax <span class="op">=</span> <span class="fl">45</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><code>DIATO</code> and <code>DINO</code> are diatom and dinophyte
+chlorophyll — the spring-bloom species large copepods prefer, and the
+later stratified-water group respectively.</p>
+</div>
+<div class="section level2">
+<h2 id="bottom-salinity">Bottom salinity<a class="anchor" aria-label="anchor" href="#bottom-salinity"></a>
+</h2>
+<p><code>BOTS</code> pairs with <code>BOTT</code>, but it is not fetched
+the same way, because <strong>GLORYS12V1 does not publish it.</strong>
+The reanalysis has temperature at the sea floor and no salinity
+counterpart. So it is derived: the full salinity column is fetched and
+the deepest wet level in each cell kept.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bots</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"BOTS"</span>, years <span class="op">=</span> <span class="fl">2010</span><span class="op">:</span><span class="fl">2014</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>,</span>
+<span>                     bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
+<span><span class="co">#&gt; BOTS is not published by this product. Deriving it from the full 'so' column</span></span>
+<span><span class="co">#&gt; and keeping the deepest wet level in each cell; the depth used comes back as</span></span>
+<span><span class="co">#&gt; BOTS_depth.</span></span></code></pre></div>
+<p>The depth each value came from is returned as <code>BOTS_depth</code>
+rather than left to be assumed. That matters because the deepest wet
+<em>model level</em> is not the sea floor: level spacing coarsens with
+depth, so in deep water the value can sit a long way above the bottom.
+In shelf water it is within a few metres.</p>
+<p>Two consequences, both deliberate:</p>
+<ul>
+<li>
+<strong>It must be fetched on its own.</strong> The whole depth
+column is a different request from the single level <code>SST</code>
+wants, so mixing them is an error rather than a quiet second download.
+Call twice and chain <code><a href="../reference/matchData.html">matchData()</a></code>.</li>
+<li>
+<strong>It costs far more.</strong> Roughly fifty levels are
+downloaded over the same box to keep one, so a large box is much slower
+than the same box of <code>SST</code>.</li>
+</ul>
+<p>In forecast mode none of this applies. The analysis-and-forecast
+product publishes sea-floor salinity outright, so <code>BOTS</code> is
+an ordinary variable there, fetches alongside <code>BOTT</code>, and
+returns no <code>BOTS_depth</code>:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BOTT"</span>, <span class="st">"BOTS"</span><span class="op">)</span>, years <span class="op">=</span> <span class="fl">2026</span>, months <span class="op">=</span> <span class="fl">8</span>,</span>
+<span>             bounding_box <span class="op">=</span> <span class="va">bb</span>, mode <span class="op">=</span> <span class="st">"forecast"</span><span class="op">)</span></span></code></pre></div>
+<p>The two are the same quantity by construction but not the same number
+— one is the deepest level of a 50-level grid, the other Copernicus’s
+own diagnostic — so a record spanning both modes has a seam in it.</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/variable_dictionary.html">variable_dictionary</a></span><span class="op">(</span><span class="st">"biogeochemical"</span><span class="op">)</span>        <span class="co"># filter by product</span></span>
+<span><span class="fu"><a href="../reference/variable_dictionary.html">variable_dictionary</a></span><span class="op">(</span><span class="st">"wind"</span><span class="op">)</span>                  <span class="co"># or just the winds</span></span>
+<span><span class="fu"><a href="../reference/fvcom_dictionary.html">fvcom_dictionary</a></span><span class="op">(</span><span class="op">)</span>                           <span class="co"># the FVCOM catalog, for accessFVCOM()</span></span>
+<span><span class="fu"><a href="../reference/fvcom_archives.html">fvcom_archives</a></span><span class="op">(</span><span class="op">)</span>                             <span class="co"># which FVCOM archives are built in</span></span>
+<span><span class="fu"><a href="../reference/hycom_dictionary.html">hycom_dictionary</a></span><span class="op">(</span><span class="op">)</span>                           <span class="co"># the HYCOM catalog, for accessHYCOM()</span></span>
+<span><span class="fu"><a href="../reference/hycom_archives.html">hycom_archives</a></span><span class="op">(</span><span class="op">)</span>                             <span class="co"># which HYCOM archives can be read</span></span>
+<span><span class="fu"><a href="../reference/hycom_covering.html">hycom_covering</a></span><span class="op">(</span><span class="st">"2019-06-15"</span><span class="op">)</span>                 <span class="co"># which of them span a given date</span></span>
+<span><span class="fu"><a href="../reference/ccmp_dictionary.html">ccmp_dictionary</a></span><span class="op">(</span><span class="op">)</span>                            <span class="co"># the CCMP catalog, for accessCCMP()</span></span>
+<span><span class="fu"><a href="../reference/ccmp_versions.html">ccmp_versions</a></span><span class="op">(</span><span class="op">)</span>                              <span class="co"># which CCMP versions can be read</span></span>
+<span><span class="fu"><a href="../reference/erddap_dictionary.html">erddap_dictionary</a></span><span class="op">(</span><span class="op">)</span>                          <span class="co"># MUR and VIIRS, for accessERDDAP()</span></span>
+<span><span class="fu"><a href="../reference/erddap_datasets.html">erddap_datasets</a></span><span class="op">(</span><span class="op">)</span>                            <span class="co"># which ERDDAP datasets ship</span></span>
+<span><span class="fu"><a href="../reference/variable_dataset.html">variable_dataset</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SST"</span>, <span class="st">"CHL"</span><span class="op">)</span><span class="op">)</span>            <span class="co"># which dataset each comes from</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="../reference/variable_dictionary.html">variable_dictionary</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">description</span>  <span class="co"># full descriptions</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

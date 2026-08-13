@@ -211,3 +211,101 @@ index_dictionary()          # carries the climate index references
 
 The README’s References section lists the Copernicus product DOIs. Cite
 whichever you actually fetched from.
+
+## Satellite or model?
+
+Copernicus serves chlorophyll and primary production from two very
+different sources, and both are available:
+
+| Name | Source | Resolution | Trade-off |
+|----|----|----|----|
+| `CHL`, `PP` | Copernicus-GlobColour, satellite | 4 km | Observed, finer — but surface-only and gappy under persistent cloud |
+| `CHL_MODEL`, `NPP_MODEL` | Biogeochemistry reanalysis | 0.25° | Gap-free and depth-resolved — but simulated, and coarser |
+
+The plain names default to satellite, since the values are observed
+rather than simulated. Switch to the model versions where cloud gaps
+would matter more than resolution.
+
+One caution: **satellite `PP` and model `NPP_MODEL` are not the same
+quantity.** `PP` is depth-integrated (mg/m2/day), `NPP_MODEL` volumetric
+(mg/m3/day). Substituting one for the other is a units error, not a
+resolution difference.
+
+Phytoplankton functional types come from the same satellite plankton
+dataset as `CHL`, so they can be fetched together:
+
+``` r
+
+env <- accessEnvDat(
+  vars = c("CHL", "DIATO", "DINO"),   # one request, one dataset
+  years = 2003:2017, months = 1:12,
+  bounding_box = list(xmin = -76, xmax = -65, ymin = 35, ymax = 45)
+)
+```
+
+`DIATO` and `DINO` are diatom and dinophyte chlorophyll — the
+spring-bloom species large copepods prefer, and the later
+stratified-water group respectively.
+
+## Bottom salinity
+
+`BOTS` pairs with `BOTT`, but it is not fetched the same way, because
+**GLORYS12V1 does not publish it.** The reanalysis has temperature at
+the sea floor and no salinity counterpart. So it is derived: the full
+salinity column is fetched and the deepest wet level in each cell kept.
+
+``` r
+
+bots <- accessEnvDat(vars = "BOTS", years = 2010:2014, months = 1:12,
+                     bounding_box = bb)
+#> BOTS is not published by this product. Deriving it from the full 'so' column
+#> and keeping the deepest wet level in each cell; the depth used comes back as
+#> BOTS_depth.
+```
+
+The depth each value came from is returned as `BOTS_depth` rather than
+left to be assumed. That matters because the deepest wet *model level*
+is not the sea floor: level spacing coarsens with depth, so in deep
+water the value can sit a long way above the bottom. In shelf water it
+is within a few metres.
+
+Two consequences, both deliberate:
+
+- **It must be fetched on its own.** The whole depth column is a
+  different request from the single level `SST` wants, so mixing them is
+  an error rather than a quiet second download. Call twice and chain
+  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md).
+- **It costs far more.** Roughly fifty levels are downloaded over the
+  same box to keep one, so a large box is much slower than the same box
+  of `SST`.
+
+In forecast mode none of this applies. The analysis-and-forecast product
+publishes sea-floor salinity outright, so `BOTS` is an ordinary variable
+there, fetches alongside `BOTT`, and returns no `BOTS_depth`:
+
+``` r
+
+accessEnvDat(vars = c("BOTT", "BOTS"), years = 2026, months = 8,
+             bounding_box = bb, mode = "forecast")
+```
+
+The two are the same quantity by construction but not the same number —
+one is the deepest level of a 50-level grid, the other Copernicus’s own
+diagnostic — so a record spanning both modes has a seam in it.
+
+``` r
+
+variable_dictionary("biogeochemical")        # filter by product
+variable_dictionary("wind")                  # or just the winds
+fvcom_dictionary()                           # the FVCOM catalog, for accessFVCOM()
+fvcom_archives()                             # which FVCOM archives are built in
+hycom_dictionary()                           # the HYCOM catalog, for accessHYCOM()
+hycom_archives()                             # which HYCOM archives can be read
+hycom_covering("2019-06-15")                 # which of them span a given date
+ccmp_dictionary()                            # the CCMP catalog, for accessCCMP()
+ccmp_versions()                              # which CCMP versions can be read
+erddap_dictionary()                          # MUR and VIIRS, for accessERDDAP()
+erddap_datasets()                            # which ERDDAP datasets ship
+variable_dataset(c("SST", "CHL"))            # which dataset each comes from
+as.data.frame(variable_dictionary())$description  # full descriptions
+```

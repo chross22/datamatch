@@ -1,0 +1,243 @@
+# Static and basin-scale covariates
+
+Not every useful covariate is a gridded field on a monthly step. Two
+other kinds are available, and they behave differently from the gridded
+data and from each other: **seafloor terrain**, which does not vary in
+time at all, and **basin-scale climate indices**, which do not vary in
+space.
+
+Neither is fetched with
+[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md).
+They have their own attach functions, because neither is a
+spatiotemporal nearest-feature join.
+
+Not everything useful is a gridded Copernicus variable on a monthly time
+step. Two other kinds are available, and they behave differently from
+the Copernicus data and from each other.
+
+### Seafloor terrain
+
+This does not vary by month or year. So it is fetched once for a study
+area and attached to every time step. It comes from NOAA ETOPO via
+`marmap`, a suggested package rather than a hard dependency:
+
+``` r
+
+bathy <- fetch_bathymetry(
+  bounding_box = list(xmin = -70, xmax = -66, ymin = 41, ymax = 44)
+)
+
+observations <- attach_bathymetry(observations, bathy, c("DEPTH", "SLOPE", "TPI"))
+```
+
+[`bathymetry_variables()`](https://chross22.github.io/datamatch/reference/bathymetry_variables.md)
+lists them: `DEPTH`, `SLOPE`, `ASPECT`, and `TPI`.
+
+`TPI`, the topographic position index, is a cell’s depth relative to the
+mean of the eight around it. It answers a question depth cannot. A 100 m
+bank top and a 100 m basin floor are the same depth and very different
+places. TPI is positive on the first, negative on the second, and near
+zero on both flat bottom and uniform slopes.
+
+It is scale-dependent by construction. It describes position within the
+immediate neighbourhood, so its meaning follows the resolution of the
+grid it was computed on.
+
+[`attach_bathymetry()`](https://chross22.github.io/datamatch/reference/attach_bathymetry.md)
+takes either a plain data frame with coordinate columns or an `sf`
+object, so it works on observations and on
+[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+output alike.
+
+### Climate indices
+
+These are monthly, and have **no spatial dimension**. One value
+describes the whole basin, so every observation in a month receives the
+same number:
+
+``` r
+
+observations <- attach_climate_index(observations, c("NAO", "AMO"))
+
+index_dictionary()          # NAO, AO, AMO, PDO, LCR, AMOC
+```
+
+That makes them a different kind of covariate from local temperature.
+They tell you about *when* — what year and season it was. They tell you
+nothing about *where* within a region conditions are better.
+
+So they are useful for interannual questions (“was this a warm-regime
+year?”) and useless for spatial ones. A model given only indices cannot
+produce a map.
+
+Six are available, and they are not interchangeable.
+
+| Name | What it measures | Units | Timescale | Record |
+|----|----|----|----|----|
+| `NAO` | Pressure difference, Icelandic Low to Azores High | standardized anomaly | Year to year | 1950– |
+| `AO` | Strength of the polar vortex | standardized anomaly | Year to year | 1950– |
+| `AMO` | Detrended North Atlantic SST anomaly | degrees C | Multidecadal | 1948– |
+| `PDO` | Leading mode of North Pacific SST | standardized anomaly | Decadal | 1948– |
+| `LCR` | Retroflection of the Labrador Current | fraction | Year to year | 1993–2014 |
+| `AMOC` | Overturning transport at 26.5°N | Sv | Year to year | 2004– |
+
+Most are **standardized anomalies** — in standard deviations, not
+anything physical. Only `AMO` (degrees C) and `AMOC` (Sverdrups) carry
+real units, so a coefficient fitted to one of those is not comparable
+with one fitted to `NAO`.
+[`index_dictionary()`](https://chross22.github.io/datamatch/reference/index_dictionary.md)
+carries the units at runtime.
+
+**`NAO`** is the usual first choice in the Northwest Atlantic. It sets
+the strength and track of the westerlies, and with them heat flux and
+mixing over the shelves. Its winter values carry most of the signal.
+Summer values are noisier and mean less.
+
+**`AO`** is the hemispheric version of the same thing: polar vortex
+strength rather than an Atlantic-specific pressure dipole. In winter it
+correlates strongly with `NAO`. Including both usually buys little and
+costs collinearity, so pick one unless you have a reason.
+
+**`AMO`** is a slow background state, not a year-to-year signal. It
+varies over decades. Within a study period of ten or twenty years it may
+act more like a trend than a covariate. One caution: it is *derived
+from* North Atlantic SST, so using it to predict local SST is partly
+circular.
+
+**`PDO`** is North Pacific and included for completeness. It has limited
+relevance to Atlantic shelf systems, and a relationship found with it is
+worth treating sceptically.
+
+The last two are different in kind, and get their own sections below.
+
+#### The overturning circulation
+
+`AMOC` is the strength of the Atlantic overturning in Sverdrups,
+measured directly by the RAPID mooring array at 26.5°N. Alone among
+these it is a measurement rather than a pattern derived from pressure or
+SST.
+
+``` r
+
+amoc <- fetch_climate_index("AMOC")      # monthly, April 2004 onward
+observations <- attach_climate_index(observations, "AMOC")
+```
+
+Being real is also its limitation, in two ways. It **starts in April
+2004**, so it cannot reach back over a longer survey record. And it is
+measured **far south of the shelf**: it describes the basin-scale
+circulation the Labrador and slope currents sit within, not conditions
+on the Gulf of Maine or Scotian Shelf. A weakening AMOC is associated
+with a warming Northwest Atlantic shelf, but that is a chain of several
+links, so check the sign of any relationship against `LCR` and `AMO`
+rather than assuming it.
+
+Two practical notes. RAPID publishes this only as NetCDF, so it needs
+the `ncdf4` package — a `Suggests`, installed with
+`install.packages("ncdf4")`. And the published series is twelve-hourly,
+averaged to monthly here; the file is over a megabyte, so it is cached
+like the Copernicus downloads.
+
+> Moat BI, Smeed DA, Rayner D, Johns WE, Smith R, Volkov D, Elipot S,
+> Petit T, Kajtar J, Baringer MO, Collins J (2026). Atlantic meridional
+> overturning circulation observed by the RAPID-MOCHA-WBTS array at 26°N
+> from 2004 to 2024 (v2024.1a). British Oceanographic Data Centre, NERC,
+> UK. <https://doi.org/10.5285/48d0bf43-0598-ceb2-e063-7086abc062f1>
+
+#### Staying current
+
+Four of the six indices are still growing. Downloads are cached, and the
+cache expires on an interval matched to how often each provider actually
+publishes, so a living index re-downloads on its own without being
+asked:
+
+``` r
+
+climate_index_status()      # what is cached, how old, what is due
+refresh_climate_index()     # force a re-fetch of everything still growing
+refresh_climate_index("AMOC")
+```
+
+| Updates        | Cache reused for | Indices                   |
+|----------------|------------------|---------------------------|
+| Monthly        | 7 days           | `NAO`, `AO`, `AMO`, `PDO` |
+| Roughly yearly | 30 days          | `AMOC`                    |
+| Never          | forever          | `LCR`                     |
+
+`LCR` finished at 2014, so re-downloading it cannot produce anything new
+and it is skipped rather than fetched again.
+
+Two behaviours are worth knowing, because both are deliberate.
+
+**Staleness is judged from the data, not the cache.** A fresh download
+of a file the provider stopped updating is still stale. If a series ends
+further behind the present than its source’s usual publishing lag, you
+are told, along with the command to force a refresh and the note that if
+refreshing changes nothing then the provider has not published either.
+
+**A failed download falls back to the cached copy, with a warning.** A
+provider being briefly unreachable should not become an error here when
+usable data is already on disk. The warning is what keeps the old copy
+from being mistaken for a current one.
+
+#### The Labrador Current retroflection index
+
+`LCR` is the odd one out among the five, and often the most directly
+useful. The other four are atmospheric or SST patterns. This one
+describes a *current*: how much of the Labrador Current turns eastward
+at the Grand Banks instead of continuing southwest along the shelf.
+
+Positive values mean stronger retroflection. That means less cold,
+fresh, oxygen-rich Labrador water reaching the Scotian Shelf and Gulf of
+Maine. For shelf water properties that is a shorter causal chain than
+the NAO, which acts on them only indirectly through winds.
+
+``` r
+
+lcr <- fetch_climate_index("LCR")        # monthly, 1993-2014
+observations <- attach_climate_index(observations, "LCR")
+```
+
+It is the published output of one study rather than an operational
+product, so **cite it when you use it**:
+
+> Jutras M, Dufour CO, Mucci A, Talbot LC (2023) Large-scale control of
+> the retroflection of the Labrador Current. *Nature Communications*
+> **14**:2623. <https://doi.org/10.1038/s41467-023-38321-y>
+
+[`index_dictionary()`](https://chross22.github.io/datamatch/reference/index_dictionary.md)
+prints that citation, and `as.data.frame(index_dictionary())$reference`
+carries it at runtime.
+
+Three limits worth knowing.
+
+It **covers 1993–2014 only**, so it cannot be attached to recent
+observations.
+
+The series is fetched from the paper’s published source data, not
+recomputed. The authors derived it by seeding 966 virtual particles per
+week across a line at (53°N, 56.7°W)–(54.3°N, 52.0°W). Each was tracked
+for three years through GLORYS12V1 velocities with
+[OceanParcels](https://parcels-code.org/). The index is the difference
+between the counts crossing hydrographic sections on the Labrador and
+Scotian Shelves.
+
+Extending the record past 2014 means redoing that computation, not
+calling a different function.
+
+**The values are the raw index, not the normalized one plotted in the
+paper.** The published source data runs roughly −0.09 to 0.18,
+consistent with a fraction of the seeded particles. Figure 3a of the
+paper shows a detrended, smoothed series normalized to \[−1, 1\],
+spanning about −0.6 to +0.5.
+
+Both describe the same quantity, but the numbers are not comparable.
+Don’t read a value here against that figure. To get the paper’s variant,
+apply its chain yourself: detrend, 12-month rolling mean, rescale to
+\[−1, 1\], subtract the 1993–2015 mean.
+
+One interaction to know.
+[`attach_climate_index()`](https://chross22.github.io/datamatch/reference/attach_climate_index.md)
+joins on year and month, and `upscale_time(to = "year")` stamps its
+output `MONTH = 1`. So attaching an index to annual data would give
+every year January’s value. Aggregate the index to a year first instead.
