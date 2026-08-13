@@ -22,12 +22,15 @@ is and is not good for.
 
 ## Matching
 
-The spatiotemporal nearest-feature join, and the columns it adds.
+The spatiotemporal nearest-feature join, the columns it adds, and where
+each value came from.
 
 - [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
   : Match one set of points to another in space and time
 - [`covariate_columns()`](https://chross22.github.io/datamatch/reference/covariate_columns.md)
   : Covariate column names in an environmental data object
+- [`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
+  : Which source and archive produced a fetched object
 
 ## Resampling
 
@@ -118,6 +121,8 @@ and where it is documented.
   : Printable dictionary of HYCOM variables
 - [`hycom_archives()`](https://chross22.github.io/datamatch/reference/hycom_archives.md)
   : HYCOM archives this package can read
+- [`hycom_covering()`](https://chross22.github.io/datamatch/reference/hycom_covering.md)
+  : Which HYCOM archives cover a given date
 - [`ccmp_variables()`](https://chross22.github.io/datamatch/reference/ccmp_variables.md)
   : Catalog of CCMP wind variables
 - [`ccmp_dictionary()`](https://chross22.github.io/datamatch/reference/ccmp_dictionary.md)

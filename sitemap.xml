@@ -50,15 +50,19 @@
 <url><loc>https://chross22.github.io/datamatch/reference/fvcom_archives.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/fvcom_coordinates.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/fvcom_dictionary.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/fvcom_hourly_times.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/fvcom_in_box.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/fvcom_mesh_coordinates.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/fvcom_open.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/fvcom_read_variable.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/fvcom_reference.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/fvcom_times.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/fvcom_variables.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/grid_resolution.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/hycom_archives.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/hycom_covering.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/hycom_dictionary.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/hycom_lon_window.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/hycom_open.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/hycom_read_variable.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/hycom_times.html</loc></url>
@@ -71,6 +75,7 @@
 <url><loc>https://chross22.github.io/datamatch/reference/index_max_age.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/infer_dataset.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/interpolate_series.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/is_provenance_column.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/layer_codes.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/layer_depths.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/marmap_cache_file.html</loc></url>
@@ -105,6 +110,8 @@
 <url><loc>https://chross22.github.io/datamatch/reference/resolve_variables.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/select_time_step.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/short_hash.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/source_of.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/stamp_source.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/standardize_time_columns.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/step_labels.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/sub_daily_steps.html</loc></url>

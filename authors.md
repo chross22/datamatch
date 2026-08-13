@@ -10,12 +10,12 @@
 Source:
 [`inst/CITATION`](https://github.com/chross22/datamatch/blob/master/inst/CITATION)
 
-Ross C (2026). *datamatch: Fetch Copernicus Marine Data and Match It in
-Space and Time*. R package version 0.2.0,
+Ross C (2026). *datamatch: Fetch Ocean Data from Several Sources and
+Match It in Space and Time*. R package version 0.2.0,
 <https://github.com/chross22/datamatch>.
 
     @Manual{datamatch,
-      title = {datamatch: Fetch Copernicus Marine Data and Match It in Space and Time},
+      title = {datamatch: Fetch Ocean Data from Several Sources and Match It in Space and Time},
       author = {Camille Ross},
       year = {2026},
       note = {R package version 0.2.0},

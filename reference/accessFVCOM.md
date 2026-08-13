@@ -17,6 +17,8 @@ accessFVCOM(
   months = NULL,
   bounding_box,
   dates = NULL,
+  frequency = c("daily", "hourly"),
+  hour = 12L,
   archive = "GOM3",
   overwrite = FALSE
 )
@@ -44,8 +46,18 @@ accessFVCOM(
 
 - dates:
 
-  the months to read, named as dates. Any date selects the month
-  containing it, since the archive is monthly.
+  the months to read, named as dates. On a monthly archive any date
+  selects the month containing it.
+
+- frequency:
+
+  for a sub-daily archive such as `GOM7`, `"daily"` (the default) for
+  one snapshot per day or `"hourly"` for every hour. Ignored, with a
+  warning, on a monthly archive.
+
+- hour:
+
+  which UTC hour the daily snapshot takes, 0 to 23.
 
 - archive:
 
@@ -71,9 +83,9 @@ and a column per requested variable
 
 NECOFS is a regional coastal model on a triangular mesh that refines
 toward the coast. Over the Gulf of Maine it resolves structure the
-global reanalyses cannot: a box that holds about 2,700 GLORYS cells
-holds some 19,000 GOM3 nodes, concentrated where the bathymetry is
-complicated.
+global reanalyses cannot: over -70 to -66 E and 41 to 44 N, GLORYS
+resolves 1,742 cells where GOM3 carries 6,579 nodes, concentrated where
+the bathymetry is complicated.
 
 That resolution is the reason to use it, and its limits are the reason
 not to. It is one regional model rather than a reanalysis assimilating
@@ -120,7 +132,47 @@ from the file, and
 [`fvcom_archive()`](https://chross22.github.io/datamatch/reference/fvcom_archive.md)
 reports it.
 
-## Only monthly means
+## Hindcast and forecast archive are different products
+
+Two NECOFS archives ship, and the second is not a continuation of the
+first:
+
+- **`GOM3`** (the default) is the 30-year **hindcast**, monthly means on
+  the 48,451-node GOM3 mesh, 1978–2013. One consistent retrospective
+  run.
+
+- **`GOM7`** is the archived **operational forecast**, hourly on the
+  207,081-node GOM7 mesh, 2025 onward. It is the model as it was running
+  at the time, stitched across whatever versions were current.
+
+Three things change at once between them — the mesh, the time step, and
+whether the output is retrospective — so they are offered as separate
+archives rather than joined into one series. `GOM7` also saves fewer
+fields: it carries no wind stress, so `TAUX` and `TAUY` are unavailable
+there.
+
+Between 2014 and 2024 this server publishes neither, which is a gap in
+NECOFS rather than in this package.
+
+## Sub-daily archives
+
+`GOM7` is hourly, so `frequency` chooses what to take from it:
+
+- `"daily"` (the default) reads **one snapshot per day**, at `hour`.
+
+- `"hourly"` reads every hour.
+
+The default is the snapshot deliberately. A month of hourly GOM7 is 720
+reads of a 207,081-node field, which is a long transfer to keep a
+shelf-sized corner of it, and a snapshot is usually what a daily
+covariate wants. A snapshot is an instant rather than a daily mean;
+[`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md)
+makes a real mean from `frequency = "hourly"` if that is what is needed.
+
+`frequency` does nothing on a monthly archive such as `GOM3`, and saying
+so beats silently ignoring it.
+
+## Only monthly means, on the hindcast
 
 The hindcast is published hourly and as monthly means of those hours.
 Only the monthly aggregation is offered, because the hourly one cannot

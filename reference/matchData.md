@@ -10,6 +10,7 @@ matchData(
   dat,
   source,
   temporal_resolution = c("auto", "hour", "day", "month", "year"),
+  record_source = TRUE,
   speciesDat = NULL,
   envDat = NULL
 )
@@ -44,6 +45,14 @@ matchData(
   [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
   recorded on `source`, or infers it from `source`'s time steps.
 
+- record_source:
+
+  add a `<var>_source` column for each column joined, naming which
+  source and archive produced it. On by default, and only has an effect
+  when `source` carries the stamp an access function leaves — see
+  [`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md).
+  Set `FALSE` for the narrower table.
+
 - speciesDat, envDat:
 
   deprecated names for `dat` and `source`. Still accepted, with a
@@ -62,6 +71,28 @@ that carry `YEAR`/`MONTH`/`DAY` columns, so it works equally for
 stations against a covariate grid, tag positions against a model field,
 moorings against satellite retrievals, or one gridded product against
 another.
+
+## Which geometries can be matched
+
+`dat` may hold **points, lines or polygons** — survey stations, tow
+tracks, transects, statistical areas. The join is nearest-feature
+against the whole geometry, so a tow matches the nearest grid cell to
+the track rather than to any one end of it, and an area matches the
+nearest cell to the area.
+
+`LON`/`LAT` are then a *representative point* rather than the geometry:
+for a line or polygon they come from
+[`sf::st_point_on_surface()`](https://r-spatial.github.io/sf/reference/geos_unary.html),
+which is guaranteed to lie on the feature where a centroid need not. The
+geometry column itself is untouched, so nothing is lost — but do not
+read `LON`/`LAT` as the position of an area.
+
+A caution about extended geometries: a long tow or a large area may lie
+nearer one cell while spanning several, and nearest-feature returns
+exactly one. Where a track crosses a front, consider splitting it, or
+matching its vertices as points and summarising afterwards.
+
+`source` should be points, as every access function returns.
 
 ## Matching in time
 
@@ -91,6 +122,24 @@ row count is a worse outcome than a visible gap.
 `dat` keeps its own columns. One of `source`'s that collides with a name
 already in `dat` is suffixed `.matched`, so nothing of `dat`'s is
 overwritten or renamed.
+
+## Which source a column came from
+
+The access functions share variable names on purpose, so `SST` from
+Copernicus, FVCOM and HYCOM all arrive in a column called `SST` and
+everything downstream works unchanged. The cost is that a table with
+several sources chained onto it has no record of which produced what.
+
+So each joined column gets a companion `<var>_source` naming the source
+and archive — `"hycom:GLBv53X"`, `"fvcom:GOM3"` — in the same spirit as
+the `<var>_source` column
+[`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md)
+writes. Pass `record_source = FALSE` to omit them.
+
+These are provenance rather than data:
+[`covariate_columns()`](https://chross22.github.io/datamatch/reference/covariate_columns.md)
+excludes them, so they are not aggregated, regridded or plotted as
+though they were measurements.
 
 ## See also
 

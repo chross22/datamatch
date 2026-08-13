@@ -707,6 +707,7 @@ fvcom_dictionary()                           # the FVCOM catalog, for accessFVCO
 fvcom_archives()                             # which FVCOM archives are built in
 hycom_dictionary()                           # the HYCOM catalog, for accessHYCOM()
 hycom_archives()                             # which HYCOM archives can be read
+hycom_covering("2019-06-15")                 # which of them span a given date
 ccmp_dictionary()                            # the CCMP catalog, for accessCCMP()
 ccmp_versions()                              # which CCMP versions can be read
 variable_dataset(c("SST", "CHL"))            # which dataset each comes from
@@ -1023,10 +1024,10 @@ uses: `SST`, `SSS`, `BOTT`, `BOTS`, `SSH`, `UO`, `VO`, `UBAR`, `VBAR`,
 `TAUX`, `TAUY`, plus `DEPTH`, `SWRAD` and `NHF`.
 
 **Why reach for it.** It is a coastal model on a triangular mesh that
-refines toward the shore. A Gulf of Maine box holding about 2,700 GLORYS
-cells holds some 19,000 GOM3 nodes, concentrated where the bathymetry is
-complicated. If the question is about the shelf rather than the basin,
-that resolution is the reason.
+refines toward the shore. Over the box these examples use — -70 to -66
+E, 41 to 44 N — GLORYS resolves 1,742 cells where GOM3 carries 6,579
+nodes, concentrated where the bathymetry is complicated. If the question
+is about the shelf rather than the basin, that resolution is the reason.
 
 **Why not.** It is one regional model rather than a reanalysis
 assimilating observations basin-wide, it stops at the mesh boundary, and
@@ -1088,11 +1089,46 @@ Sub-monthly FVCOM is therefore not a matter of passing a different
 argument. It would mean reading the per-file datasets behind the
 aggregation, a month at a time.
 
+### Hindcast and forecast archive are two products
+
 [`fvcom_archives()`](https://chross22.github.io/datamatch/reference/fvcom_archives.md)
-names what is built in: currently the 30-year GOM3 hindcast, 1978–2013,
-monthly. Reading it needs the `ncdf4` package, a `Suggests`, and a
-network route to a plain-HTTP service on port 8080, which some
-institutional networks block.
+ships two NECOFS archives, and the second is **not** a continuation of
+the first:
+
+|             | `GOM3` (default) | `GOM7`                        |
+|-------------|------------------|-------------------------------|
+| Kind        | hindcast         | archived operational forecast |
+| Mesh        | 48,451 nodes     | 207,081 nodes                 |
+| Step        | monthly means    | hourly                        |
+| Covers      | 1978–2013        | 2025–                         |
+| Wind stress | yes              | **no**                        |
+
+Three things change at once — the mesh, the step, and whether the output
+is retrospective — so they are separate archives rather than one
+stitched series. Between 2014 and 2024 this server publishes neither,
+which is a gap in NECOFS rather than in this package.
+
+`GOM7` is hourly, so `frequency` chooses what to take:
+
+``` r
+
+# One snapshot a day at 12 UTC - the default, because a month of hourly GOM7 is
+# 720 reads of a 207,081-node field
+daily <- accessFVCOM(vars = c("SST", "BOTS"), years = 2025, months = 6,
+                     bounding_box = bb, archive = "GOM7")
+
+# Every hour, when a real daily mean is wanted
+steps <- accessFVCOM(vars = "SST", years = 2025, months = 6,
+                     bounding_box = bb, archive = "GOM7", frequency = "hourly")
+mean_sst <- upscale_time(steps, to = "day")
+```
+
+A snapshot is an instant, not a daily mean.
+
+[`fvcom_archives()`](https://chross22.github.io/datamatch/reference/fvcom_archives.md)
+names what is built in. Reading it needs the `ncdf4` package, a
+`Suggests`, and a network route to a plain-HTTP service on port 8080,
+which some institutional networks block.
 
 ### Reading FVCOM from anywhere else
 
@@ -1189,6 +1225,37 @@ steps <- accessHYCOM(vars = "SST", frequency = "3hourly",
 
 daily <- upscale_time(steps, to = "day")     # a genuine daily mean
 ```
+
+### Reaching past 2015
+
+The default archive is the **reanalysis** (`GLBv53X`, 1994–2015): one
+internally consistent run, which is why it is the default. HYCOM
+continues to the present, but as a chain of shorter **operational**
+experiments — the model as it was running at the time:
+
+``` r
+
+hycom_covering("2019-06-15")
+#> [1] "GLBv930" "GLBy930"
+
+recent <- accessHYCOM(vars = c("BOTT", "BOTS"), dates = "2019-06-15",
+                      bounding_box = bb, archive = "GLBy930")
+```
+
+Together they run 1994 → September 2024. One archive is read per call,
+and a request falling outside the one named is told which others hold it
+rather than being stitched to them silently — because the archives
+overlap, so where two cover a date there is a real choice between the
+more consistent run and the more recent one.
+
+The seam that matters is the **run**, not the grid. Crossing from the
+reanalysis into an operational archive changes how the values were
+produced. The grids mostly agree: `GLBv0.08` and `GLBy0.08` hold the
+same 126 latitudes between 40 and 45 °N, identically, so on a
+mid-latitude shelf the cells line up across the seam. They diverge
+toward the poles, where `GLBv0.08` stretches and `GLBy0.08` stays
+uniform. (`GLBy0.08` also stores longitude 0–360 rather than −180…180 —
+handled internally, so pass the box negative west either way.)
 
 Two practical notes. **The archive has gaps** — some three-hourly steps
 are simply absent, so a `"daily"` request at an hour that is missing
@@ -1772,6 +1839,37 @@ citing. Downloads go through the [Copernicus Marine
 Toolbox](https://toolbox-docs.marine.copernicus.eu/), which publishes no
 DOI of its own — cite the products.
 
+### Ocean and wind models
+
+Each is somebody else’s work, and
+[`fvcom_archives()`](https://chross22.github.io/datamatch/reference/fvcom_archives.md),
+[`hycom_archives()`](https://chross22.github.io/datamatch/reference/hycom_archives.md)
+and
+[`ccmp_versions()`](https://chross22.github.io/datamatch/reference/ccmp_versions.md)
+carry these references at runtime:
+
+- **FVCOM / NECOFS** — Chen C, Beardsley RC, Cowles G (2006). An
+  unstructured grid, finite-volume coastal ocean model (FVCOM) system.
+  *Oceanography* **19**(1):78–89.
+  <https://doi.org/10.5670/oceanog.2006.92>
+
+- **HYCOM / GOFS 3.1** — Chassignet EP, Hurlburt HE, Smedstad OM,
+  Halliwell GR, Hogan PJ, Wallcraft AJ, Baraille R, Bleck R (2007). The
+  HYCOM (HYbrid Coordinate Ocean Model) data assimilative system.
+  *Journal of Marine Systems* **65**:60–83.
+  <https://doi.org/10.1016/j.jmarsys.2005.09.016>
+
+- **CCMP** — Mears C, Lee T, Ricciardulli L, Wang X, Wentz F (2022).
+  Improving the Accuracy of the Cross-Calibrated Multi-Platform (CCMP)
+  Ocean Vector Winds. *Remote Sensing* **14**(17):4230.
+  <https://doi.org/10.3390/rs14174230>
+
+Say which archive as well as which model — a value from the HYCOM
+reanalysis and one from an operational experiment are not the same run,
+and
+[`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
+records exactly that.
+
 ### Seafloor terrain
 
 - NOAA National Centers for Environmental Information (2022). *ETOPO
@@ -1892,12 +1990,15 @@ is and is not good for.
 
 ## Matching
 
-The spatiotemporal nearest-feature join, and the columns it adds.
+The spatiotemporal nearest-feature join, the columns it adds, and where
+each value came from.
 
 - [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
   : Match one set of points to another in space and time
 - [`covariate_columns()`](https://chross22.github.io/datamatch/reference/covariate_columns.md)
   : Covariate column names in an environmental data object
+- [`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
+  : Which source and archive produced a fetched object
 
 ## Resampling
 
@@ -1988,6 +2089,8 @@ and where it is documented.
   : Printable dictionary of HYCOM variables
 - [`hycom_archives()`](https://chross22.github.io/datamatch/reference/hycom_archives.md)
   : HYCOM archives this package can read
+- [`hycom_covering()`](https://chross22.github.io/datamatch/reference/hycom_covering.md)
+  : Which HYCOM archives cover a given date
 - [`ccmp_variables()`](https://chross22.github.io/datamatch/reference/ccmp_variables.md)
   : Catalog of CCMP wind variables
 - [`ccmp_dictionary()`](https://chross22.github.io/datamatch/reference/ccmp_dictionary.md)

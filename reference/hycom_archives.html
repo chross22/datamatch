@@ -58,31 +58,61 @@ opens several.</p>
 
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>a named list, one entry per archive, each with <code>url</code> (a template
-taking the year), <code>years</code>, <code>step_hours</code>, <code>label</code>, and <code>reference</code></p>
+    <p>a named list, one entry per archive, each with <code>url</code>, <code>layout</code>,
+<code>start</code>, <code>end</code>, <code>step_hours</code>, <code>kind</code>, <code>label</code>, and <code>reference</code></p>
     </div>
     <div class="section level2">
-    <h2 id="coverage-and-the-gap-after-">Coverage and the gap after 2015<a class="anchor" aria-label="anchor" href="#coverage-and-the-gap-after-"></a></h2>
+    <h2 id="one-reanalysis-then-a-chain-of-operational-experiments">One reanalysis, then a chain of operational experiments<a class="anchor" aria-label="anchor" href="#one-reanalysis-then-a-chain-of-operational-experiments"></a></h2>
 
 
-<p>Only the GOFS 3.1 reanalysis, <code>GLBv0.08/expt_53.X</code>, is listed. It runs
-1994–2015, which overlaps GLORYS well. HYCOM's later record is split across
-several short experiments with differing grids and variable sets, and picking
-between them is a judgement about which to track rather than a lookup — so
-this offers the one long consistent record and says nothing about the rest.</p>
+<p><code>GLBv53X</code> is the GOFS 3.1 <strong>reanalysis</strong>: one internally consistent run over
+1994–2015, which is what makes it the default. Everything after it is
+<strong>operational</strong> output — the model as it was running at the time, reassigned
+an experiment number whenever it changed — so the later archives are short,
+they overlap each other, and they are not a reanalysis.</p>
+<p>Together they reach the present:</p>
+<table class="table table"><tr><td><code>GLBv53X</code></td><td>1994-01-01 to 2015-12-31</td><td>reanalysis</td></tr><tr><td><code>GLBv563</code></td><td>2014-07-01 to 2016-09-30</td><td>operational</td></tr><tr><td><code>GLBv572</code></td><td>2016-05-01 to 2017-02-01</td><td>operational</td></tr><tr><td><code>GLBv928</code></td><td>2017-02-01 to 2017-06-01</td><td>operational</td></tr><tr><td><code>GLBv577</code></td><td>2017-06-01 to 2017-10-01</td><td>operational</td></tr><tr><td><code>GLBv929</code></td><td>2017-10-01 to 2018-03-20</td><td>operational</td></tr><tr><td><code>GLBv930</code></td><td>2018-01-01 to 2020-02-19</td><td>operational</td></tr><tr><td><code>GLBy930</code></td><td>2018-12-04 to 2024-09-05</td><td>operational, finer grid</td></tr></table></div>
+    <div class="section level2">
+    <h2 id="two-seams-to-know-about">Two seams to know about<a class="anchor" aria-label="anchor" href="#two-seams-to-know-about"></a></h2>
+
+
+<p><strong>They overlap.</strong> <code>GLBv563</code> starts eighteen months before <code>GLBv53X</code> ends, and
+several of the 2017 experiments abut or overlap. Nothing here picks between
+them, because which one to prefer where they overlap is a judgement: the
+reanalysis is the more consistent, the operational run the more recent.</p>
+<p><strong>The seam that matters is the run, not the grid.</strong> Crossing from <code>GLBv53X</code>
+into an operational archive means changing from a reanalysis to the model as
+it was running at the time, which is a genuine discontinuity in how the
+values were produced.</p>
+<p>The grid difference is smaller than it looks. <code>GLBv0.08</code> carries 3251
+latitudes and <code>GLBy0.08</code> carries 4251, but both span -80 to 90 and both are
+spaced 0.04 degrees through the middle latitudes — <code>GLBv0.08</code> stretches
+toward the poles where <code>GLBy0.08</code> stays uniform. Between 40 and 45 N the two
+hold the same 126 latitudes, identically, so on a mid-latitude shelf the cells
+<em>do</em> correspond and a series spanning the seam is on one grid. They diverge
+at high latitude, where a polar study would be comparing different cells.</p>
+<p>The longitude convention differs too — <code>GLBv0.08</code> runs -180 to 180 and
+<code>GLBy0.08</code> runs 0 to 360 — but that is handled internally. Give
+<code>bounding_box</code> negative west for either.</p>
+<p><code><a href="accessHYCOM.html">accessHYCOM()</a></code> reads one archive per call and names the others when a
+request falls outside the one asked for, rather than stitching them silently.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="accessHYCOM.html">accessHYCOM()</a></code></p></div>
+    <div class="dont-index"><p><code><a href="accessHYCOM.html">accessHYCOM()</a></code>, <code><a href="hycom_covering.html">hycom_covering()</a></code></p></div>
     </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="fu">hycom_archives</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "GLBv53X"</span>
-<span class="r-in"><span><span class="fu">hycom_archives</span><span class="op">(</span><span class="op">)</span><span class="op">$</span><span class="va">GLBv53X</span><span class="op">$</span><span class="va">years</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] 1994 1995 1996 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [16] 2009 2010 2011 2012 2013 2014 2015</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "GLBv53X" "GLBv563" "GLBv572" "GLBv928" "GLBv577" "GLBv929" "GLBv930"</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [8] "GLBy930"</span>
+<span class="r-in"><span><span class="fu">hycom_archives</span><span class="op">(</span><span class="op">)</span><span class="op">$</span><span class="va">GLBv53X</span><span class="op">$</span><span class="va">end</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "2015-12-31"</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Which archives cover a given day</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="hycom_covering.html">hycom_covering</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/as.Date.html" class="external-link">as.Date</a></span><span class="op">(</span><span class="st">"2019-06-15"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] "GLBv930" "GLBy930"</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -51,6 +51,7 @@ time period, and returns <code>dat</code> with <code>source</code>'s columns add
 <span>  <span class="va">dat</span>,</span>
 <span>  <span class="va">source</span>,</span>
 <span>  temporal_resolution <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"hour"</span>, <span class="st">"day"</span>, <span class="st">"month"</span>, <span class="st">"year"</span><span class="op">)</span>,</span>
+<span>  record_source <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  speciesDat <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  envDat <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -85,6 +86,13 @@ when matching hourly.</sf></p></dd>
 recorded on <code>source</code>, or infers it from <code>source</code>'s time steps.</char></p></dd>
 
 
+<dt id="arg-record-source">record_source<a class="anchor" aria-label="anchor" href="#arg-record-source"></a></dt>
+<dd><p><logical> add a <code>&lt;var&gt;_source</code> column for each column
+joined, naming which source and archive produced it. On by default, and only
+has an effect when <code>source</code> carries the stamp an access function leaves —
+see <code><a href="source_of.html">source_of()</a></code>. Set <code>FALSE</code> for the narrower table.</logical></p></dd>
+
+
 <dt id="arg-speciesdat-envdat">speciesDat, envDat<a class="anchor" aria-label="anchor" href="#arg-speciesdat-envdat"></a></dt>
 <dd><p>deprecated names for <code>dat</code> and <code>source</code>. Still
 accepted, with a warning.</p></dd>
@@ -102,6 +110,25 @@ spatiotemporal nearest-feature join between two <code>sf</code> point objects th
 <code>YEAR</code>/<code>MONTH</code>/<code>DAY</code> columns, so it works equally for stations against a
 covariate grid, tag positions against a model field, moorings against
 satellite retrievals, or one gridded product against another.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="which-geometries-can-be-matched">Which geometries can be matched<a class="anchor" aria-label="anchor" href="#which-geometries-can-be-matched"></a></h2>
+
+
+<p><code>dat</code> may hold <strong>points, lines or polygons</strong> — survey stations, tow tracks,
+transects, statistical areas. The join is nearest-feature against the whole
+geometry, so a tow matches the nearest grid cell to the track rather than to
+any one end of it, and an area matches the nearest cell to the area.</p>
+<p><code>LON</code>/<code>LAT</code> are then a <em>representative point</em> rather than the geometry: for a
+line or polygon they come from <code><a href="https://r-spatial.github.io/sf/reference/geos_unary.html" class="external-link">sf::st_point_on_surface()</a></code>, which is
+guaranteed to lie on the feature where a centroid need not. The geometry
+column itself is untouched, so nothing is lost — but do not read <code>LON</code>/<code>LAT</code>
+as the position of an area.</p>
+<p>A caution about extended geometries: a long tow or a large area may lie
+nearer one cell while spanning several, and nearest-feature returns exactly
+one. Where a track crosses a front, consider splitting it, or matching its
+vertices as points and summarising afterwards.</p>
+<p><code>source</code> should be points, as every access function returns.</p>
     </div>
     <div class="section level2">
     <h2 id="matching-in-time">Matching in time<a class="anchor" aria-label="anchor" href="#matching-in-time"></a></h2>
@@ -131,6 +158,21 @@ worse outcome than a visible gap.</p>
 <p><code>dat</code> keeps its own columns. One of <code>source</code>'s that collides with a name
 already in <code>dat</code> is suffixed <code>.matched</code>, so nothing of <code>dat</code>'s is overwritten
 or renamed.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="which-source-a-column-came-from">Which source a column came from<a class="anchor" aria-label="anchor" href="#which-source-a-column-came-from"></a></h2>
+
+
+<p>The access functions share variable names on purpose, so <code>SST</code> from Copernicus,
+FVCOM and HYCOM all arrive in a column called <code>SST</code> and everything downstream
+works unchanged. The cost is that a table with several sources chained onto it
+has no record of which produced what.</p>
+<p>So each joined column gets a companion <code>&lt;var&gt;_source</code> naming the source and
+archive — <code>"hycom:GLBv53X"</code>, <code>"fvcom:GOM3"</code> — in the same spirit as the
+<code>&lt;var&gt;_source</code> column <code><a href="fill_satellite_gaps.html">fill_satellite_gaps()</a></code> writes. Pass
+<code>record_source = FALSE</code> to omit them.</p>
+<p>These are provenance rather than data: <code><a href="covariate_columns.html">covariate_columns()</a></code> excludes them, so
+they are not aggregated, regridded or plotted as though they were measurements.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

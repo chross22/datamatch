@@ -1,6 +1,8 @@
-# Open one year of a HYCOM archive
+# Open a HYCOM archive, or one year of it
 
-Open one year of a HYCOM archive
+The reanalysis is published one dataset per year and the operational
+runs each as a single aggregation, so `layout` decides whether the year
+is part of the address or ignored.
 
 ## Usage
 
@@ -17,7 +19,7 @@ hycom_open(spec, year)
 
 - year:
 
-  the year to open
+  the year to open, used only when `layout` is `"per_year"`
 
 ## Value
 

@@ -56,6 +56,8 @@ accessEnvDat() returns, so matchData() joins it unchanged."></head><body>
 <span>  months <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">bounding_box</span>,</span>
 <span>  dates <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  frequency <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"daily"</span>, <span class="st">"hourly"</span><span class="op">)</span>,</span>
+<span>  hour <span class="op">=</span> <span class="fl">12L</span>,</span>
 <span>  archive <span class="op">=</span> <span class="st">"GOM3"</span>,</span>
 <span>  overwrite <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -83,8 +85,18 @@ an <code>sf</code>/<code>sfc</code> object to take the bounding box of</list></p
 
 
 <dt id="arg-dates">dates<a class="anchor" aria-label="anchor" href="#arg-dates"></a></dt>
-<dd><p>the months to read, named as dates. Any date selects the month
-containing it, since the archive is monthly.</p></dd>
+<dd><p>the months to read, named as dates. On a monthly archive any
+date selects the month containing it.</p></dd>
+
+
+<dt id="arg-frequency">frequency<a class="anchor" aria-label="anchor" href="#arg-frequency"></a></dt>
+<dd><p><char> for a sub-daily archive such as <code>GOM7</code>, <code>"daily"</code>
+(the default) for one snapshot per day or <code>"hourly"</code> for every hour.
+Ignored, with a warning, on a monthly archive.</char></p></dd>
+
+
+<dt id="arg-hour">hour<a class="anchor" aria-label="anchor" href="#arg-hour"></a></dt>
+<dd><p><integer> which UTC hour the daily snapshot takes, 0 to 23.</integer></p></dd>
 
 
 <dt id="arg-archive">archive<a class="anchor" aria-label="anchor" href="#arg-archive"></a></dt>
@@ -110,8 +122,8 @@ other region is reached.</p></dd>
 
 <p>NECOFS is a regional coastal model on a triangular mesh that refines toward
 the coast. Over the Gulf of Maine it resolves structure the global reanalyses
-cannot: a box that holds about 2,700 GLORYS cells holds some 19,000 GOM3
-nodes, concentrated where the bathymetry is complicated.</p>
+cannot: over -70 to -66 E and 41 to 44 N, GLORYS resolves 1,742 cells where
+GOM3 carries 6,579 nodes, concentrated where the bathymetry is complicated.</p>
 <p>That resolution is the reason to use it, and its limits are the reason not to.
 It is one regional model rather than a reanalysis assimilating observations
 basin-wide, it stops at the mesh boundary, and it ends in 2013. A covariate
@@ -155,7 +167,39 @@ the mesh, the period, which fields were saved — is read from the file, and
 <code><a href="fvcom_archive.html">fvcom_archive()</a></code> reports it.</p>
     </div>
     <div class="section level2">
-    <h2 id="only-monthly-means">Only monthly means<a class="anchor" aria-label="anchor" href="#only-monthly-means"></a></h2>
+    <h2 id="hindcast-and-forecast-archive-are-different-products">Hindcast and forecast archive are different products<a class="anchor" aria-label="anchor" href="#hindcast-and-forecast-archive-are-different-products"></a></h2>
+
+
+<p>Two NECOFS archives ship, and the second is not a continuation of the first:</p>
+<ul><li><p><strong><code>GOM3</code></strong> (the default) is the 30-year <strong>hindcast</strong>, monthly means on
+the 48,451-node GOM3 mesh, 1978–2013. One consistent retrospective run.</p></li>
+<li><p><strong><code>GOM7</code></strong> is the archived <strong>operational forecast</strong>, hourly on the
+207,081-node GOM7 mesh, 2025 onward. It is the model as it was running at
+the time, stitched across whatever versions were current.</p></li>
+</ul><p>Three things change at once between them — the mesh, the time step, and
+whether the output is retrospective — so they are offered as separate
+archives rather than joined into one series. <code>GOM7</code> also saves fewer fields:
+it carries no wind stress, so <code>TAUX</code> and <code>TAUY</code> are unavailable there.</p>
+<p>Between 2014 and 2024 this server publishes neither, which is a gap in NECOFS
+rather than in this package.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="sub-daily-archives">Sub-daily archives<a class="anchor" aria-label="anchor" href="#sub-daily-archives"></a></h2>
+
+
+<p><code>GOM7</code> is hourly, so <code>frequency</code> chooses what to take from it:</p>
+<ul><li><p><code>"daily"</code> (the default) reads <strong>one snapshot per day</strong>, at <code>hour</code>.</p></li>
+<li><p><code>"hourly"</code> reads every hour.</p></li>
+</ul><p>The default is the snapshot deliberately. A month of hourly GOM7 is 720 reads
+of a 207,081-node field, which is a long transfer to keep a shelf-sized corner
+of it, and a snapshot is usually what a daily covariate wants. A snapshot is
+an instant rather than a daily mean; <code><a href="upscale_time.html">upscale_time()</a></code> makes a real mean from
+<code>frequency = "hourly"</code> if that is what is needed.</p>
+<p><code>frequency</code> does nothing on a monthly archive such as <code>GOM3</code>, and saying so
+beats silently ignoring it.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="only-monthly-means-on-the-hindcast">Only monthly means, on the hindcast<a class="anchor" aria-label="anchor" href="#only-monthly-means-on-the-hindcast"></a></h2>
 
 
 <p>The hindcast is published hourly and as monthly means of those hours. Only the

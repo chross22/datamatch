@@ -64,7 +64,11 @@ accessHYCOM(
 - archive:
 
   which archive to read, from
-  [`hycom_archives()`](https://chross22.github.io/datamatch/reference/hycom_archives.md)
+  [`hycom_archives()`](https://chross22.github.io/datamatch/reference/hycom_archives.md).
+  The default is the 1994–2015 reanalysis; later years live in the
+  operational archives, which
+  [`hycom_covering()`](https://chross22.github.io/datamatch/reference/hycom_covering.md)
+  will name for a given date.
 
 - overwrite:
 
@@ -113,11 +117,38 @@ Fetching a month of three-hourly data is 248 downloads over a slow
 protocol. Prefer `dates` and a small box unless the whole series is
 genuinely wanted.
 
-## One dataset per year
+## Reaching past 2015
 
-HYCOM splits its record by year, so a request spanning years opens one
-connection per year rather than one aggregation. Years outside the
-archive are warned about and skipped rather than failing the call.
+The default archive is the **reanalysis**, `GLBv53X`, which is one
+internally consistent run over 1994–2015. HYCOM continues to the
+present, but as a chain of shorter **operational** experiments — the
+model as it was running at the time.
+[`hycom_archives()`](https://chross22.github.io/datamatch/reference/hycom_archives.md)
+lists them and
+[`hycom_covering()`](https://chross22.github.io/datamatch/reference/hycom_covering.md)
+says which span a given date:
+
+    hycom_covering("2019-06-15")
+    #> [1] "GLBv930" "GLBy930"
+
+    recent <- accessHYCOM(vars = "BOTS", dates = "2019-06-15",
+                          bounding_box = bb, archive = "GLBy930")
+
+One archive is read per call, and a request falling outside the one
+named is told which others hold it rather than being stitched to them
+silently. The archives overlap, so where two cover a date there is a
+real choice between the more consistent run and the more recent one, and
+crossing from the reanalysis into an operational run is a discontinuity
+in how the values were made. The grids themselves agree through the
+middle latitudes, so on a shelf the cells line up across the seam even
+though the runs do not — see
+[`hycom_archives()`](https://chross22.github.io/datamatch/reference/hycom_archives.md).
+
+## One dataset per year, sometimes
+
+The reanalysis is published one dataset per year, so a request spanning
+years opens one connection per year. The operational archives are each a
+single aggregation and open once.
 
 ## See also
 

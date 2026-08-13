@@ -101,7 +101,9 @@ be a multiple of 3, since that is the model's step.</integer></p></dd>
 
 
 <dt id="arg-archive">archive<a class="anchor" aria-label="anchor" href="#arg-archive"></a></dt>
-<dd><p><char> which archive to read, from <code><a href="hycom_archives.html">hycom_archives()</a></code></char></p></dd>
+<dd><p><char> which archive to read, from <code><a href="hycom_archives.html">hycom_archives()</a></code>. The
+default is the 1994–2015 reanalysis; later years live in the operational
+archives, which <code><a href="hycom_covering.html">hycom_covering()</a></code> will name for a given date.</char></p></dd>
 
 
 <dt id="arg-overwrite">overwrite<a class="anchor" aria-label="anchor" href="#arg-overwrite"></a></dt>
@@ -146,12 +148,35 @@ visible and the choice of summary yours:</p>
 Prefer <code>dates</code> and a small box unless the whole series is genuinely wanted.</p>
     </div>
     <div class="section level2">
-    <h2 id="one-dataset-per-year">One dataset per year<a class="anchor" aria-label="anchor" href="#one-dataset-per-year"></a></h2>
+    <h2 id="reaching-past-">Reaching past 2015<a class="anchor" aria-label="anchor" href="#reaching-past-"></a></h2>
 
 
-<p>HYCOM splits its record by year, so a request spanning years opens one
-connection per year rather than one aggregation. Years outside the archive
-are warned about and skipped rather than failing the call.</p>
+<p>The default archive is the <strong>reanalysis</strong>, <code>GLBv53X</code>, which is one
+internally consistent run over 1994–2015. HYCOM continues to the present, but
+as a chain of shorter <strong>operational</strong> experiments — the model as it was
+running at the time. <code><a href="hycom_archives.html">hycom_archives()</a></code> lists them and <code><a href="hycom_covering.html">hycom_covering()</a></code>
+says which span a given date:</p>
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">hycom_covering</span>(<span class="st">"2019-06-15"</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="co">#&gt; [1] "GLBv930" "GLBy930"</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>recent <span class="ot">&lt;-</span> <span class="fu">accessHYCOM</span>(<span class="at">vars =</span> <span class="st">"BOTS"</span>, <span class="at">dates =</span> <span class="st">"2019-06-15"</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>                      <span class="at">bounding_box =</span> bb, <span class="at">archive =</span> <span class="st">"GLBy930"</span>)</span></code></pre><p></p></div>
+<p>One archive is read per call, and a request falling outside the one named is
+told which others hold it rather than being stitched to them silently. The
+archives overlap, so where two cover a date there is a real choice between
+the more consistent run and the more recent one, and crossing from the
+reanalysis into an operational run is a discontinuity in how the values were
+made. The grids themselves agree through the middle latitudes, so on a shelf
+the cells line up across the seam even though the runs do not — see
+<code><a href="hycom_archives.html">hycom_archives()</a></code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="one-dataset-per-year-sometimes">One dataset per year, sometimes<a class="anchor" aria-label="anchor" href="#one-dataset-per-year-sometimes"></a></h2>
+
+
+<p>The reanalysis is published one dataset per year, so a request spanning years
+opens one connection per year. The operational archives are each a single
+aggregation and open once.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

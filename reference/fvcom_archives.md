@@ -49,7 +49,7 @@ about the cause.
 
 ``` r
 names(fvcom_archives())
-#> [1] "GOM3"
+#> [1] "GOM3" "GOM7"
 fvcom_archives()$GOM3$url
 #> [1] "http://www.smast.umassd.edu:8080/thredds/dodsC/fvcom/hindcasts/30yr_gom3/mean"
 ```
