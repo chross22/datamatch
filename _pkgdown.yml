@@ -20,10 +20,12 @@ reference:
 
 - title: Matching
   desc: >
-    The spatiotemporal nearest-feature join, and the columns it adds.
+    The spatiotemporal nearest-feature join, the columns it adds, and where each
+    value came from.
   contents:
   - matchData
   - covariate_columns
+  - source_of
 
 - title: Resampling
   desc: >
@@ -81,6 +83,7 @@ reference:
   - hycom_variables
   - hycom_dictionary
   - hycom_archives
+  - hycom_covering
   - ccmp_variables
   - ccmp_dictionary
   - ccmp_versions
