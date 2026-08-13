@@ -6,7 +6,7 @@ stations, tag positions, or another gridded product — and the package
 also covers regridding, gap filling, seafloor terrain, and basin-scale
 climate indices.
 
-Four sources sit behind one interface, sharing one set of variable
+Five sources sit behind one interface, sharing one set of variable
 names:
 
 | Source | Function | Gives | Steps | Record |
@@ -15,6 +15,7 @@ names:
 | [FVCOM / NECOFS](#fvcom-a-regional-model-on-an-unstructured-mesh) | [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md) | coastal model on a triangular mesh | monthly, hourly | 1978–2013, then 2025– |
 | [HYCOM](#hycom-and-bottom-fields-for-free) | [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md) | independent global model, sea-floor fields | 3-hourly | 1994–2024 |
 | [CCMP](#ccmp-the-long-wind-record) | [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md) | surface winds | 6-hourly | 1993–present |
+| [MUR / VIIRS](#mur-and-viirs-through-erddap) | [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md) | satellite SST and chlorophyll | daily | 2002– / 2012– |
 
 All four return the same `sf` shape, so
 [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
@@ -107,6 +108,8 @@ vignette compares them side by side if that is what you came for.
     fetch](#three-hourly-and-no-mean-to-fetch)
 - [CCMP, the long wind record](#ccmp-the-long-wind-record) — six-hourly
   winds, 1993–present
+- [MUR and VIIRS, through ERDDAP](#mur-and-viirs-through-erddap) — 0.01°
+  satellite SST, and chlorophyll
 - [Static and basin-scale
   covariates](#static-and-basin-scale-covariates)
   - [Seafloor terrain](#seafloor-terrain) — depth, slope, aspect, and
@@ -723,6 +726,8 @@ hycom_archives()                             # which HYCOM archives can be read
 hycom_covering("2019-06-15")                 # which of them span a given date
 ccmp_dictionary()                            # the CCMP catalog, for accessCCMP()
 ccmp_versions()                              # which CCMP versions can be read
+erddap_dictionary()                          # MUR and VIIRS, for accessERDDAP()
+erddap_datasets()                            # which ERDDAP datasets ship
 variable_dataset(c("SST", "CHL"))            # which dataset each comes from
 as.data.frame(variable_dictionary())$description  # full descriptions
 ```
@@ -1345,6 +1350,64 @@ real mean is made.
 > coordinates come back negative west, so the result overlays the other
 > sources without adjustment.
 
+## MUR and VIIRS, through ERDDAP
+
+[`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+reads satellite products from NOAA’s ERDDAP servers — **no account
+needed**, and subset server-side:
+
+``` r
+
+bb <- list(xmin = -70, xmax = -66, ymin = 41, ymax = 44)
+
+sst <- accessERDDAP(vars = c("SST", "SST_ERROR"),
+                    dates = unique(observations$date), bounding_box = bb)
+
+matched <- matchData(observations, sst)
+```
+
+| Dataset         | Gives                     | Resolution  | Record          |
+|-----------------|---------------------------|-------------|-----------------|
+| `MUR` (default) | `SST`, `SST_ERROR`, `ICE` | 0.01° daily | 2002-06–        |
+| `VIIRSCHL`      | `CHL`, gap-filled         | 0.04° daily | 2020-05–        |
+| `VIIRSCHL2018`  | `CHL`, raw retrieval      | 0.04° daily | 2012-01–2022-07 |
+
+**MUR is the finest field here by a wide margin** — 0.01° is about 1 km,
+where the physics reanalysis is 9 km and GOM3’s mesh a few km on the
+shelf. The same routing matters as elsewhere: these products are also at
+PO.DAAC, where they need an Earthdata login; ERDDAP serves them openly,
+so there are no credentials for this package to handle or for you to
+configure.
+
+Three things to know:
+
+- **A satellite SST is not a model SST.** MUR measures the *foundation*
+  temperature, below the daily warming layer; a model `SST` is its
+  topmost level. On a calm sunny afternoon they differ by a degree or
+  more. Both arrive in a column called `SST`, which is why
+  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+  records `<var>_source`.
+- **MUR is gap-free by construction.** It is an analysis, so cloud is
+  interpolated over rather than left `NA` — fetch `SST_ERROR` alongside
+  if that interpolation matters. `VIIRSCHL` is likewise DINEOF
+  gap-filled; `VIIRSCHL2018` is the raw retrieval and is gappy under
+  cloud, which is what
+  [`fill_satellite_gaps()`](#filling-satellite-gaps) is for.
+- **There is no global VIIRS SST here.** The VIIRS SST on these servers
+  covers the US West Coast only. MUR is the SST to use instead — it is a
+  blended analysis taking VIIRS among its inputs, at finer resolution
+  and over a longer record.
+
+[`erddap_datasets()`](https://chross22.github.io/datamatch/reference/erddap_datasets.md)
+lists what ships and
+[`erddap_dictionary()`](https://chross22.github.io/datamatch/reference/erddap_dictionary.md)
+tabulates the variables. ERDDAP hosts thousands more;
+`erddap_dataset(server, dataset_id)` describes any of them for
+[`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md),
+the same way
+[`fvcom_archive()`](https://chross22.github.io/datamatch/reference/fvcom_archive.md)
+does for FVCOM.
+
 ## Static and basin-scale covariates
 
 Not everything useful is a gridded Copernicus variable on a monthly time
@@ -1884,6 +1947,16 @@ carry these references at runtime:
   Improving the Accuracy of the Cross-Calibrated Multi-Platform (CCMP)
   Ocean Vector Winds. *Remote Sensing* **14**(17):4230.
   <https://doi.org/10.3390/rs14174230>
+
+- **MUR** — Chin TM, Vazquez-Cuervo J, Armstrong EM (2017). A
+  multi-scale high-resolution analysis of global sea surface
+  temperature. *Remote Sensing of Environment* **200**:154–169.
+  <https://doi.org/10.1016/j.rse.2017.07.029>
+
+- **VIIRS gap-filled chlorophyll** — Liu X, Wang M (2018). Gap filling
+  of missing data for VIIRS global ocean color products using the DINEOF
+  method. *IEEE Transactions on Geoscience and Remote Sensing*
+  **56**:4464–4476. <https://doi.org/10.1109/TGRS.2018.2820423>
 
 Say which archive as well as which model — a value from the HYCOM
 reanalysis and one from an operational experiment are not the same run,

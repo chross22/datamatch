@@ -15,6 +15,8 @@ is and is not good for.
   : Access HYCOM output from the GOFS 3.1 reanalysis
 - [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
   : Access CCMP ocean surface winds
+- [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+  : Access satellite data through ERDDAP
 - [`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md)
   : Fill satellite gaps with the model equivalent
 - [`forecast_variables()`](https://chross22.github.io/datamatch/reference/forecast_variables.md)
@@ -129,6 +131,13 @@ and where it is documented.
   : Printable dictionary of CCMP variables
 - [`ccmp_versions()`](https://chross22.github.io/datamatch/reference/ccmp_versions.md)
   : CCMP versions this package can read
+- [`erddap_datasets()`](https://chross22.github.io/datamatch/reference/erddap_datasets.md)
+  : Satellite datasets read through ERDDAP
+- [`erddap_dataset()`](https://chross22.github.io/datamatch/reference/erddap_dataset.md)
+  : Describe any ERDDAP griddap dataset, so it can be read like a
+  built-in one
+- [`erddap_dictionary()`](https://chross22.github.io/datamatch/reference/erddap_dictionary.md)
+  : Printable dictionary of the ERDDAP datasets and their variables
 - [`product_url()`](https://chross22.github.io/datamatch/reference/product_url.md)
   : Copernicus Marine product page for a product identifier
 - [`as_markdown()`](https://chross22.github.io/datamatch/reference/as_markdown.md)

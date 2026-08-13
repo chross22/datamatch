@@ -4,6 +4,34 @@
 
 ### New features
 
+- **MUR and VIIRS, through
+  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md).**
+  Satellite SST and chlorophyll from NOAA’s ERDDAP servers: `MUR`
+  (0.01°, daily, 2002-06 onward) for SST, and `VIIRSCHL` /
+  `VIIRSCHL2018` for chlorophyll. MUR is by a wide margin the finest
+  field the package can reach — about 1 km, against 9 km for the physics
+  reanalysis.
+
+  **No account is needed.** The same products at PO.DAAC require an
+  Earthdata login; ERDDAP serves them openly and subsets server-side, so
+  there are no credentials for this package to handle or for the user to
+  configure. That is why this route was chosen.
+
+  Three things the documentation is explicit about. A satellite SST is
+  the *foundation* temperature, below the daily warming layer, where a
+  model `SST` is its topmost level — they differ by a degree or more on
+  a calm sunny day, and both arrive in a column called `SST`. MUR is
+  gap-free by construction because it is an analysis, so `SST_ERROR` is
+  where the interpolation shows up. And there is **no global VIIRS
+  SST**: the VIIRS SST on these servers covers the US West Coast only,
+  so MUR — a blend taking VIIRS among its inputs — is the SST to use
+  instead.
+
+  As with FVCOM, the backend is general rather than a fixed list:
+  `erddap_dataset(server, dataset_id)` describes any of the thousands of
+  other griddap datasets for
+  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md).
+
 - **HYCOM now reaches 2024, and FVCOM 2025.** Both had stopped short —
   HYCOM at 2015 and FVCOM at 2013 — because each shipped a single
   archive. Neither was a limit of the data.

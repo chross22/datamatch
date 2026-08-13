@@ -9,6 +9,7 @@
 <url><loc>https://chross22.github.io/datamatch/index.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/news/index.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/accessCCMP.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/accessERDDAP.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/accessEnvDat.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/accessFVCOM.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/accessHYCOM.html</loc></url>
@@ -41,6 +42,12 @@
 <url><loc>https://chross22.github.io/datamatch/reference/download_day.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/downscale_grid.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/downscale_time.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/erddap_dataset.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/erddap_datasets.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/erddap_dictionary.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/erddap_metadata.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/erddap_parse_das.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/erddap_read_day.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/expected_steps.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/fetch_bathymetry.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/fetch_climate_index.html</loc></url>
