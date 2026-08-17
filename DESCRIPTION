@@ -43,6 +43,7 @@ Imports:
 Suggests:
     marmap,
     ncdf4,
+    emld,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),

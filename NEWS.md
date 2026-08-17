@@ -2,6 +2,33 @@
 
 ## New features
 
+* **EML metadata, through `write_eml()`.** Writes an Ecological Metadata
+  Language document for a matched table — the standard EDI, LTER and DataONE
+  expect alongside a deposited dataset.
+
+  Most of it comes from the data: the bounding box and date range from the
+  object, and an attribute for every column with its definition, units and
+  measurement scale taken from whichever source catalog defines that name. This
+  package's own conventions are described too, so the time columns, `LON`/`LAT`
+  and the `_source` and `_depth` columns are not left as bare names.
+
+  The methods section is the part worth having. Because `matchData()` records
+  `<var>_source` on every join, a table with several sources chained onto it
+  produces a methods statement naming each and a citation for each — assembled
+  from the source catalogs rather than by hand, which is the most tedious part
+  of depositing a derived dataset and the easiest to get wrong.
+
+  One thing that would otherwise fail at submission rather than at write time:
+  EML validates units against a fixed vocabulary, and **`PSU` and `N/m2` are not
+  in it** — salinity and wind stress, two core variables here. Both are written
+  as custom units and declared in the document's own `unitList`. Which names are
+  valid was settled by validating documents against the schema, not by reading a
+  list: `milligramsPerCubicMeter` is accepted and `milligramPerCubicMeter` is
+  not. `write_eml()` validates before returning, so an invalid document is an
+  error rather than a rejection later.
+
+  Needs `emld`, a new `Suggests`.
+
 * **MUR and VIIRS, through `accessERDDAP()`.** Satellite SST and chlorophyll
   from NOAA's ERDDAP servers: `MUR` (0.01°, daily, 2002-06 onward) for SST, and
   `VIIRSCHL` / `VIIRSCHL2018` for chlorophyll. MUR is by a wide margin the

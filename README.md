@@ -25,7 +25,7 @@ names:
 | [CCMP](#ccmp-the-long-wind-record) | `accessCCMP()` | surface winds | 6-hourly | 1993–present |
 | [MUR / VIIRS](#mur-and-viirs-through-erddap) | `accessERDDAP()` | satellite SST and chlorophyll | daily | 2002– / 2012– |
 
-All four return the same `sf` shape, so `matchData()` joins any of them
+All five return the same `sf` shape, so `matchData()` joins any of them
 to your observations and they chain together:
 
 ``` r
@@ -120,8 +120,17 @@ devtools::install_github("chross22/datamatch")
 
 ## Set up
 
-Downloads go through `copernicusmarine`, the official Python client. It
-is not an R package and is not installed with this one:
+**Only Copernicus needs an account.** FVCOM, HYCOM, CCMP and the ERDDAP
+satellite products are read over plain HTTP and OPeNDAP with no
+credentials at all; they need the `ncdf4` package, which is a
+`Suggests`:
+
+``` r
+install.packages("ncdf4")
+```
+
+Copernicus downloads go through `copernicusmarine`, the official Python
+client. It is not an R package and is not installed with this one:
 
 ``` bash
 pip install copernicusmarine
@@ -1072,6 +1081,43 @@ covers what TPI actually measures, which index to choose and why they
 are not interchangeable, the `LCR` and `AMOC` caveats, and how the index
 cache expires on each provider’s publishing cadence.
 
+## Depositing what you made
+
+`write_eml()` writes [Ecological Metadata
+Language](https://eml.ecoinformatics.org/) for a matched table — the
+standard EDI, LTER and DataONE expect alongside a deposited dataset:
+
+``` r
+write_eml(
+  matched, "matched.xml",
+  title = "Bottom conditions at trawl stations, Gulf of Maine",
+  creator = list(individualName = list(givenName = "Camille", surName = "Ross"),
+                 userId = list(directory = "https://orcid.org",
+                               userId = "0000-0002-1428-2294")),
+  abstract = "Survey stations with environmental covariates matched by datamatch."
+)
+```
+
+Most of the document is filled in from the data: the bounding box and
+date range from the object itself, and an attribute for every column
+with its definition, units and measurement scale taken from whichever
+source catalog defines that name.
+
+The part worth having is the **methods section**. Because `matchData()`
+records `<var>_source` on every join, a table with four sources chained
+onto it produces a methods statement naming all four and a citation for
+each — which is otherwise the most tedious part of depositing a derived
+dataset, and the easiest to get wrong. `title`, `creator` and `abstract`
+are yours to supply; nothing else needs to be.
+
+> One detail that would otherwise bite at submission rather than at
+> write time: EML validates units against a fixed vocabulary, and
+> **`PSU` and `N/m²` are not in it**. Both are written as custom units
+> and declared in the document’s own `unitList`, so what comes out
+> validates. `write_eml()` checks that before returning.
+
+Needs the `emld` package, a `Suggests`.
+
 ## Putting it together
 
 A worked example: physical, biological, seafloor, and basin-scale
@@ -1197,6 +1243,7 @@ page for each.
 |----|----|
 | `matchData()` | the spatiotemporal nearest-feature join |
 | `source_of()` | which source and archive an object came from |
+| `write_eml()` | EML metadata for a matched table, for depositing it |
 | `covariate_columns()` | which columns are data rather than time or provenance |
 
 **Resampling and gap filling**

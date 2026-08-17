@@ -27,6 +27,7 @@ reference:
   - matchData
   - covariate_columns
   - source_of
+  - write_eml
 
 - title: Resampling
   desc: >
