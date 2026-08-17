@@ -33,6 +33,8 @@ each value came from.
   : Covariate column names in an environmental data object
 - [`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
   : Which source and archive produced a fetched object
+- [`write_eml()`](https://chross22.github.io/datamatch/reference/write_eml.md)
+  : Write EML metadata for a matched table
 
 ## Resampling
 

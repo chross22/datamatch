@@ -44,6 +44,10 @@
 <url><loc>https://chross22.github.io/datamatch/reference/download_day.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/downscale_grid.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/downscale_time.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/eml_attribute.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/eml_coverage.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/eml_methods.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/eml_unit_table.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/erddap_dataset.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/erddap_datasets.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/erddap_dictionary.html</loc></url>
@@ -85,6 +89,7 @@
 <url><loc>https://chross22.github.io/datamatch/reference/infer_dataset.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/interpolate_series.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/is_provenance_column.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/known_variables.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/layer_codes.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/layer_depths.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/marmap_cache_file.html</loc></url>
@@ -120,6 +125,7 @@
 <url><loc>https://chross22.github.io/datamatch/reference/select_time_step.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/short_hash.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/source_of.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/source_reference.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/stamp_source.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/standardize_time_columns.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/step_labels.html</loc></url>
@@ -138,5 +144,6 @@
 <url><loc>https://chross22.github.io/datamatch/reference/warn_if_stale.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/wind_variables.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/without_calendar_warning.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/write_eml.html</loc></url>
 </urlset>
 
