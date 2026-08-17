@@ -13,3 +13,5 @@
 ^\.claude$
 ^doc$
 ^Meta$
+^CITATION\.cff$
+^\.zenodo\.json$

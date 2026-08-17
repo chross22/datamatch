@@ -1,0 +1,40 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite it using the metadata below. The data
+  products a given run fetches carry their own citations, which are separate
+  and also required - see the References section of the README, and the
+  reference field each source catalog carries at runtime.
+title: "datamatch: Fetch Ocean Data from Several Sources and Match It in Space and Time"
+type: software
+version: 0.2.0
+license: MIT
+repository-code: "https://github.com/chross22/datamatch"
+url: "https://chross22.github.io/datamatch/"
+abstract: >-
+  Downloads ocean and atmosphere data and joins it to point data in space and
+  time, at the downloaded data's own resolution. The join is a general
+  spatiotemporal nearest-feature match, so either side may be species
+  observations, survey stations, tag positions, or another gridded product.
+  Five sources are covered behind one interface and one set of variable names -
+  the Copernicus Marine Service, HYCOM, FVCOM, CCMP and NOAA ERDDAP - so a
+  covariate arrives in a column of the same name whichever supplied it, and
+  which source produced each value is recorded on the result. Also provides
+  spatial and temporal resampling, gap filling for satellite ocean colour,
+  seafloor terrain, basin-scale climate indices, plots for inspecting what was
+  downloaded, and Ecological Metadata Language for a matched table.
+authors:
+  - family-names: Ross
+    given-names: Camille
+    email: camille.ross@maine.edu
+    orcid: "https://orcid.org/0000-0002-1428-2294"
+keywords:
+  - R
+  - oceanography
+  - marine ecology
+  - spatiotemporal matching
+  - environmental covariates
+  - Copernicus Marine Service
+  - HYCOM
+  - FVCOM
+  - satellite remote sensing
+  - species distribution modelling
