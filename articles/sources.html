@@ -176,7 +176,10 @@ forecast archive starts in 2025, on a different mesh. <strong>HYCOM
 reaches 2024 only by crossing from the reanalysis into a series of
 operational experiments</strong>, which is a seam in how the values were
 produced. <code>hycom_covering(date)</code> says which archives hold a
-given day.</p>
+given day, and <code>accessHYCOM(archive = "continuous")</code> reads
+across them in one call — warning once at the crossing, and recording on
+every row which run it came from, since a step in a series across that
+date can be the change of run rather than the ocean.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/variable_dictionary.html">variable_dictionary</a></span><span class="op">(</span><span class="op">)</span>   <span class="co"># Copernicus</span></span>
 <span><span class="fu"><a href="../reference/fvcom_dictionary.html">fvcom_dictionary</a></span><span class="op">(</span><span class="op">)</span>      <span class="co"># FVCOM</span></span>

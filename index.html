@@ -417,7 +417,14 @@
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/hycom_covering.html">hycom_covering</a></span><span class="op">(</span><span class="st">"2019-06-15"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "GLBv930" "GLBy930"</span></span></code></pre></div>
-<p>The seam that matters is the <strong>run</strong>, not the grid. Note also that some three-hourly steps are simply absent, so a daily request at a missing hour skips that day and warns.</p>
+<p><code>archive = "continuous"</code> reads across the archives instead, spanning the whole 1994–2024 record in one call. It is opt-in because <strong>the seam that matters is the run, not the grid</strong>: crossing out of the reanalysis leaves one consistent hindcast for the model as it was running at the time, so a step in a series across that date can be the change of run rather than the ocean. The call warns once, naming the day it happens, and records the archive on every row:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessHYCOM.html">accessHYCOM</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"BOTS"</span>, years <span class="op">=</span> <span class="fl">2014</span><span class="op">:</span><span class="fl">2019</span>, months <span class="op">=</span> <span class="fl">6</span>,</span>
+<span>                   bounding_box <span class="op">=</span> <span class="va">bb</span>, archive <span class="op">=</span> <span class="st">"continuous"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/source_of.html">source_of</a></span><span class="op">(</span><span class="va">env</span><span class="op">)</span></span>
+<span><span class="co">#&gt; "hycom:GLBv53X+hycom:GLBv930"</span></span></code></pre></div>
+<p><code><a href="reference/matchData.html">matchData()</a></code> carries that into <code>&lt;var&gt;_source</code> per row, so a value from the operational model never claims to be the reanalysis.</p>
+<p>Note also that some three-hourly steps are simply absent, so a daily request at a missing hour skips that day and warns.</p>
 </div>
 <div class="section level2">
 <h2 id="ccmp">CCMP<a class="anchor" aria-label="anchor" href="#ccmp"></a>
@@ -490,7 +497,7 @@
 <h2 id="working-with-what-comes-back">Working with what comes back<a class="anchor" aria-label="anchor" href="#working-with-what-comes-back"></a>
 </h2>
 <p>Everything an access function returns is the same shape, so the same tools apply whichever source produced it:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/upscale_grid.html">upscale_grid</a></span><span class="op">(</span><span class="va">chl</span>, to <span class="op">=</span> <span class="va">sst</span><span class="op">)</span>             <span class="co"># onto another product's grid</span></span>
 <span><span class="fu"><a href="reference/downscale_grid.html">downscale_grid</a></span><span class="op">(</span><span class="va">sst</span>, to <span class="op">=</span> <span class="fl">0.05</span><span class="op">)</span>          <span class="co"># onto a finer one</span></span>
 <span><span class="fu"><a href="reference/upscale_time.html">upscale_time</a></span><span class="op">(</span><span class="va">hourly</span>, to <span class="op">=</span> <span class="st">"day"</span><span class="op">)</span>        <span class="co"># hour -&gt; day -&gt; month -&gt; year</span></span>
@@ -510,7 +517,7 @@
 <h2 id="static-and-basin-scale-covariates">Static and basin-scale covariates<a class="anchor" aria-label="anchor" href="#static-and-basin-scale-covariates"></a>
 </h2>
 <p>Two kinds of covariate are not gridded fields on a time step, and neither is attached with <code><a href="reference/matchData.html">matchData()</a></code>:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bathy</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/fetch_bathymetry.html">fetch_bathymetry</a></span><span class="op">(</span>bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
 <span><span class="va">observations</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/attach_bathymetry.html">attach_bathymetry</a></span><span class="op">(</span><span class="va">observations</span>, <span class="va">bathy</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"DEPTH"</span>, <span class="st">"SLOPE"</span>, <span class="st">"TPI"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
@@ -522,7 +529,7 @@
 <h2 id="putting-it-together">Putting it together<a class="anchor" aria-label="anchor" href="#putting-it-together"></a>
 </h2>
 <p>Physical, biological, seafloor and basin-scale covariates onto one table of observations. The whole thing is a pipeline of joins; each step adds columns and never changes the number of rows:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bb</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>xmin <span class="op">=</span> <span class="op">-</span><span class="fl">70</span>, xmax <span class="op">=</span> <span class="op">-</span><span class="fl">66</span>, ymin <span class="op">=</span> <span class="fl">41</span>, ymax <span class="op">=</span> <span class="fl">44</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">phys</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessCopernicus.html">accessCopernicus</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SST"</span>, <span class="st">"SSS"</span>, <span class="st">"MLD"</span><span class="op">)</span>,</span>
@@ -642,7 +649,7 @@
 <h2 id="citing">Citing<a class="anchor" aria-label="anchor" href="#citing"></a>
 </h2>
 <p>Everything datamatch returns comes from someone else’s data, and the obligation to cite travels with the data rather than with this package. <strong>Cite whichever products you actually used</strong> — <a href="https://chross22.github.io/datamatch/articles/sources.html#what-to-cite">Choosing a data source</a> lists them all with DOIs, <code><a href="reference/variable_dictionary.html">variable_dictionary()</a></code> links to each Copernicus product page, and <code><a href="reference/index_dictionary.html">index_dictionary()</a></code>, <code><a href="reference/fvcom_archives.html">fvcom_archives()</a></code>, <code><a href="reference/hycom_archives.html">hycom_archives()</a></code> and <code><a href="reference/ccmp_versions.html">ccmp_versions()</a></code> carry their references at runtime.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"datamatch"</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>

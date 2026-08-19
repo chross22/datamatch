@@ -8,32 +8,22 @@ step.
 
 ``` r
 accessCopernicus(
-  product_id = NULL,
-  dataset_id = NULL,
   vars,
   years = NULL,
   months = NULL,
   bounding_box,
-  depth = c(0, 1),
-  overwrite = FALSE,
-  n_workers = 4,
-  frequency = c("monthly", "daily", "hourly"),
   dates = NULL,
-  mode = c("reanalysis", "forecast")
+  frequency = c("monthly", "daily", "hourly"),
+  depth = c(0, 1),
+  mode = c("reanalysis", "forecast"),
+  product_id = NULL,
+  dataset_id = NULL,
+  n_workers = 4,
+  overwrite = FALSE
 )
 ```
 
 ## Arguments
-
-- product_id:
-
-  product identification string from the Copernicus Marine Data Store.
-  Optional when `vars` are catalog names.
-
-- dataset_id:
-
-  dataset identification string from the Copernicus Marine Data Store.
-  Optional when `vars` are catalog names.
 
 - vars:
 
@@ -54,20 +44,13 @@ accessCopernicus(
 
   named list of spatial coordinates of bounding box
 
-- depth:
+- dates:
 
-  depth range to access (in meters). Widened to the whole water column
-  for a derived variable such as `BOTS`, which needs it, unless given
-  explicitly.
-
-- overwrite:
-
-  whether or not to overwrite the data if it exists locally
-
-- n_workers:
-
-  how many days to download at once. See the Downloading in parallel
-  section. Use `n_workers = 1` to download one day at a time.
+  the exact dates to fetch, as `YYYYMMDD` strings, `YYYY-MM-DD` strings,
+  or `Date` objects. `NULL`, the default, fetches every day of the
+  requested months instead. Passing `dates` implies
+  `frequency = "daily"` and replaces `years` and `months`, which must
+  then not be given. See the Fetching specific dates section.
 
 - frequency:
 
@@ -76,13 +59,11 @@ accessCopernicus(
   daily data and Hourly wind sections. Ignored when `dataset_id` is
   given, since the dataset itself fixes the step.
 
-- dates:
+- depth:
 
-  the exact dates to fetch, as `YYYYMMDD` strings, `YYYY-MM-DD` strings,
-  or `Date` objects. `NULL`, the default, fetches every day of the
-  requested months instead. Passing `dates` implies
-  `frequency = "daily"` and replaces `years` and `months`, which must
-  then not be given. See the Fetching specific dates section.
+  depth range to access (in meters). Widened to the whole water column
+  for a derived variable such as `BOTS`, which needs it, unless given
+  explicitly.
 
 - mode:
 
@@ -92,6 +73,25 @@ accessCopernicus(
   [`forecast_variables()`](https://chross22.github.io/datamatch/reference/forecast_variables.md)
   for which variables have a forecast equivalent and how the identifiers
   differ.
+
+- product_id:
+
+  product identification string from the Copernicus Marine Data Store.
+  Optional when `vars` are catalog names.
+
+- dataset_id:
+
+  dataset identification string from the Copernicus Marine Data Store.
+  Optional when `vars` are catalog names.
+
+- n_workers:
+
+  how many days to download at once. See the Downloading in parallel
+  section. Use `n_workers = 1` to download one day at a time.
+
+- overwrite:
+
+  whether or not to overwrite the data if it exists locally
 
 ## Value
 

@@ -50,18 +50,18 @@ it as an <code>sf</code> point object with one row per grid cell and time step.<
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">accessCopernicus</span><span class="op">(</span></span>
-<span>  product_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  dataset_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">vars</span>,</span>
 <span>  years <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  months <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">bounding_box</span>,</span>
-<span>  depth <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span>,</span>
-<span>  overwrite <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  n_workers <span class="op">=</span> <span class="fl">4</span>,</span>
-<span>  frequency <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"monthly"</span>, <span class="st">"daily"</span>, <span class="st">"hourly"</span><span class="op">)</span>,</span>
 <span>  dates <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  mode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"reanalysis"</span>, <span class="st">"forecast"</span><span class="op">)</span></span>
+<span>  frequency <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"monthly"</span>, <span class="st">"daily"</span>, <span class="st">"hourly"</span><span class="op">)</span>,</span>
+<span>  depth <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span>,</span>
+<span>  mode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"reanalysis"</span>, <span class="st">"forecast"</span><span class="op">)</span>,</span>
+<span>  product_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  dataset_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  n_workers <span class="op">=</span> <span class="fl">4</span>,</span>
+<span>  overwrite <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -69,17 +69,7 @@ it as an <code>sf</code> point object with one row per grid cell and time step.<
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
-<dl><dt id="arg-product-id">product_id<a class="anchor" aria-label="anchor" href="#arg-product-id"></a></dt>
-<dd><p><char> product identification string from the Copernicus
-Marine Data Store. Optional when <code>vars</code> are catalog names.</char></p></dd>
-
-
-<dt id="arg-dataset-id">dataset_id<a class="anchor" aria-label="anchor" href="#arg-dataset-id"></a></dt>
-<dd><p><char> dataset identification string from the Copernicus
-Marine Data Store. Optional when <code>vars</code> are catalog names.</char></p></dd>
-
-
-<dt id="arg-vars">vars<a class="anchor" aria-label="anchor" href="#arg-vars"></a></dt>
+<dl><dt id="arg-vars">vars<a class="anchor" aria-label="anchor" href="#arg-vars"></a></dt>
 <dd><p><char> variables to access: names from <code><a href="variable_dictionary.html">variable_dictionary()</a></code>,
 raw Copernicus variable codes, or a mixture</char></p></dd>
 
@@ -98,20 +88,12 @@ given.</numeric></p></dd>
 <dd><p><list> named list of spatial coordinates of bounding box</list></p></dd>
 
 
-<dt id="arg-depth">depth<a class="anchor" aria-label="anchor" href="#arg-depth"></a></dt>
-<dd><p><numeric> depth range to access (in meters). Widened to the whole
-water column for a derived variable such as <code>BOTS</code>, which needs it, unless
-given explicitly.</numeric></p></dd>
-
-
-<dt id="arg-overwrite">overwrite<a class="anchor" aria-label="anchor" href="#arg-overwrite"></a></dt>
-<dd><p><logical> whether or not to overwrite the data if it exists locally</logical></p></dd>
-
-
-<dt id="arg-n-workers">n_workers<a class="anchor" aria-label="anchor" href="#arg-n-workers"></a></dt>
-<dd><p><integer> how many days to download at once. See the
-Downloading in parallel section. Use <code>n_workers = 1</code> to download one day at
-a time.</integer></p></dd>
+<dt id="arg-dates">dates<a class="anchor" aria-label="anchor" href="#arg-dates"></a></dt>
+<dd><p>the exact dates to fetch, as <code>YYYYMMDD</code> strings,
+<code>YYYY-MM-DD</code> strings, or <code>Date</code> objects. <code>NULL</code>, the default, fetches every
+day of the requested months instead. Passing <code>dates</code> implies
+<code>frequency = "daily"</code> and replaces <code>years</code> and <code>months</code>, which must then not
+be given. See the Fetching specific dates section.</p></dd>
 
 
 <dt id="arg-frequency">frequency<a class="anchor" aria-label="anchor" href="#arg-frequency"></a></dt>
@@ -121,12 +103,10 @@ See the Monthly and daily data and Hourly wind sections. Ignored when
 <code>dataset_id</code> is given, since the dataset itself fixes the step.</char></p></dd>
 
 
-<dt id="arg-dates">dates<a class="anchor" aria-label="anchor" href="#arg-dates"></a></dt>
-<dd><p>the exact dates to fetch, as <code>YYYYMMDD</code> strings,
-<code>YYYY-MM-DD</code> strings, or <code>Date</code> objects. <code>NULL</code>, the default, fetches every
-day of the requested months instead. Passing <code>dates</code> implies
-<code>frequency = "daily"</code> and replaces <code>years</code> and <code>months</code>, which must then not
-be given. See the Fetching specific dates section.</p></dd>
+<dt id="arg-depth">depth<a class="anchor" aria-label="anchor" href="#arg-depth"></a></dt>
+<dd><p><numeric> depth range to access (in meters). Widened to the whole
+water column for a derived variable such as <code>BOTS</code>, which needs it, unless
+given explicitly.</numeric></p></dd>
 
 
 <dt id="arg-mode">mode<a class="anchor" aria-label="anchor" href="#arg-mode"></a></dt>
@@ -134,6 +114,26 @@ be given. See the Fetching specific dates section.</p></dd>
 or <code>"forecast"</code> for the analysis-and-forecast products, which run to about
 ten days ahead. See <code><a href="forecast_variables.html">forecast_variables()</a></code> for which variables have a
 forecast equivalent and how the identifiers differ.</char></p></dd>
+
+
+<dt id="arg-product-id">product_id<a class="anchor" aria-label="anchor" href="#arg-product-id"></a></dt>
+<dd><p><char> product identification string from the Copernicus
+Marine Data Store. Optional when <code>vars</code> are catalog names.</char></p></dd>
+
+
+<dt id="arg-dataset-id">dataset_id<a class="anchor" aria-label="anchor" href="#arg-dataset-id"></a></dt>
+<dd><p><char> dataset identification string from the Copernicus
+Marine Data Store. Optional when <code>vars</code> are catalog names.</char></p></dd>
+
+
+<dt id="arg-n-workers">n_workers<a class="anchor" aria-label="anchor" href="#arg-n-workers"></a></dt>
+<dd><p><integer> how many days to download at once. See the
+Downloading in parallel section. Use <code>n_workers = 1</code> to download one day at
+a time.</integer></p></dd>
+
+
+<dt id="arg-overwrite">overwrite<a class="anchor" aria-label="anchor" href="#arg-overwrite"></a></dt>
+<dd><p><logical> whether or not to overwrite the data if it exists locally</logical></p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -28,7 +28,10 @@ the GOM3 hindcast stops in 2013 and the GOM7 forecast archive starts in
 2025, on a different mesh. **HYCOM reaches 2024 only by crossing from
 the reanalysis into a series of operational experiments**, which is a
 seam in how the values were produced. `hycom_covering(date)` says which
-archives hold a given day.
+archives hold a given day, and `accessHYCOM(archive = "continuous")`
+reads across them in one call — warning once at the crossing, and
+recording on every row which run it came from, since a step in a series
+across that date can be the change of run rather than the ocean.
 
 ``` r
 

@@ -2,6 +2,60 @@
 
 ## datamatch 0.2.0
 
+### New features
+
+- **`accessHYCOM(archive = "continuous")` reads across the archives.**
+  HYCOM reaches 1994 to September 2024, but only as a reanalysis
+  followed by a chain of shorter operational experiments, and until now
+  that meant one call per archive. `"continuous"` picks an archive per
+  day — the reanalysis wherever it reaches, the earliest-starting
+  operational archive after that — so a single call spans the record.
+
+  It is opt-in, and the default is unchanged, because the seam is real:
+  crossing out of the reanalysis leaves one internally consistent
+  hindcast for the model as it was running at the time, so a step in a
+  series across that date can be the change of run rather than a change
+  in the ocean. The call warns once, naming the day it happens and the
+  archives it used.
+
+  **Provenance is recorded per row** for such a fetch, rather than once
+  for the object, so a value from the operational model never claims to
+  be the reanalysis.
+  [`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
+  reports every run present, and
+  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+  carries the per-row tag into `<var>_source`. A continuous read that
+  never leaves one archive is stamped once, as before.
+
+### Breaking changes
+
+- **[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+  takes its arguments in the same order as the other four access
+  functions.** It led with `product_id` and `dataset_id`, where
+  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
+  [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
+  [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+  and
+  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+  all lead with `vars`. All five now open
+  `vars, years, months, bounding_box, dates`, put `frequency` sixth
+  where the source has more than one step, and end with `overwrite`; the
+  source-specific arguments sit between. Swapping one access function
+  for another is now a rename rather than a rewrite.
+
+  Calls that name their arguments — every example in the documentation,
+  and every call in datamatch, taupatch, derivoce and msomgom — are
+  unaffected. A call written positionally against the old order would
+  now put a product identifier into `vars`, which would fetch nothing
+  rather than fail, so that case is caught at the call with a message
+  saying what changed.
+
+  `product_id` and `dataset_id` can usually be dropped entirely; they
+  are inferred from the variable names.
+
+  A new test file pins the shared order, so the five cannot drift apart
+  again.
+
 ### Documentation
 
 - **The README is now a front door rather than a manual.** It had grown

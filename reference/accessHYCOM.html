@@ -106,9 +106,13 @@ be a multiple of 3, since that is the model's step.</integer></p></dd>
 
 
 <dt id="arg-archive">archive<a class="anchor" aria-label="anchor" href="#arg-archive"></a></dt>
-<dd><p><char> which archive to read, from <code><a href="hycom_archives.html">hycom_archives()</a></code>. The
-default is the 1994–2015 reanalysis; later years live in the operational
-archives, which <code><a href="hycom_covering.html">hycom_covering()</a></code> will name for a given date.</char></p></dd>
+<dd><p><char> which archive to read, from <code><a href="hycom_archives.html">hycom_archives()</a></code>, or
+<code>"continuous"</code> to read across them. The default is the 1994–2015
+reanalysis; later years live in the operational archives, which
+<code><a href="hycom_covering.html">hycom_covering()</a></code> will name for a given date. <code>"continuous"</code> picks an
+archive per day — the reanalysis wherever it reaches, the earliest-starting
+operational archive after that — and warns once, naming the day the run
+changes. Every row records the archive it came from; see <code><a href="source_of.html">source_of()</a></code>.</char></p></dd>
 
 
 <dt id="arg-overwrite">overwrite<a class="anchor" aria-label="anchor" href="#arg-overwrite"></a></dt>
@@ -166,7 +170,29 @@ says which span a given date:</p>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a></span>
 <span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>recent <span class="ot">&lt;-</span> <span class="fu">accessHYCOM</span>(<span class="at">vars =</span> <span class="st">"BOTS"</span>, <span class="at">dates =</span> <span class="st">"2019-06-15"</span>,</span>
 <span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>                      <span class="at">bounding_box =</span> bb, <span class="at">archive =</span> <span class="st">"GLBy930"</span>)</span></code></pre><p></p></div>
-<p>One archive is read per call, and a request falling outside the one named is
+    </div>
+    <div class="section level2">
+    <h2 id="reading-across-archives">Reading across archives<a class="anchor" aria-label="anchor" href="#reading-across-archives"></a></h2>
+
+
+
+<p><code>archive = "continuous"</code> spans the whole 1994–2024 record in one call, rather
+than one archive per call. It is opt-in because the seam is real: crossing out
+of <code>GLBv53X</code> leaves an internally consistent reanalysis for the model as it
+was running at the time, so a step in a series across that date can be the
+change of run rather than a change in the ocean. The call warns once, naming
+the day it happens.</p>
+<p>The grids mostly agree — <code>GLBv0.08</code> and <code>GLBy0.08</code> hold the same 126 latitudes
+between 40 and 45 °N — so on a mid-latitude shelf the cells line up across the
+seam. It is the run that changes, not the geometry.</p>
+<p>Provenance is recorded per row rather than per fetch, so a value from the
+operational model never claims to be the reanalysis. <code><a href="matchData.html">matchData()</a></code> carries
+that into <code>&lt;var&gt;_source</code>.</p>
+<p></p><div class="sourceCode r"><pre><code><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/accessHYCOM.html">accessHYCOM</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"BOTS"</span>, years <span class="op">=</span> <span class="fl">2014</span><span class="op">:</span><span class="fl">2019</span>, months <span class="op">=</span> <span class="fl">6</span>,</span>
+<span>                   bounding_box <span class="op">=</span> <span class="va">bb</span>, archive <span class="op">=</span> <span class="st">"continuous"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/source_of.html">source_of</a></span><span class="op">(</span><span class="va">env</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [1] "hycom:GLBv53X+hycom:GLBv563+hycom:GLBv930"</span></span></code></pre><p></p></div>
+<p>One archive is read per call otherwise, and a request falling outside the one named is
 told which others hold it rather than being stitched to them silently. The
 archives overlap, so where two cover a date there is a real choice between
 the more consistent run and the more recent one, and crossing from the

@@ -66,11 +66,15 @@ accessHYCOM(
 - archive:
 
   which archive to read, from
-  [`hycom_archives()`](https://chross22.github.io/datamatch/reference/hycom_archives.md).
-  The default is the 1994–2015 reanalysis; later years live in the
-  operational archives, which
+  [`hycom_archives()`](https://chross22.github.io/datamatch/reference/hycom_archives.md),
+  or `"continuous"` to read across them. The default is the 1994–2015
+  reanalysis; later years live in the operational archives, which
   [`hycom_covering()`](https://chross22.github.io/datamatch/reference/hycom_covering.md)
-  will name for a given date.
+  will name for a given date. `"continuous"` picks an archive per day —
+  the reanalysis wherever it reaches, the earliest-starting operational
+  archive after that — and warns once, naming the day the run changes.
+  Every row records the archive it came from; see
+  [`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md).
 
 - overwrite:
 
@@ -136,14 +140,37 @@ says which span a given date:
     recent <- accessHYCOM(vars = "BOTS", dates = "2019-06-15",
                           bounding_box = bb, archive = "GLBy930")
 
-One archive is read per call, and a request falling outside the one
-named is told which others hold it rather than being stitched to them
-silently. The archives overlap, so where two cover a date there is a
-real choice between the more consistent run and the more recent one, and
-crossing from the reanalysis into an operational run is a discontinuity
-in how the values were made. The grids themselves agree through the
-middle latitudes, so on a shelf the cells line up across the seam even
-though the runs do not — see
+## Reading across archives
+
+`archive = "continuous"` spans the whole 1994–2024 record in one call,
+rather than one archive per call. It is opt-in because the seam is real:
+crossing out of `GLBv53X` leaves an internally consistent reanalysis for
+the model as it was running at the time, so a step in a series across
+that date can be the change of run rather than a change in the ocean.
+The call warns once, naming the day it happens.
+
+The grids mostly agree — `GLBv0.08` and `GLBy0.08` hold the same 126
+latitudes between 40 and 45 °N — so on a mid-latitude shelf the cells
+line up across the seam. It is the run that changes, not the geometry.
+
+Provenance is recorded per row rather than per fetch, so a value from
+the operational model never claims to be the reanalysis.
+[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+carries that into `<var>_source`.
+
+    env <- accessHYCOM(vars = "BOTS", years = 2014:2019, months = 6,
+                       bounding_box = bb, archive = "continuous")
+    source_of(env)
+    #> [1] "hycom:GLBv53X+hycom:GLBv563+hycom:GLBv930"
+
+One archive is read per call otherwise, and a request falling outside
+the one named is told which others hold it rather than being stitched to
+them silently. The archives overlap, so where two cover a date there is
+a real choice between the more consistent run and the more recent one,
+and crossing from the reanalysis into an operational run is a
+discontinuity in how the values were made. The grids themselves agree
+through the middle latitudes, so on a shelf the cells line up across the
+seam even though the runs do not — see
 [`hycom_archives()`](https://chross22.github.io/datamatch/reference/hycom_archives.md).
 
 ## One dataset per year, sometimes
