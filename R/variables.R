@@ -1,7 +1,3 @@
-# Null-coalescing operator. Defined here rather than relying on base R's, which
-# only exists from R 4.4 onward.
-`%||%` <- function(x, y) if (is.null(x)) y else x
-
 #' The columns that stamp a row in time rather than describe conditions
 #'
 #' Everything else in an [accessCopernicus()] result is a covariate, so this is what
