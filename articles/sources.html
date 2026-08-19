@@ -68,22 +68,23 @@
 
     
     
-<p>datamatch fetches from four sources and joins any of them to your
+<p>datamatch fetches from five sources and joins any of them to your
 observations the same way. This is about which one to reach for, and
 what changes when you do.</p>
 <p>Nothing here is downloaded when the vignette is built — the fetches
 are shown but not run, because each needs a network and some need
 several gigabytes.</p>
 <div class="section level2">
-<h2 id="the-four-side-by-side">The four, side by side<a class="anchor" aria-label="anchor" href="#the-four-side-by-side"></a>
+<h2 id="the-five-side-by-side">The five, side by side<a class="anchor" aria-label="anchor" href="#the-five-side-by-side"></a>
 </h2>
-<table class="table">
+<table style="width:100%;" class="table">
 <colgroup>
-<col width="20%">
-<col width="20%">
-<col width="20%">
-<col width="20%">
-<col width="20%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
 </colgroup>
 <thead><tr class="header">
 <th></th>
@@ -91,6 +92,7 @@ several gigabytes.</p>
 <th><code><a href="../reference/accessFVCOM.html">accessFVCOM()</a></code></th>
 <th><code><a href="../reference/accessHYCOM.html">accessHYCOM()</a></code></th>
 <th><code><a href="../reference/accessCCMP.html">accessCCMP()</a></code></th>
+<th><code><a href="../reference/accessERDDAP.html">accessERDDAP()</a></code></th>
 </tr></thead>
 <tbody>
 <tr class="odd">
@@ -99,6 +101,7 @@ several gigabytes.</p>
 <td>NECOFS / any FVCOM</td>
 <td>HYCOM GOFS 3.1</td>
 <td>RSS CCMP v3.1</td>
+<td>NOAA ERDDAP</td>
 </tr>
 <tr class="even">
 <td>Kind</td>
@@ -106,6 +109,7 @@ several gigabytes.</p>
 <td>regional coastal model</td>
 <td>global model</td>
 <td>wind analysis</td>
+<td>satellite analysis</td>
 </tr>
 <tr class="odd">
 <td>Grid</td>
@@ -113,6 +117,7 @@ several gigabytes.</p>
 <td>unstructured mesh</td>
 <td>0.08° regular</td>
 <td>0.25° regular</td>
+<td>0.01°–0.04° regular</td>
 </tr>
 <tr class="even">
 <td>Steps</td>
@@ -120,6 +125,7 @@ several gigabytes.</p>
 <td>monthly (GOM3), hourly (GOM7)</td>
 <td>3-hourly</td>
 <td>6-hourly</td>
+<td>daily</td>
 </tr>
 <tr class="odd">
 <td>Record</td>
@@ -127,6 +133,7 @@ several gigabytes.</p>
 <td>1978–2013, then 2025–</td>
 <td>1994–2024 across archives</td>
 <td>1993–present</td>
+<td>2002– (SST), 2012– (chl)</td>
 </tr>
 <tr class="even">
 <td>Bottom salinity</td>
@@ -134,11 +141,13 @@ several gigabytes.</p>
 <td>free</td>
 <td>free</td>
 <td>—</td>
+<td>—</td>
 </tr>
 <tr class="odd">
 <td>Wind stress</td>
 <td>yes</td>
 <td>GOM3 only</td>
+<td>—</td>
 <td>—</td>
 <td>—</td>
 </tr>
@@ -148,6 +157,15 @@ several gigabytes.</p>
 <td>client-side</td>
 <td>server-side</td>
 <td><strong>whole globe</strong></td>
+<td>server-side</td>
+</tr>
+<tr class="odd">
+<td>Account needed</td>
+<td>yes</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
 </tr>
 </tbody>
 </table>
@@ -163,7 +181,8 @@ given day.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/variable_dictionary.html">variable_dictionary</a></span><span class="op">(</span><span class="op">)</span>   <span class="co"># Copernicus</span></span>
 <span><span class="fu"><a href="../reference/fvcom_dictionary.html">fvcom_dictionary</a></span><span class="op">(</span><span class="op">)</span>      <span class="co"># FVCOM</span></span>
 <span><span class="fu"><a href="../reference/hycom_dictionary.html">hycom_dictionary</a></span><span class="op">(</span><span class="op">)</span>      <span class="co"># HYCOM</span></span>
-<span><span class="fu"><a href="../reference/ccmp_dictionary.html">ccmp_dictionary</a></span><span class="op">(</span><span class="op">)</span>       <span class="co"># CCMP</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/ccmp_dictionary.html">ccmp_dictionary</a></span><span class="op">(</span><span class="op">)</span>       <span class="co"># CCMP</span></span>
+<span><span class="fu"><a href="../reference/erddap_dictionary.html">erddap_dictionary</a></span><span class="op">(</span><span class="op">)</span>     <span class="co"># MUR and VIIRS</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="they-share-variable-names-on-purpose">They share variable names on purpose<a class="anchor" aria-label="anchor" href="#they-share-variable-names-on-purpose"></a>
@@ -216,6 +235,12 @@ archives carry it to September 2024.</p>
 Six-hourly from 1993 to within days of the present, where the Copernicus
 wind is monthly from mid-1994 or hourly only from 2007. But it carries
 no stress.</p>
+<p><strong>Reach for ERDDAP for resolution.</strong> MUR is 0.01° —
+about a kilometre, against nine for the physics reanalysis — and needs
+no account, where the same product at PO.DAAC needs an Earthdata login.
+It is a satellite analysis of the <em>foundation</em> temperature rather
+than a model level, which is a different quantity from a model
+<code>SST</code>, not a better measurement of the same one.</p>
 </div>
 <div class="section level2">
 <h2 id="bottom-salinity-four-ways">Bottom salinity, four ways<a class="anchor" aria-label="anchor" href="#bottom-salinity-four-ways"></a>
@@ -245,8 +270,8 @@ well above it, so the depth is reported rather than left to assume.</p>
 <div class="section level2">
 <h2 id="sub-daily-data-and-means-that-are-not-means">Sub-daily data, and means that are not means<a class="anchor" aria-label="anchor" href="#sub-daily-data-and-means-that-are-not-means"></a>
 </h2>
-<p>All four publish below daily somewhere, and none of them publishes a
-daily mean:</p>
+<p>Four of the five publish below daily somewhere, and none of them
+publishes a daily mean:</p>
 <table class="table">
 <thead><tr class="header">
 <th>Source</th>

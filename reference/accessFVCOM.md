@@ -189,10 +189,14 @@ aggregation, read one month at a time.
 
 [`fvcom_variables()`](https://chross22.github.io/datamatch/reference/fvcom_variables.md)
 for what can be read,
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
-for the Copernicus equivalent,
+[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
+[`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
+[`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+and
+[`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+for the other sources,
 [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
-for joining either to observations
+for joining any of them to observations
 
 ## Examples
 

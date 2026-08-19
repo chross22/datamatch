@@ -2,7 +2,9 @@
 
 Reads HYCOM over OPeNDAP and returns it as an `sf` point object with one
 row per grid cell and time step — the same shape
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
+[`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md),
+[`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
 and
 [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md)
 return, so
@@ -154,9 +156,11 @@ single aggregation and open once.
 
 [`hycom_variables()`](https://chross22.github.io/datamatch/reference/hycom_variables.md)
 for what can be read,
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
+[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
+[`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
 and
-[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md)
+[`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
 for the other sources,
 [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
 for joining any of them

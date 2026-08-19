@@ -1,6 +1,6 @@
 # Choosing a data source
 
-datamatch fetches from four sources and joins any of them to your
+datamatch fetches from five sources and joins any of them to your
 observations the same way. This is about which one to reach for, and
 what changes when you do.
 
@@ -8,18 +8,19 @@ Nothing here is downloaded when the vignette is built — the fetches are
 shown but not run, because each needs a network and some need several
 gigabytes.
 
-## The four, side by side
+## The five, side by side
 
-|  | [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md) | [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md) | [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md) | [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md) |
-|----|----|----|----|----|
-| Source | Copernicus Marine | NECOFS / any FVCOM | HYCOM GOFS 3.1 | RSS CCMP v3.1 |
-| Kind | global reanalysis, forecast, satellite | regional coastal model | global model | wind analysis |
-| Grid | 0.083°–4 km, regular | unstructured mesh | 0.08° regular | 0.25° regular |
-| Steps | monthly, daily, hourly | monthly (GOM3), hourly (GOM7) | 3-hourly | 6-hourly |
-| Record | 1993– | 1978–2013, then 2025– | 1994–2024 across archives | 1993–present |
-| Bottom salinity | derived | free | free | — |
-| Wind stress | yes | GOM3 only | — | — |
-| Subsetting | server-side | client-side | server-side | **whole globe** |
+|  | [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md) | [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md) | [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md) | [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md) | [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md) |
+|----|----|----|----|----|----|
+| Source | Copernicus Marine | NECOFS / any FVCOM | HYCOM GOFS 3.1 | RSS CCMP v3.1 | NOAA ERDDAP |
+| Kind | global reanalysis, forecast, satellite | regional coastal model | global model | wind analysis | satellite analysis |
+| Grid | 0.083°–4 km, regular | unstructured mesh | 0.08° regular | 0.25° regular | 0.01°–0.04° regular |
+| Steps | monthly, daily, hourly | monthly (GOM3), hourly (GOM7) | 3-hourly | 6-hourly | daily |
+| Record | 1993– | 1978–2013, then 2025– | 1994–2024 across archives | 1993–present | 2002– (SST), 2012– (chl) |
+| Bottom salinity | derived | free | free | — | — |
+| Wind stress | yes | GOM3 only | — | — | — |
+| Subsetting | server-side | client-side | server-side | **whole globe** | server-side |
+| Account needed | yes | no | no | no | no |
 
 Two of those records are chains rather than one run, and the gaps matter
 more than the endpoints. **FVCOM has nothing between 2014 and 2024** —
@@ -35,6 +36,7 @@ variable_dictionary()   # Copernicus
 fvcom_dictionary()      # FVCOM
 hycom_dictionary()      # HYCOM
 ccmp_dictionary()       # CCMP
+erddap_dictionary()     # MUR and VIIRS
 ```
 
 ## They share variable names on purpose
@@ -97,6 +99,13 @@ operational archives carry it to September 2024.
 within days of the present, where the Copernicus wind is monthly from
 mid-1994 or hourly only from 2007. But it carries no stress.
 
+**Reach for ERDDAP for resolution.** MUR is 0.01° — about a kilometre,
+against nine for the physics reanalysis — and needs no account, where
+the same product at PO.DAAC needs an Earthdata login. It is a satellite
+analysis of the *foundation* temperature rather than a model level,
+which is a different quantity from a model `SST`, not a better
+measurement of the same one.
+
 ## Bottom salinity, four ways
 
 `BOTS` is the clearest case of the same name costing different amounts:
@@ -126,8 +135,8 @@ depth is reported rather than left to assume.
 
 ## Sub-daily data, and means that are not means
 
-All four publish below daily somewhere, and none of them publishes a
-daily mean:
+Four of the five publish below daily somewhere, and none of them
+publishes a daily mean:
 
 | Source          | Native step | `frequency`                              |
 |-----------------|-------------|------------------------------------------|

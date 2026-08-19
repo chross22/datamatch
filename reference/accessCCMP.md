@@ -4,9 +4,10 @@ Downloads the CCMP wind analysis from Remote Sensing Systems and returns
 it as an `sf` point object with one row per grid cell and time step —
 the same shape
 [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
-[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md)
-and
+[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
 [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md)
+and
+[`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
 return, so
 [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
 joins it unchanged.

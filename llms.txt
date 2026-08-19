@@ -11,7 +11,7 @@ names:
 
 | Source | Function | Gives | Steps | Record |
 |----|----|----|----|----|
-| [Copernicus Marine](#quick-start) | [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md) | physics, biogeochemistry, ocean colour, wind and stress | monthly, daily, hourly | 1993– |
+| [Copernicus Marine](#copernicus-marine-the-widest-catalog) | [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md) | physics, biogeochemistry, ocean colour, wind and stress | monthly, daily, hourly | 1993– |
 | [FVCOM / NECOFS](#fvcom-a-regional-model-on-an-unstructured-mesh) | [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md) | coastal model on a triangular mesh | monthly, hourly | 1978–2013, then 2025– |
 | [HYCOM](#hycom-and-bottom-fields-for-free) | [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md) | independent global model, sea-floor fields | 3-hourly | 1994–2024 |
 | [CCMP](#ccmp-the-long-wind-record) | [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md) | surface winds | 6-hourly | 1993–present |
@@ -39,16 +39,13 @@ matched <- matchData(matched,      accessCCMP(vars = "WSPD", ...))
 > [`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
 > reads it back.
 
-**How to read the rest of this.** [Quick start](#quick-start) and
-[Variable names](#variable-names) use Copernicus throughout, because it
-has the widest variable list and the setup everything else builds on —
-but nearly all of it (matching, resampling, plotting, the time-step
-rules) applies to every source. The other four get their own sections
-under [The five
-sources](#fvcom-a-regional-model-on-an-unstructured-mesh), and the
-[“Choosing a data
+**How this is laid out.** [Quick start](#quick-start) shows the pattern,
+then each of the five sources gets a section of its own — what it holds,
+over what record, and what it will not do. Everything after them is
+shared: matching, resampling, plotting and the rest work the same
+whichever source produced the data. The [“Choosing a data
 source”](https://chross22.github.io/datamatch/articles/sources.html)
-vignette compares them side by side if that is what you came for.
+vignette compares the five side by side if that is what you came for.
 
 **Contents**
 
@@ -61,36 +58,46 @@ vignette compares them side by side if that is what you came for.
   - [Monthly, daily, or hourly](#monthly-daily-or-hourly)
   - [Downloads run in parallel](#downloads-run-in-parallel)
 
-**Choosing what to fetch**
+**The five sources**
 
-- [Variable names](#variable-names) — request `SST` rather than `thetao`
+- [Copernicus Marine](#copernicus-marine-the-widest-catalog) —
+  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
+  1993–
+  - [Variable names](#variable-names) — request `SST` rather than
+    `thetao`
   - [Satellite or model?](#satellite-or-model)
   - [Winds](#winds)
   - [Bottom salinity](#bottom-salinity)
-- [Spatial and temporal resolution](#spatial-and-temporal-resolution)
-- [Forecasts](#forecasts) — the same variables, ten days ahead
-
-**The five sources**
-
+  - [Spatial and temporal resolution](#spatial-and-temporal-resolution)
+  - [Forecasts](#forecasts) — ten days ahead
 - [FVCOM, a regional model on an unstructured
-  mesh](#fvcom-a-regional-model-on-an-unstructured-mesh) — NECOFS,
+  mesh](#fvcom-a-regional-model-on-an-unstructured-mesh) —
+  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
   1978–2013 and 2025–
 - [HYCOM, and bottom fields for free](#hycom-and-bottom-fields-for-free)
-  — GOFS 3.1, 1994–2024
-- [CCMP, the long wind record](#ccmp-the-long-wind-record) — six-hourly
-  winds, 1993–present
-- [MUR and VIIRS, through ERDDAP](#mur-and-viirs-through-erddap) — 0.01°
-  satellite SST, and chlorophyll
+  —
+  [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
+  1994–2024
+- [CCMP, the long wind record](#ccmp-the-long-wind-record) —
+  [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md),
+  six-hourly, 1993–present
+- [MUR and VIIRS, through ERDDAP](#mur-and-viirs-through-erddap) —
+  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md),
+  0.01° satellite SST
 
-**Putting it to use**
+**Working with what you fetched** — the same for every source
 
+- [Matching](#matching) — the spatiotemporal join
 - [Working with what comes back](#working-with-what-comes-back) —
   resampling, gap filling, plots
 - [Static and basin-scale
   covariates](#static-and-basin-scale-covariates) — seafloor terrain and
   climate indices
 - [Putting it together](#putting-it-together) — a full worked example
-- [Matching](#matching) — a general spatiotemporal join
+- [Depositing what you made](#depositing-what-you-made) — EML metadata
+
+**Reference**
+
 - [Function reference](#function-reference) — everything the package
   exports
 - [Vignettes](#vignettes)
@@ -327,7 +334,15 @@ not abandon the others.
 back](https://chross22.github.io/datamatch/articles/working-with-data.html#downloads-run-in-parallel)
 has the timings and what raising it actually buys.
 
-## Variable names
+## Copernicus Marine, the widest catalog
+
+[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md).
+The widest catalog and the longest record: physics, biogeochemistry,
+satellite ocean colour, and surface wind and stress, from 1993 with a
+forecast running ten days ahead. It is the only source needing an
+account, and the one the Quick start above uses.
+
+#### Variable names
 
 Copernicus variable codes are terse and easy to misremember. `thetao` is
 temperature, `mlotst` is mixed layer depth, `zos` is sea surface height.
@@ -501,7 +516,7 @@ Existing calls need no change. Anything outside the dictionary is passed
 through to the API with a warning, since Copernicus serves far more than
 this catalog covers.
 
-### Satellite or model?
+#### Satellite or model?
 
 Chlorophyll and primary production come from two very different places.
 `CHL` and `PP` are Copernicus-GlobColour satellite retrievals —
@@ -517,7 +532,7 @@ quantity.** `PP` is depth-integrated (mg/m2/day), `NPP_MODEL` volumetric
 source](https://chross22.github.io/datamatch/articles/sources.html#satellite-or-model)
 covers the trade in full.
 
-### Winds
+#### Winds
 
 Six wind variables come from the Copernicus L4 wind product —
 scatterometer retrievals blended with an ECMWF model background. They
@@ -584,7 +599,7 @@ Wind has no forecast, either. Copernicus publishes a near-real-time wind
 analysis, but it is hourly only and reaches the present rather than past
 it.
 
-### Bottom salinity
+#### Bottom salinity
 
 `BOTS` costs a different amount depending on where it comes from.
 GLORYS12V1 publishes no sea-floor salinity, so in reanalysis mode it is
@@ -597,7 +612,7 @@ sigma or bottom fields, it is an ordinary request.
 source](https://chross22.github.io/datamatch/articles/sources.html#bottom-salinity-four-ways)
 shows all four ways side by side.
 
-## Spatial and temporal resolution
+#### Spatial and temporal resolution
 
 Products do not share a grid, so how resolution is handled matters:
 
@@ -653,7 +668,7 @@ and
 [`downscale_grid()`](https://chross22.github.io/datamatch/reference/downscale_grid.md)
 are how you act on that decision.
 
-## Forecasts
+#### Forecasts
 
 The same variables can be requested from the analysis-and-forecast
 products, which run to about ten days ahead:
@@ -1070,6 +1085,39 @@ the same way
 [`fvcom_archive()`](https://chross22.github.io/datamatch/reference/fvcom_archive.md)
 does for FVCOM.
 
+## Matching
+
+`matchData(dat, source)` joins each row of `dat` to the nearest feature
+of `source` within the same time period, and returns `dat` with
+`source`’s columns added.
+
+``` r
+
+matched <- matchData(observations, env)
+```
+
+**Neither side has to be observations or environmental data.** It is a
+spatiotemporal nearest-feature join between two `sf` point objects
+carrying `YEAR`/`MONTH`/`DAY`, so it works equally for stations against
+a covariate grid, tag positions against a model field, moorings against
+satellite retrievals, or one gridded product against another. The
+arguments are named `dat` and `source` for that reason.
+
+Matching happens at **`source`’s** temporal resolution, inferred from
+its time steps. That matters for monthly products: a monthly mean
+carries one time step per month while observations fall on arbitrary
+days, so matching on exact dates would match nothing. Pass
+`temporal_resolution` to override.
+
+Rows falling in a period `source` does not cover are returned with `NA`
+and a warning naming the periods, rather than being dropped silently.
+One row out per row in, always. A `source` column whose name collides
+with one already in `dat` is suffixed `.matched`, so nothing of yours is
+overwritten.
+
+> The arguments used to be `speciesDat` and `envDat`. Those still work
+> and warn; they will be removed in a later version.
+
 ## Working with what comes back
 
 Everything an access function returns is the same shape, so the same
@@ -1133,48 +1181,6 @@ covariates**](https://chross22.github.io/datamatch/articles/covariates.html)
 covers what TPI actually measures, which index to choose and why they
 are not interchangeable, the `LCR` and `AMOC` caveats, and how the index
 cache expires on each provider’s publishing cadence.
-
-## Depositing what you made
-
-[`write_eml()`](https://chross22.github.io/datamatch/reference/write_eml.md)
-writes [Ecological Metadata Language](https://eml.ecoinformatics.org/)
-for a matched table — the standard EDI, LTER and DataONE expect
-alongside a deposited dataset:
-
-``` r
-
-write_eml(
-  matched, "matched.xml",
-  title = "Bottom conditions at trawl stations, Gulf of Maine",
-  creator = list(individualName = list(givenName = "Camille", surName = "Ross"),
-                 userId = list(directory = "https://orcid.org",
-                               userId = "0000-0002-1428-2294")),
-  abstract = "Survey stations with environmental covariates matched by datamatch."
-)
-```
-
-Most of the document is filled in from the data: the bounding box and
-date range from the object itself, and an attribute for every column
-with its definition, units and measurement scale taken from whichever
-source catalog defines that name.
-
-The part worth having is the **methods section**. Because
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
-records `<var>_source` on every join, a table with four sources chained
-onto it produces a methods statement naming all four and a citation for
-each — which is otherwise the most tedious part of depositing a derived
-dataset, and the easiest to get wrong. `title`, `creator` and `abstract`
-are yours to supply; nothing else needs to be.
-
-> One detail that would otherwise bite at submission rather than at
-> write time: EML validates units against a fixed vocabulary, and
-> **`PSU` and `N/m²` are not in it**. Both are written as custom units
-> and declared in the document’s own `unitList`, so what comes out
-> validates.
-> [`write_eml()`](https://chross22.github.io/datamatch/reference/write_eml.md)
-> checks that before returning.
-
-Needs the `emld` package, a `Suggests`.
 
 ## Putting it together
 
@@ -1257,38 +1263,47 @@ itself rather than the observations. Regrid first, then match:
 phys_coarse <- upscale_grid(phys, to = bio)    # 0.083° onto the 0.25° BGC grid
 ```
 
-## Matching
+## Depositing what you made
 
-`matchData(dat, source)` joins each row of `dat` to the nearest feature
-of `source` within the same time period, and returns `dat` with
-`source`’s columns added.
+[`write_eml()`](https://chross22.github.io/datamatch/reference/write_eml.md)
+writes [Ecological Metadata Language](https://eml.ecoinformatics.org/)
+for a matched table — the standard EDI, LTER and DataONE expect
+alongside a deposited dataset:
 
 ``` r
 
-matched <- matchData(observations, env)
+write_eml(
+  matched, "matched.xml",
+  title = "Bottom conditions at trawl stations, Gulf of Maine",
+  creator = list(individualName = list(givenName = "Camille", surName = "Ross"),
+                 userId = list(directory = "https://orcid.org",
+                               userId = "0000-0002-1428-2294")),
+  abstract = "Survey stations with environmental covariates matched by datamatch."
+)
 ```
 
-**Neither side has to be observations or environmental data.** It is a
-spatiotemporal nearest-feature join between two `sf` point objects
-carrying `YEAR`/`MONTH`/`DAY`, so it works equally for stations against
-a covariate grid, tag positions against a model field, moorings against
-satellite retrievals, or one gridded product against another. The
-arguments are named `dat` and `source` for that reason.
+Most of the document is filled in from the data: the bounding box and
+date range from the object itself, and an attribute for every column
+with its definition, units and measurement scale taken from whichever
+source catalog defines that name.
 
-Matching happens at **`source`’s** temporal resolution, inferred from
-its time steps. That matters for monthly products: a monthly mean
-carries one time step per month while observations fall on arbitrary
-days, so matching on exact dates would match nothing. Pass
-`temporal_resolution` to override.
+The part worth having is the **methods section**. Because
+[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+records `<var>_source` on every join, a table with four sources chained
+onto it produces a methods statement naming all four and a citation for
+each — which is otherwise the most tedious part of depositing a derived
+dataset, and the easiest to get wrong. `title`, `creator` and `abstract`
+are yours to supply; nothing else needs to be.
 
-Rows falling in a period `source` does not cover are returned with `NA`
-and a warning naming the periods, rather than being dropped silently.
-One row out per row in, always. A `source` column whose name collides
-with one already in `dat` is suffixed `.matched`, so nothing of yours is
-overwritten.
+> One detail that would otherwise bite at submission rather than at
+> write time: EML validates units against a fixed vocabulary, and
+> **`PSU` and `N/m²` are not in it**. Both are written as custom units
+> and declared in the document’s own `unitList`, so what comes out
+> validates.
+> [`write_eml()`](https://chross22.github.io/datamatch/reference/write_eml.md)
+> checks that before returning.
 
-> The arguments used to be `speciesDat` and `envDat`. Those still work
-> and warn; they will be removed in a later version.
+Needs the `emld` package, a `Suggests`.
 
 ## Function reference
 

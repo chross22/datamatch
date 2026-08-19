@@ -64,7 +64,10 @@
 
 
 <dl><dt id="arg-env-dat">env_dat<a class="anchor" aria-label="anchor" href="#arg-env-dat"></a></dt>
-<dd><p>an <code>sf</code> POINT object from <code><a href="accessEnvDat.html">accessEnvDat()</a></code>, on a regular grid</p></dd>
+<dd><p>an <code>sf</code> POINT object on a regular grid, from <code><a href="accessEnvDat.html">accessEnvDat()</a></code>,
+<code><a href="accessHYCOM.html">accessHYCOM()</a></code>, <code><a href="accessCCMP.html">accessCCMP()</a></code> or <code><a href="accessERDDAP.html">accessERDDAP()</a></code>. Not <code><a href="accessFVCOM.html">accessFVCOM()</a></code>:
+its mesh is unstructured, so there are no rows and columns to aggregate
+over - match it to points, or regrid a regular product onto it.</p></dd>
 
 
 <dt id="arg-to">to<a class="anchor" aria-label="anchor" href="#arg-to"></a></dt>

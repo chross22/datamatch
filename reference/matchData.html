@@ -77,14 +77,15 @@ the error, so nothing has to be guessed at.</sf></p></dd>
 
 
 <dt id="arg-source">source<a class="anchor" aria-label="anchor" href="#arg-source"></a></dt>
-<dd><p><sf object> the points to take values from, typically a grid
-from <code><a href="accessEnvDat.html">accessEnvDat()</a></code>. Must carry <code>YEAR</code>/<code>MONTH</code>/<code>DAY</code>, and <code>HOUR</code> as well
-when matching hourly.</sf></p></dd>
+<dd><p><sf object> the points to take values from: a grid from any
+access function — <code><a href="accessEnvDat.html">accessEnvDat()</a></code>, <code><a href="accessFVCOM.html">accessFVCOM()</a></code>, <code><a href="accessHYCOM.html">accessHYCOM()</a></code>,
+<code><a href="accessCCMP.html">accessCCMP()</a></code> or <code><a href="accessERDDAP.html">accessERDDAP()</a></code>. Must carry <code>YEAR</code>/<code>MONTH</code>/<code>DAY</code>, and
+<code>HOUR</code> as well when matching hourly.</sf></p></dd>
 
 
 <dt id="arg-temporal-resolution">temporal_resolution<a class="anchor" aria-label="anchor" href="#arg-temporal-resolution"></a></dt>
 <dd><p><char> one of <code>"auto"</code> (default), <code>"hour"</code>,
-<code>"day"</code>, <code>"month"</code>, or <code>"year"</code>. <code>"auto"</code> uses the step <code><a href="accessEnvDat.html">accessEnvDat()</a></code>
+<code>"day"</code>, <code>"month"</code>, or <code>"year"</code>. <code>"auto"</code> uses the step the access function
 recorded on <code>source</code>, or infers it from <code>source</code>'s time steps.</char></p></dd>
 
 
@@ -165,9 +166,9 @@ or renamed.</p>
     <h2 id="which-source-a-column-came-from">Which source a column came from<a class="anchor" aria-label="anchor" href="#which-source-a-column-came-from"></a></h2>
 
 
-<p>The access functions share variable names on purpose, so <code>SST</code> from Copernicus,
-FVCOM and HYCOM all arrive in a column called <code>SST</code> and everything downstream
-works unchanged. The cost is that a table with several sources chained onto it
+<p>The access functions share variable names on purpose, so <code>SST</code> from
+Copernicus, FVCOM, HYCOM and MUR all arrives in a column called <code>SST</code> and
+everything downstream works unchanged. The cost is that a table with several sources chained onto it
 has no record of which produced what.</p>
 <p>So each joined column gets a companion <code>&lt;var&gt;_source</code> naming the source and
 archive — <code>"hycom:GLBv53X"</code>, <code>"fvcom:GOM3"</code> — in the same spirit as the
@@ -178,7 +179,8 @@ they are not aggregated, regridded or plotted as though they were measurements.<
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="accessEnvDat.html">accessEnvDat()</a></code> for the usual <code>source</code>, <code><a href="attach_bathymetry.html">attach_bathymetry()</a></code> and
+    <div class="dont-index"><p><code><a href="accessEnvDat.html">accessEnvDat()</a></code>, <code><a href="accessFVCOM.html">accessFVCOM()</a></code>, <code><a href="accessHYCOM.html">accessHYCOM()</a></code>, <code><a href="accessCCMP.html">accessCCMP()</a></code>
+and <code><a href="accessERDDAP.html">accessERDDAP()</a></code> for the usual <code>source</code>; <code><a href="attach_bathymetry.html">attach_bathymetry()</a></code> and
 <code><a href="attach_climate_index.html">attach_climate_index()</a></code> for covariates that are not matched this way</p></div>
     </div>
 

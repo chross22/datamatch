@@ -2,8 +2,9 @@
 
 Every access function stamps its result with where the values came from,
 and this reads it back. The tag is short and stable —
-`"copernicus:..."`, `"fvcom:GOM3"`, `"hycom:GLBv53X"`, `"ccmp:v03.1"` —
-naming the source and the particular archive or dataset within it.
+`"copernicus:..."`, `"fvcom:GOM3"`, `"hycom:GLBv53X"`, `"ccmp:v03.1"`,
+`"erddap:MUR"` — naming the source and the particular archive or dataset
+within it.
 
 ## Usage
 
@@ -18,8 +19,7 @@ source_of(x)
   an object from
   [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
   [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
-  [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md)
-  or
+  [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
   [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
 
 ## Value
@@ -29,7 +29,7 @@ for anything built by hand or produced before this was recorded
 
 ## Why this exists
 
-The four sources deliberately share variable names, so an `SST` column
+The five sources deliberately share variable names, so an `SST` column
 means the same *quantity* whichever produced it and everything
 downstream works unchanged. That is the point of the design and also its
 hazard: the column name alone cannot say whether a value came from a

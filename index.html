@@ -79,7 +79,7 @@
 </tr></thead>
 <tbody>
 <tr>
-<td><a href="#quick-start">Copernicus Marine</a></td>
+<td><a href="#copernicus-marine-the-widest-catalog">Copernicus Marine</a></td>
 <td><code><a href="reference/accessEnvDat.html">accessEnvDat()</a></code></td>
 <td>physics, biogeochemistry, ocean colour, wind and stress</td>
 <td>monthly, daily, hourly</td>
@@ -123,7 +123,7 @@
 <blockquote>
 <p><strong>One name, several sources, and they are not the same number.</strong> <code>SST</code> from Copernicus, FVCOM and HYCOM are three different models, and <code>WSPD</code> from Copernicus and CCMP two different analyses. Sharing the column name is what makes them interchangeable <em>mechanically</em> — so everything downstream works unchanged — and is exactly why it is worth recording which one you used. <code><a href="reference/matchData.html">matchData()</a></code> writes a <code>&lt;var&gt;_source</code> column saying which, and <code><a href="reference/source_of.html">source_of()</a></code> reads it back.</p>
 </blockquote>
-<p><strong>How to read the rest of this.</strong> <a href="#quick-start">Quick start</a> and <a href="#variable-names">Variable names</a> use Copernicus throughout, because it has the widest variable list and the setup everything else builds on — but nearly all of it (matching, resampling, plotting, the time-step rules) applies to every source. The other four get their own sections under <a href="#fvcom-a-regional-model-on-an-unstructured-mesh">The five sources</a>, and the <a href="https://chross22.github.io/datamatch/articles/sources.html">“Choosing a data source”</a> vignette compares them side by side if that is what you came for.</p>
+<p><strong>How this is laid out.</strong> <a href="#quick-start">Quick start</a> shows the pattern, then each of the five sources gets a section of its own — what it holds, over what record, and what it will not do. Everything after them is shared: matching, resampling, plotting and the rest work the same whichever source produced the data. The <a href="https://chross22.github.io/datamatch/articles/sources.html">“Choosing a data source”</a> vignette compares the five side by side if that is what you came for.</p>
 <details><summary><b>Contents</b>
 </summary><p><strong>Getting started</strong></p>
 <ul>
@@ -139,33 +139,35 @@
 </ul>
 </li>
 </ul>
-<p><strong>Choosing what to fetch</strong></p>
-<ul>
-<li>
-<a href="#variable-names">Variable names</a> — request <code>SST</code> rather than <code>thetao</code>
-<ul>
-<li><a href="#satellite-or-model">Satellite or model?</a></li>
-<li><a href="#winds">Winds</a></li>
-<li><a href="#bottom-salinity">Bottom salinity</a></li>
-</ul>
-</li>
-<li><a href="#spatial-and-temporal-resolution">Spatial and temporal resolution</a></li>
-<li>
-<a href="#forecasts">Forecasts</a> — the same variables, ten days ahead</li>
-</ul>
 <p><strong>The five sources</strong></p>
 <ul>
 <li>
-<a href="#fvcom-a-regional-model-on-an-unstructured-mesh">FVCOM, a regional model on an unstructured mesh</a> — NECOFS, 1978–2013 and 2025–</li>
-<li>
-<a href="#hycom-and-bottom-fields-for-free">HYCOM, and bottom fields for free</a> — GOFS 3.1, 1994–2024</li>
-<li>
-<a href="#ccmp-the-long-wind-record">CCMP, the long wind record</a> — six-hourly winds, 1993–present</li>
-<li>
-<a href="#mur-and-viirs-through-erddap">MUR and VIIRS, through ERDDAP</a> — 0.01° satellite SST, and chlorophyll</li>
-</ul>
-<p><strong>Putting it to use</strong></p>
+<a href="#copernicus-marine-the-widest-catalog">Copernicus Marine</a> — <code><a href="reference/accessEnvDat.html">accessEnvDat()</a></code>, 1993–
 <ul>
+<li>
+<a href="#variable-names">Variable names</a> — request <code>SST</code> rather than <code>thetao</code>
+</li>
+<li><a href="#satellite-or-model">Satellite or model?</a></li>
+<li><a href="#winds">Winds</a></li>
+<li><a href="#bottom-salinity">Bottom salinity</a></li>
+<li><a href="#spatial-and-temporal-resolution">Spatial and temporal resolution</a></li>
+<li>
+<a href="#forecasts">Forecasts</a> — ten days ahead</li>
+</ul>
+</li>
+<li>
+<a href="#fvcom-a-regional-model-on-an-unstructured-mesh">FVCOM, a regional model on an unstructured mesh</a> — <code><a href="reference/accessFVCOM.html">accessFVCOM()</a></code>, 1978–2013 and 2025–</li>
+<li>
+<a href="#hycom-and-bottom-fields-for-free">HYCOM, and bottom fields for free</a> — <code><a href="reference/accessHYCOM.html">accessHYCOM()</a></code>, 1994–2024</li>
+<li>
+<a href="#ccmp-the-long-wind-record">CCMP, the long wind record</a> — <code><a href="reference/accessCCMP.html">accessCCMP()</a></code>, six-hourly, 1993–present</li>
+<li>
+<a href="#mur-and-viirs-through-erddap">MUR and VIIRS, through ERDDAP</a> — <code><a href="reference/accessERDDAP.html">accessERDDAP()</a></code>, 0.01° satellite SST</li>
+</ul>
+<p><strong>Working with what you fetched</strong> — the same for every source</p>
+<ul>
+<li>
+<a href="#matching">Matching</a> — the spatiotemporal join</li>
 <li>
 <a href="#working-with-what-comes-back">Working with what comes back</a> — resampling, gap filling, plots</li>
 <li>
@@ -173,7 +175,10 @@
 <li>
 <a href="#putting-it-together">Putting it together</a> — a full worked example</li>
 <li>
-<a href="#matching">Matching</a> — a general spatiotemporal join</li>
+<a href="#depositing-what-you-made">Depositing what you made</a> — EML metadata</li>
+</ul>
+<p><strong>Reference</strong></p>
+<ul>
 <li>
 <a href="#function-reference">Function reference</a> — everything the package exports</li>
 <li><a href="#vignettes">Vignettes</a></li>
@@ -324,8 +329,12 @@
 </div>
 </div>
 <div class="section level2">
-<h2 id="variable-names">Variable names<a class="anchor" aria-label="anchor" href="#variable-names"></a>
+<h2 id="copernicus-marine-the-widest-catalog">Copernicus Marine, the widest catalog<a class="anchor" aria-label="anchor" href="#copernicus-marine-the-widest-catalog"></a>
 </h2>
+<p><code><a href="reference/accessEnvDat.html">accessEnvDat()</a></code>. The widest catalog and the longest record: physics, biogeochemistry, satellite ocean colour, and surface wind and stress, from 1993 with a forecast running ten days ahead. It is the only source needing an account, and the one the Quick start above uses.</p>
+<div class="section level4">
+<h4 id="variable-names">Variable names<a class="anchor" aria-label="anchor" href="#variable-names"></a>
+</h4>
 <p>Copernicus variable codes are terse and easy to misremember. <code>thetao</code> is temperature, <code>mlotst</code> is mixed layer depth, <code>zos</code> is sea surface height. Get one wrong and you get a failed download rather than an obvious mistake.</p>
 <p>So you can request variables by name instead. The dictionary lists what is available, and which product and dataset each comes from:</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
@@ -595,16 +604,17 @@
 <span><span class="co">#&gt;     CHL  -&gt;  cmems_mod_glo_bgc_my_0.25deg_P1M-m</span></span>
 <span><span class="co">#&gt;   Call accessEnvDat() once per dataset.</span></span></code></pre></div>
 <p>Existing calls need no change. Anything outside the dictionary is passed through to the API with a warning, since Copernicus serves far more than this catalog covers.</p>
-<div class="section level3">
-<h3 id="satellite-or-model">Satellite or model?<a class="anchor" aria-label="anchor" href="#satellite-or-model"></a>
-</h3>
+</div>
+<div class="section level4">
+<h4 id="satellite-or-model">Satellite or model?<a class="anchor" aria-label="anchor" href="#satellite-or-model"></a>
+</h4>
 <p>Chlorophyll and primary production come from two very different places. <code>CHL</code> and <code>PP</code> are Copernicus-GlobColour satellite retrievals — observed, 4 km, and gappy under cloud. <code>CHL_MODEL</code> and <code>NPP_MODEL</code> are the biogeochemistry reanalysis — gap-free and depth-resolved, but simulated and coarser. The plain names default to satellite.</p>
 <p>One caution: <strong>satellite <code>PP</code> and model <code>NPP_MODEL</code> are not the same quantity.</strong> <code>PP</code> is depth-integrated (mg/m2/day), <code>NPP_MODEL</code> volumetric (mg/m3/day).</p>
 <p>→ <a href="https://chross22.github.io/datamatch/articles/sources.html#satellite-or-model">Choosing a data source</a> covers the trade in full.</p>
 </div>
-<div class="section level3">
-<h3 id="winds">Winds<a class="anchor" aria-label="anchor" href="#winds"></a>
-</h3>
+<div class="section level4">
+<h4 id="winds">Winds<a class="anchor" aria-label="anchor" href="#winds"></a>
+</h4>
 <p>Six wind variables come from the Copernicus L4 wind product — scatterometer retrievals blended with an ECMWF model background. They are fetched like anything else:</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">wind</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"WSPD"</span>, <span class="st">"UWND"</span>, <span class="st">"VWND"</span>, <span class="st">"TAU"</span><span class="op">)</span>,</span>
@@ -645,6 +655,7 @@
 <p><strong>Wind is its own product on its own grid</strong>, not part of the physics reanalysis, so it is a separate call from <code>SST</code> — the usual rule. It is 0.25° monthly, about three times coarser than GLORYS, and runs from June 1994.</p>
 <p><strong>Speed and stress are not the same covariate.</strong> Stress is roughly quadratic in speed, so it is what actually sets mixing and, through its curl, Ekman pumping. If the question is about the ocean’s response to wind rather than about the wind itself, <code>TAU</code> is usually the one to reach for.</p>
 <p>One subtlety in the monthly means: <code>WSPD</code> is averaged <em>as a speed</em>, so it exceeds the magnitude of the mean vector wherever direction varied within the month. A month of storms from every direction has a large <code>WSPD</code> and a small <code>sqrt(UWND² + VWND²)</code>. Both are correct; they answer different questions.</p>
+</div>
 <div class="section level4">
 <h4 id="there-is-no-daily-wind">There is no daily wind<a class="anchor" aria-label="anchor" href="#there-is-no-daily-wind"></a>
 </h4>
@@ -659,17 +670,15 @@
 <p>Two limits worth knowing before planning around it. The hourly product starts in <strong>2007</strong>, where the monthly one reaches back to 1994. And it carries the vector components only — <code>WSPD</code> and <code>TAU</code> are magnitudes it leaves to be computed, so both are monthly only.</p>
 <p>Wind has no forecast, either. Copernicus publishes a near-real-time wind analysis, but it is hourly only and reaches the present rather than past it.</p>
 </div>
-</div>
-<div class="section level3">
-<h3 id="bottom-salinity">Bottom salinity<a class="anchor" aria-label="anchor" href="#bottom-salinity"></a>
-</h3>
+<div class="section level4">
+<h4 id="bottom-salinity">Bottom salinity<a class="anchor" aria-label="anchor" href="#bottom-salinity"></a>
+</h4>
 <p><code>BOTS</code> costs a different amount depending on where it comes from. GLORYS12V1 publishes no sea-floor salinity, so in reanalysis mode it is <strong>derived</strong> — the full depth column is fetched and the deepest wet level kept, which means it must be fetched on its own and returns a <code>BOTS_depth</code> column. In forecast mode, and from FVCOM, HYCOM and their sigma or bottom fields, it is an ordinary request.</p>
 <p>→ <a href="https://chross22.github.io/datamatch/articles/sources.html#bottom-salinity-four-ways">Choosing a data source</a> shows all four ways side by side.</p>
 </div>
-</div>
-<div class="section level2">
-<h2 id="spatial-and-temporal-resolution">Spatial and temporal resolution<a class="anchor" aria-label="anchor" href="#spatial-and-temporal-resolution"></a>
-</h2>
+<div class="section level4">
+<h4 id="spatial-and-temporal-resolution">Spatial and temporal resolution<a class="anchor" aria-label="anchor" href="#spatial-and-temporal-resolution"></a>
+</h4>
 <p>Products do not share a grid, so how resolution is handled matters:</p>
 <table class="table">
 <colgroup>
@@ -745,9 +754,9 @@
 <p>Keep the coarser grid and nothing is repeated, but you throw away resolution the fine variables really had. <code>taupatch</code> exposes this as a <code>covariates.grid</code> setting.</p>
 <p><code><a href="reference/upscale_grid.html">upscale_grid()</a></code> and <code><a href="reference/downscale_grid.html">downscale_grid()</a></code> are how you act on that decision.</p>
 </div>
-<div class="section level2">
-<h2 id="forecasts">Forecasts<a class="anchor" aria-label="anchor" href="#forecasts"></a>
-</h2>
+<div class="section level4">
+<h4 id="forecasts">Forecasts<a class="anchor" aria-label="anchor" href="#forecasts"></a>
+</h4>
 <p>The same variables can be requested from the analysis-and-forecast products, which run to about ten days ahead:</p>
 <div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span></span>
@@ -764,6 +773,7 @@
 <strong>Some codes differ.</strong> Bottom temperature is <code>bottomT</code> in the reanalysis and <code>tob</code> in the forecast. Requesting <code>BOTT</code> gets the right one either way.</li>
 </ul>
 <p>Satellite variables have no forecast — ocean colour is observation, and there is no observation of the future. Asking for <code>CHL</code> in forecast mode says so and points at <code>CHL_MODEL</code>.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="fvcom-a-regional-model-on-an-unstructured-mesh">FVCOM, a regional model on an unstructured mesh<a class="anchor" aria-label="anchor" href="#fvcom-a-regional-model-on-an-unstructured-mesh"></a>
@@ -1075,10 +1085,23 @@
 <p><code><a href="reference/erddap_datasets.html">erddap_datasets()</a></code> lists what ships and <code><a href="reference/erddap_dictionary.html">erddap_dictionary()</a></code> tabulates the variables. ERDDAP hosts thousands more; <code>erddap_dataset(server, dataset_id)</code> describes any of them for <code><a href="reference/accessERDDAP.html">accessERDDAP()</a></code>, the same way <code><a href="reference/fvcom_archive.html">fvcom_archive()</a></code> does for FVCOM.</p>
 </div>
 <div class="section level2">
+<h2 id="matching">Matching<a class="anchor" aria-label="anchor" href="#matching"></a>
+</h2>
+<p><code>matchData(dat, source)</code> joins each row of <code>dat</code> to the nearest feature of <code>source</code> within the same time period, and returns <code>dat</code> with <code>source</code>’s columns added.</p>
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">matched</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/matchData.html">matchData</a></span><span class="op">(</span><span class="va">observations</span>, <span class="va">env</span><span class="op">)</span></span></code></pre></div>
+<p><strong>Neither side has to be observations or environmental data.</strong> It is a spatiotemporal nearest-feature join between two <code>sf</code> point objects carrying <code>YEAR</code>/<code>MONTH</code>/<code>DAY</code>, so it works equally for stations against a covariate grid, tag positions against a model field, moorings against satellite retrievals, or one gridded product against another. The arguments are named <code>dat</code> and <code>source</code> for that reason.</p>
+<p>Matching happens at <strong><code>source</code>’s</strong> temporal resolution, inferred from its time steps. That matters for monthly products: a monthly mean carries one time step per month while observations fall on arbitrary days, so matching on exact dates would match nothing. Pass <code>temporal_resolution</code> to override.</p>
+<p>Rows falling in a period <code>source</code> does not cover are returned with <code>NA</code> and a warning naming the periods, rather than being dropped silently. One row out per row in, always. A <code>source</code> column whose name collides with one already in <code>dat</code> is suffixed <code>.matched</code>, so nothing of yours is overwritten.</p>
+<blockquote>
+<p>The arguments used to be <code>speciesDat</code> and <code>envDat</code>. Those still work and warn; they will be removed in a later version.</p>
+</blockquote>
+</div>
+<div class="section level2">
 <h2 id="working-with-what-comes-back">Working with what comes back<a class="anchor" aria-label="anchor" href="#working-with-what-comes-back"></a>
 </h2>
 <p>Everything an access function returns is the same shape, so the same tools apply whichever source produced it: resampling between grids and time steps, filling satellite gaps, and looking at what arrived.</p>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/upscale_grid.html">upscale_grid</a></span><span class="op">(</span><span class="va">chl</span>, to <span class="op">=</span> <span class="va">sst</span><span class="op">)</span>             <span class="co"># onto another product's grid</span></span>
 <span><span class="fu"><a href="reference/downscale_grid.html">downscale_grid</a></span><span class="op">(</span><span class="va">sst</span>, to <span class="op">=</span> <span class="fl">0.05</span><span class="op">)</span>          <span class="co"># onto a finer one</span></span>
 <span><span class="fu"><a href="reference/upscale_time.html">upscale_time</a></span><span class="op">(</span><span class="va">hourly</span>, to <span class="op">=</span> <span class="st">"day"</span><span class="op">)</span>        <span class="co"># hour -&gt; day -&gt; month -&gt; year</span></span>
@@ -1097,7 +1120,7 @@
 <h2 id="static-and-basin-scale-covariates">Static and basin-scale covariates<a class="anchor" aria-label="anchor" href="#static-and-basin-scale-covariates"></a>
 </h2>
 <p>Two kinds of covariate are not gridded fields on a time step, and neither is attached with <code><a href="reference/matchData.html">matchData()</a></code>:</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bathy</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/fetch_bathymetry.html">fetch_bathymetry</a></span><span class="op">(</span>bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
 <span><span class="va">observations</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/attach_bathymetry.html">attach_bathymetry</a></span><span class="op">(</span><span class="va">observations</span>, <span class="va">bathy</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"DEPTH"</span>, <span class="st">"SLOPE"</span>, <span class="st">"TPI"</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
@@ -1105,26 +1128,6 @@
 <p><strong>Seafloor terrain</strong> — <code>DEPTH</code>, <code>SLOPE</code>, <code>ASPECT</code>, <code>TPI</code> from NOAA ETOPO — does not vary in time, so it is fetched once and attached to every step. <strong>Climate indices</strong> — <code>NAO</code>, <code>AO</code>, <code>AMO</code>, <code>PDO</code>, <code>LCR</code>, <code>AMOC</code> — have no spatial dimension at all: one value describes the whole basin in a month, so they tell you about <em>when</em>, never about <em>where</em>.</p>
 <p><code><a href="reference/bathymetry_variables.html">bathymetry_variables()</a></code> and <code><a href="reference/index_dictionary.html">index_dictionary()</a></code> list what is available.</p>
 <p>→ <a href="https://chross22.github.io/datamatch/articles/covariates.html"><strong>Static and basin-scale covariates</strong></a> covers what TPI actually measures, which index to choose and why they are not interchangeable, the <code>LCR</code> and <code>AMOC</code> caveats, and how the index cache expires on each provider’s publishing cadence.</p>
-</div>
-<div class="section level2">
-<h2 id="depositing-what-you-made">Depositing what you made<a class="anchor" aria-label="anchor" href="#depositing-what-you-made"></a>
-</h2>
-<p><code><a href="reference/write_eml.html">write_eml()</a></code> writes <a href="https://eml.ecoinformatics.org/" class="external-link">Ecological Metadata Language</a> for a matched table — the standard EDI, LTER and DataONE expect alongside a deposited dataset:</p>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/write_eml.html">write_eml</a></span><span class="op">(</span></span>
-<span>  <span class="va">matched</span>, <span class="st">"matched.xml"</span>,</span>
-<span>  title <span class="op">=</span> <span class="st">"Bottom conditions at trawl stations, Gulf of Maine"</span>,</span>
-<span>  creator <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>individualName <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>givenName <span class="op">=</span> <span class="st">"Camille"</span>, surName <span class="op">=</span> <span class="st">"Ross"</span><span class="op">)</span>,</span>
-<span>                 userId <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>directory <span class="op">=</span> <span class="st">"https://orcid.org"</span>,</span>
-<span>                               userId <span class="op">=</span> <span class="st">"0000-0002-1428-2294"</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  abstract <span class="op">=</span> <span class="st">"Survey stations with environmental covariates matched by datamatch."</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>Most of the document is filled in from the data: the bounding box and date range from the object itself, and an attribute for every column with its definition, units and measurement scale taken from whichever source catalog defines that name.</p>
-<p>The part worth having is the <strong>methods section</strong>. Because <code><a href="reference/matchData.html">matchData()</a></code> records <code>&lt;var&gt;_source</code> on every join, a table with four sources chained onto it produces a methods statement naming all four and a citation for each — which is otherwise the most tedious part of depositing a derived dataset, and the easiest to get wrong. <code>title</code>, <code>creator</code> and <code>abstract</code> are yours to supply; nothing else needs to be.</p>
-<blockquote>
-<p>One detail that would otherwise bite at submission rather than at write time: EML validates units against a fixed vocabulary, and <strong><code>PSU</code> and <code>N/m²</code> are not in it</strong>. Both are written as custom units and declared in the document’s own <code>unitList</code>, so what comes out validates. <code><a href="reference/write_eml.html">write_eml()</a></code> checks that before returning.</p>
-</blockquote>
-<p>Needs the <code>emld</code> package, a <code>Suggests</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="putting-it-together">Putting it together<a class="anchor" aria-label="anchor" href="#putting-it-together"></a>
@@ -1168,17 +1171,24 @@
 <code class="sourceCode R"><span><span class="va">phys_coarse</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/upscale_grid.html">upscale_grid</a></span><span class="op">(</span><span class="va">phys</span>, to <span class="op">=</span> <span class="va">bio</span><span class="op">)</span>    <span class="co"># 0.083° onto the 0.25° BGC grid</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="matching">Matching<a class="anchor" aria-label="anchor" href="#matching"></a>
+<h2 id="depositing-what-you-made">Depositing what you made<a class="anchor" aria-label="anchor" href="#depositing-what-you-made"></a>
 </h2>
-<p><code>matchData(dat, source)</code> joins each row of <code>dat</code> to the nearest feature of <code>source</code> within the same time period, and returns <code>dat</code> with <code>source</code>’s columns added.</p>
+<p><code><a href="reference/write_eml.html">write_eml()</a></code> writes <a href="https://eml.ecoinformatics.org/" class="external-link">Ecological Metadata Language</a> for a matched table — the standard EDI, LTER and DataONE expect alongside a deposited dataset:</p>
 <div class="sourceCode" id="cb38"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">matched</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/matchData.html">matchData</a></span><span class="op">(</span><span class="va">observations</span>, <span class="va">env</span><span class="op">)</span></span></code></pre></div>
-<p><strong>Neither side has to be observations or environmental data.</strong> It is a spatiotemporal nearest-feature join between two <code>sf</code> point objects carrying <code>YEAR</code>/<code>MONTH</code>/<code>DAY</code>, so it works equally for stations against a covariate grid, tag positions against a model field, moorings against satellite retrievals, or one gridded product against another. The arguments are named <code>dat</code> and <code>source</code> for that reason.</p>
-<p>Matching happens at <strong><code>source</code>’s</strong> temporal resolution, inferred from its time steps. That matters for monthly products: a monthly mean carries one time step per month while observations fall on arbitrary days, so matching on exact dates would match nothing. Pass <code>temporal_resolution</code> to override.</p>
-<p>Rows falling in a period <code>source</code> does not cover are returned with <code>NA</code> and a warning naming the periods, rather than being dropped silently. One row out per row in, always. A <code>source</code> column whose name collides with one already in <code>dat</code> is suffixed <code>.matched</code>, so nothing of yours is overwritten.</p>
+<code class="sourceCode R"><span><span class="fu"><a href="reference/write_eml.html">write_eml</a></span><span class="op">(</span></span>
+<span>  <span class="va">matched</span>, <span class="st">"matched.xml"</span>,</span>
+<span>  title <span class="op">=</span> <span class="st">"Bottom conditions at trawl stations, Gulf of Maine"</span>,</span>
+<span>  creator <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>individualName <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>givenName <span class="op">=</span> <span class="st">"Camille"</span>, surName <span class="op">=</span> <span class="st">"Ross"</span><span class="op">)</span>,</span>
+<span>                 userId <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>directory <span class="op">=</span> <span class="st">"https://orcid.org"</span>,</span>
+<span>                               userId <span class="op">=</span> <span class="st">"0000-0002-1428-2294"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  abstract <span class="op">=</span> <span class="st">"Survey stations with environmental covariates matched by datamatch."</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Most of the document is filled in from the data: the bounding box and date range from the object itself, and an attribute for every column with its definition, units and measurement scale taken from whichever source catalog defines that name.</p>
+<p>The part worth having is the <strong>methods section</strong>. Because <code><a href="reference/matchData.html">matchData()</a></code> records <code>&lt;var&gt;_source</code> on every join, a table with four sources chained onto it produces a methods statement naming all four and a citation for each — which is otherwise the most tedious part of depositing a derived dataset, and the easiest to get wrong. <code>title</code>, <code>creator</code> and <code>abstract</code> are yours to supply; nothing else needs to be.</p>
 <blockquote>
-<p>The arguments used to be <code>speciesDat</code> and <code>envDat</code>. Those still work and warn; they will be removed in a later version.</p>
+<p>One detail that would otherwise bite at submission rather than at write time: EML validates units against a fixed vocabulary, and <strong><code>PSU</code> and <code>N/m²</code> are not in it</strong>. Both are written as custom units and declared in the document’s own <code>unitList</code>, so what comes out validates. <code><a href="reference/write_eml.html">write_eml()</a></code> checks that before returning.</p>
 </blockquote>
+<p>Needs the <code>emld</code> package, a <code>Suggests</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="function-reference">Function reference<a class="anchor" aria-label="anchor" href="#function-reference"></a>

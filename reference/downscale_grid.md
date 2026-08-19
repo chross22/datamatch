@@ -21,9 +21,17 @@ downscale_grid(
 
 - env_dat:
 
-  an `sf` POINT object from
+  an `sf` POINT object on a regular grid, from
   [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
-  on a regular grid
+  [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
+  [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+  or
+  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md).
+  Not
+  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md):
+  its mesh is unstructured, so there are no rows and columns to
+  aggregate over - match it to points, or regrid a regular product onto
+  it.
 
 - to:
 

@@ -33,17 +33,21 @@ matchData(
 
 - source:
 
-  the points to take values from, typically a grid from
-  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md).
+  the points to take values from: a grid from any access function —
+  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
+  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
+  [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
+  [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+  or
+  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md).
   Must carry `YEAR`/`MONTH`/`DAY`, and `HOUR` as well when matching
   hourly.
 
 - temporal_resolution:
 
   one of `"auto"` (default), `"hour"`, `"day"`, `"month"`, or `"year"`.
-  `"auto"` uses the step
-  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
-  recorded on `source`, or infers it from `source`'s time steps.
+  `"auto"` uses the step the access function recorded on `source`, or
+  infers it from `source`'s time steps.
 
 - record_source:
 
@@ -126,8 +130,8 @@ overwritten or renamed.
 ## Which source a column came from
 
 The access functions share variable names on purpose, so `SST` from
-Copernicus, FVCOM and HYCOM all arrive in a column called `SST` and
-everything downstream works unchanged. The cost is that a table with
+Copernicus, FVCOM, HYCOM and MUR all arrives in a column called `SST`
+and everything downstream works unchanged. The cost is that a table with
 several sources chained onto it has no record of which produced what.
 
 So each joined column gets a companion `<var>_source` naming the source
@@ -143,8 +147,13 @@ though they were measurements.
 
 ## See also
 
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
-for the usual `source`,
+[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
+[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
+[`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
+[`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+and
+[`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+for the usual `source`;
 [`attach_bathymetry()`](https://chross22.github.io/datamatch/reference/attach_bathymetry.md)
 and
 [`attach_climate_index()`](https://chross22.github.io/datamatch/reference/attach_climate_index.md)

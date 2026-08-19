@@ -1,10 +1,9 @@
 # Map an environmental variable
 
-A quick look at what came back from
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
-— the first thing worth doing after a download, and the fastest way to
-catch a bounding box that came out somewhere unintended, a variable that
-is all `NA`, or a depth range that returned the wrong level.
+A quick look at what came back from any access function — the first
+thing worth doing after a download, and the fastest way to catch a
+bounding box that came out somewhere unintended, a variable that is all
+`NA`, or a depth range that returned the wrong level.
 
 ## Usage
 
@@ -16,8 +15,13 @@ plot_env(env_dat, var = NULL, time = 1, palette = "viridis", main = NULL, ...)
 
 - env_dat:
 
-  an `sf` POINT object from
-  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+  an `sf` POINT object from any access function -
+  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
+  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
+  [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
+  [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+  or
+  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
 
 - var:
 

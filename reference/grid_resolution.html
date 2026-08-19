@@ -60,14 +60,17 @@ so that a single missing row or column does not shift the answer.</p>
 
 
 <dl><dt id="arg-env-dat">env_dat<a class="anchor" aria-label="anchor" href="#arg-env-dat"></a></dt>
-<dd><p>an <code>sf</code> POINT object from <code><a href="accessEnvDat.html">accessEnvDat()</a></code></p></dd>
+<dd><p>an <code>sf</code> POINT object from any access function -
+<code><a href="accessEnvDat.html">accessEnvDat()</a></code>, <code><a href="accessFVCOM.html">accessFVCOM()</a></code>, <code><a href="accessHYCOM.html">accessHYCOM()</a></code>, <code><a href="accessCCMP.html">accessCCMP()</a></code> or
+<code><a href="accessERDDAP.html">accessERDDAP()</a></code></p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>named numeric vector <code>c(x = , y = )</code> in the units of the object's CRS,
-degrees for <code><a href="accessEnvDat.html">accessEnvDat()</a></code> output. <code>NA</code> in a direction with only one
-distinct coordinate.</p>
+degrees for every access function here. <code>NA</code> in a direction with only one
+distinct coordinate, and meaningless on an unstructured FVCOM mesh, which
+has no regular spacing to report.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
