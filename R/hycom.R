@@ -300,7 +300,7 @@ hycom_window <- function(values, lower, upper, axis) {
   }
   list(start = min(inside), count = length(inside),
        values = values[min(inside):max(inside)],
-       keep = seq_len(length(inside)))
+       keep = seq_along(inside))
 }
 
 #' The longitude window, in whichever convention the archive uses
