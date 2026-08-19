@@ -45,7 +45,7 @@ Analyze Bathymetric and Topographic Data.
 \doi{10.32614/CRAN.package.marmap}
 }
 
-The bounding box takes the same shape as \code{accessEnvDat()}'s, so a single
+The bounding box takes the same shape as \code{accessCopernicus()}'s, so a single
 definition of the study area serves both.
 }
 

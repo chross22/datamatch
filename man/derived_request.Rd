@@ -28,7 +28,7 @@ single request is not possible, and the alternatives are each worse than
 refusing. Fetching the column and taking its surface for the other variables
 would download fifty times the data to discard it. Issuing a second, quieter
 download behind one call would break the rule the rest of the package holds
-to, that one \code{accessEnvDat()} call is one dataset request.
+to, that one \code{accessCopernicus()} call is one dataset request.
 
 So it is an error, in the same spirit as mixing two products, and the fix is
 the same: call twice and chain \code{\link[=matchData]{matchData()}}.

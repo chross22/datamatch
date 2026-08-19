@@ -26,7 +26,7 @@ Entries come from the global reanalyses: physical variables from
 \section{Monthly, daily and hourly}{
 
 \code{dataset_id} is the monthly mean; \code{daily_dataset_id} is the daily one, which
-\code{\link[=accessEnvDat]{accessEnvDat()}} uses when given \code{frequency = "daily"}, and
+\code{\link[=accessCopernicus]{accessCopernicus()}} uses when given \code{frequency = "daily"}, and
 \code{hourly_dataset_id} the hourly one. Either is \code{NA} where no such equivalent
 exists, and those gaps are not incidental:
 
@@ -62,13 +62,13 @@ needed — the analysis-and-forecast product publishes \code{sob} directly — s
 
 The two are the same quantity by construction but not the same number: one is
 the deepest wet level of a 50-level grid, the other Copernicus's own sea-floor
-diagnostic. \code{\link[=accessEnvDat]{accessEnvDat()}} says which it used.
+diagnostic. \code{\link[=accessCopernicus]{accessCopernicus()}} says which it used.
 
 \code{CHL} is the case worth reading twice. Daily ocean colour is not the monthly
 product at a finer step: it is \code{l4-gapfree}, the space-time interpolated
 field, because a single day of a single sensor is mostly cloud. The daily
 values are therefore already gap-filled by Copernicus, and running
-\code{\link[=fill_satellite_gaps]{fill_satellite_gaps()}} over them fills nothing. \code{\link[=accessEnvDat]{accessEnvDat()}} says so
+\code{\link[=fill_satellite_gaps]{fill_satellite_gaps()}} over them fills nothing. \code{\link[=accessCopernicus]{accessCopernicus()}} says so
 when it makes the substitution.
 
 Copernicus revises dataset identifiers periodically. If a fetch fails with an

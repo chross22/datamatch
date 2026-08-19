@@ -52,7 +52,7 @@ immediate neighbourhood, so its meaning follows the
 resolution of the grid it was computed on.
 
 `attach_bathymetry()` takes either a plain data frame with coordinate columns or
-an `sf` object, so it works on observations and on `accessEnvDat()` output alike.
+an `sf` object, so it works on observations and on `accessCopernicus()` output alike.
 
 ### Climate indices
 

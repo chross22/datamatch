@@ -14,7 +14,7 @@ downscale_time(
 }
 \arguments{
 \item{env_dat}{an \code{sf} POINT object from any access function -
-\code{\link[=accessEnvDat]{accessEnvDat()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=accessCCMP]{accessCCMP()}} or
+\code{\link[=accessCopernicus]{accessCopernicus()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=accessCCMP]{accessCCMP()}} or
 \code{\link[=accessERDDAP]{accessERDDAP()}}}
 
 \item{to}{the target step: \code{"day"} or \code{"month"}}
@@ -72,7 +72,7 @@ early, which is a systematic bias rather than a rounding difference.
 
 \examples{
 \dontrun{
-monthly <- accessEnvDat(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
+monthly <- accessCopernicus(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
 
 # Daily steps, each carrying its month's value
 daily <- downscale_time(monthly, to = "day")

@@ -22,7 +22,7 @@ have had from Copernicus or FVCOM.
 HYCOM serves \code{salinity_bottom} and \code{water_temp_bottom} as variables in their
 own right, so \code{BOTS} and \code{BOTT} are ordinary requests here. That is the one
 place HYCOM is plainly easier than the Copernicus reanalysis, which publishes
-bottom temperature but no bottom salinity and makes \code{\link[=accessEnvDat]{accessEnvDat()}} derive
+bottom temperature but no bottom salinity and makes \code{\link[=accessCopernicus]{accessCopernicus()}} derive
 one from the full depth column. If bottom salinity over 1994–2015 is what you
 need, this is the cheapest source for it.
 }

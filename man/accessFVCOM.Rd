@@ -50,7 +50,7 @@ other region is reached.}
 \description{
 Reads an unstructured-mesh FVCOM archive over OPeNDAP and returns it as an
 \code{sf} point object with one row per mesh point and time step — the same shape
-\code{\link[=accessEnvDat]{accessEnvDat()}} returns, so \code{\link[=matchData]{matchData()}} joins it unchanged.
+\code{\link[=accessCopernicus]{accessCopernicus()}} returns, so \code{\link[=matchData]{matchData()}} joins it unchanged.
 }
 \section{What this is, and when to prefer it}{
 
@@ -80,7 +80,7 @@ of one onto the other. Fetch each and chain \code{\link[=matchData]{matchData()}
 
 \code{BOTS} costs nothing here. FVCOM's sigma coordinate makes the deepest layer
 the sea floor at every node, so bottom salinity is a layer index rather than
-the derivation \code{\link[=accessEnvDat]{accessEnvDat()}} needs against GLORYS. If bottom properties are
+the derivation \code{\link[=accessCopernicus]{accessCopernicus()}} needs against GLORYS. If bottom properties are
 the point of the analysis, this is the cheaper source for them.
 }
 
@@ -173,7 +173,7 @@ matched <- matchData(matched, currents)
 }
 }
 \seealso{
-\code{\link[=fvcom_variables]{fvcom_variables()}} for what can be read, \code{\link[=accessEnvDat]{accessEnvDat()}},
+\code{\link[=fvcom_variables]{fvcom_variables()}} for what can be read, \code{\link[=accessCopernicus]{accessCopernicus()}},
 \code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=accessCCMP]{accessCCMP()}} and \code{\link[=accessERDDAP]{accessERDDAP()}} for the other sources,
 \code{\link[=matchData]{matchData()}} for joining any of them to observations
 }

@@ -49,7 +49,7 @@ requested variable
 }
 \description{
 Reads HYCOM over OPeNDAP and returns it as an \code{sf} point object with one row
-per grid cell and time step — the same shape \code{\link[=accessEnvDat]{accessEnvDat()}}, \code{\link[=accessCCMP]{accessCCMP()}},
+per grid cell and time step — the same shape \code{\link[=accessCopernicus]{accessCopernicus()}}, \code{\link[=accessCCMP]{accessCCMP()}},
 \code{\link[=accessERDDAP]{accessERDDAP()}} and
 \code{\link[=accessFVCOM]{accessFVCOM()}} return, so \code{\link[=matchData]{matchData()}} joins it unchanged.
 }
@@ -139,7 +139,7 @@ daily <- upscale_time(steps, to = "day")
 }
 }
 \seealso{
-\code{\link[=hycom_variables]{hycom_variables()}} for what can be read, \code{\link[=accessEnvDat]{accessEnvDat()}},
+\code{\link[=hycom_variables]{hycom_variables()}} for what can be read, \code{\link[=accessCopernicus]{accessCopernicus()}},
 \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessCCMP]{accessCCMP()}} and \code{\link[=accessERDDAP]{accessERDDAP()}} for the other sources,
 \code{\link[=matchData]{matchData()}} for joining any of them
 }

@@ -40,7 +40,7 @@ test_that("asking CCMP for stress explains why it cannot have it", {
                "carries no wind stress")
   expect_error(accessCCMP(vars = "TAU", dates = "2010-06-15",
                           bounding_box = bb),
-               "accessEnvDat")
+               "accessCopernicus")
 })
 
 test_that("longitudes round-trip between the two conventions", {

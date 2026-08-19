@@ -7,7 +7,7 @@
 source_of(x)
 }
 \arguments{
-\item{x}{an object from \code{\link[=accessEnvDat]{accessEnvDat()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}},
+\item{x}{an object from \code{\link[=accessCopernicus]{accessCopernicus()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}},
 \code{\link[=accessCCMP]{accessCCMP()}} or \code{\link[=accessERDDAP]{accessERDDAP()}}}
 }
 \value{

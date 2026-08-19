@@ -8,7 +8,7 @@ plot_coverage(env_dat, vars = NULL, main = "Data coverage by time step", ...)
 }
 \arguments{
 \item{env_dat}{an \code{sf} POINT object from any access function -
-\code{\link[=accessEnvDat]{accessEnvDat()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=accessCCMP]{accessCCMP()}} or
+\code{\link[=accessCopernicus]{accessCopernicus()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=accessCCMP]{accessCCMP()}} or
 \code{\link[=accessERDDAP]{accessERDDAP()}}}
 
 \item{vars}{which variables to show; \code{NULL} uses all covariate columns}
@@ -34,7 +34,7 @@ the thing to look at before trusting a monthly mean or deciding whether
 }
 \examples{
 \dontrun{
-chl <- accessEnvDat(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
+chl <- accessCopernicus(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
 
 plot_coverage(chl)
 # The winter months are the ones to be careful with.

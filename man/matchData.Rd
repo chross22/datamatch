@@ -26,7 +26,7 @@ rather than a year or a day of the month. An unrecognised name is named in
 the error, so nothing has to be guessed at.}
 
 \item{source}{\if{html}{\out{<sf object>}} the points to take values from: a grid from any
-access function — \code{\link[=accessEnvDat]{accessEnvDat()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}},
+access function — \code{\link[=accessCopernicus]{accessCopernicus()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}},
 \code{\link[=accessCCMP]{accessCCMP()}} or \code{\link[=accessERDDAP]{accessERDDAP()}}. Must carry \code{YEAR}/\code{MONTH}/\code{DAY}, and
 \code{HOUR} as well when matching hourly.}
 
@@ -126,7 +126,7 @@ they are not aggregated, regridded or plotted as though they were measurements.
 
 \examples{
 \dontrun{
-env <- accessEnvDat(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
+env <- accessCopernicus(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
 
 matched <- matchData(observations, env)
 
@@ -135,7 +135,7 @@ matched <- matchData(matched, chlorophyll)
 }
 }
 \seealso{
-\code{\link[=accessEnvDat]{accessEnvDat()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=accessCCMP]{accessCCMP()}}
+\code{\link[=accessCopernicus]{accessCopernicus()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=accessCCMP]{accessCCMP()}}
 and \code{\link[=accessERDDAP]{accessERDDAP()}} for the usual \code{source}; \code{\link[=attach_bathymetry]{attach_bathymetry()}} and
 \code{\link[=attach_climate_index]{attach_climate_index()}} for covariates that are not matched this way
 }

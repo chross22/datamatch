@@ -80,7 +80,7 @@
 #'   rather than a year or a day of the month. An unrecognised name is named in
 #'   the error, so nothing has to be guessed at.
 #' @param source <sf object> the points to take values from: a grid from any
-#'   access function — [accessEnvDat()], [accessFVCOM()], [accessHYCOM()],
+#'   access function — [accessCopernicus()], [accessFVCOM()], [accessHYCOM()],
 #'   [accessCCMP()] or [accessERDDAP()]. Must carry `YEAR`/`MONTH`/`DAY`, and
 #'   `HOUR` as well when matching hourly.
 #' @param temporal_resolution <char> one of `"auto"` (default), `"hour"`,
@@ -96,14 +96,14 @@
 #'   row, plus `LON`/`LAT` coordinate columns.
 #' @examples
 #' \dontrun{
-#' env <- accessEnvDat(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
+#' env <- accessCopernicus(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
 #'
 #' matched <- matchData(observations, env)
 #'
 #' # Chains, so several sources land on one table
 #' matched <- matchData(matched, chlorophyll)
 #' }
-#' @seealso [accessEnvDat()], [accessFVCOM()], [accessHYCOM()], [accessCCMP()]
+#' @seealso [accessCopernicus()], [accessFVCOM()], [accessHYCOM()], [accessCCMP()]
 #'   and [accessERDDAP()] for the usual `source`; [attach_bathymetry()] and
 #'   [attach_climate_index()] for covariates that are not matched this way
 #' @export
@@ -148,7 +148,7 @@ matchData <- function(dat, source,
   # column that is missing rather than empty.
   if (temporal_resolution == "hour" && !"HOUR" %in% names(source)) {
     stop("temporal_resolution = \"hour\" was given, but `source` has no HOUR ",
-         "column.\nOnly an hourly fetch - accessEnvDat(frequency = \"hourly\") ",
+         "column.\nOnly an hourly fetch - accessCopernicus(frequency = \"hourly\") ",
          "- carries one. Match at\n\"day\" or coarser instead.", call. = FALSE)
   }
 
@@ -297,7 +297,7 @@ matchData <- function(dat, source,
 #' @return one of "hour", "day", "month", or "year"
 #' @keywords internal
 detect_temporal_resolution <- function(x) {
-  # accessEnvDat() knows which dataset it fetched, so it records the step rather
+  # accessCopernicus() knows which dataset it fetched, so it records the step rather
   # than leaving it to be inferred. Worth trusting over the heuristics below: a
   # `dates` request of one date per month is genuinely indistinguishable from
   # monthly data by inspection, and guessing monthly would drop the day from the

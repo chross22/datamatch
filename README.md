@@ -19,7 +19,7 @@ names:
 
 | Source | Function | Gives | Steps | Record |
 |----|----|----|----|----|
-| [Copernicus Marine](#copernicus-marine-the-widest-catalog) | `accessEnvDat()` | physics, biogeochemistry, ocean colour, wind and stress | monthly, daily, hourly | 1993– |
+| [Copernicus Marine](#copernicus-marine-the-widest-catalog) | `accessCopernicus()` | physics, biogeochemistry, ocean colour, wind and stress | monthly, daily, hourly | 1993– |
 | [FVCOM / NECOFS](#fvcom-a-regional-model-on-an-unstructured-mesh) | `accessFVCOM()` | coastal model on a triangular mesh | monthly, hourly | 1978–2013, then 2025– |
 | [HYCOM](#hycom-and-bottom-fields-for-free) | `accessHYCOM()` | independent global model, sea-floor fields | 3-hourly | 1994–2024 |
 | [CCMP](#ccmp-the-long-wind-record) | `accessCCMP()` | surface winds | 6-hourly | 1993–present |
@@ -30,10 +30,10 @@ names:
 Each takes `vars`, a `bounding_box`, and either `years`/`months` or
 `dates`, and each returns one row per cell per time step.
 
-- **`accessEnvDat()`** — Copernicus Marine. The widest catalog: physics,
-  biogeochemistry, satellite ocean colour, wind and stress, monthly to
-  hourly from 1993, with a forecast ten days ahead. The only one needing
-  an account.
+- **`accessCopernicus()`** — Copernicus Marine. The widest catalog:
+  physics, biogeochemistry, satellite ocean colour, wind and stress,
+  monthly to hourly from 1993, with a forecast ten days ahead. The only
+  one needing an account.
 - **`accessFVCOM()`** — FVCOM, an unstructured-mesh coastal model.
   NECOFS for the Northeast US ships built in; `fvcom_archive(url)`
   reaches any other FVCOM run. `fvcom_mesh()` returns the triangles
@@ -52,7 +52,7 @@ All five return the same `sf` shape, so `matchData()` joins any of them
 to your observations and they chain together:
 
 ``` r
-matched <- matchData(observations, accessEnvDat(vars = "SST", ...))
+matched <- matchData(observations, accessCopernicus(vars = "SST", ...))
 matched <- matchData(matched,      accessHYCOM(vars = "BOTS", ...))
 matched <- matchData(matched,      accessCCMP(vars = "WSPD", ...))
 ```
@@ -94,7 +94,7 @@ vignette compares the five side by side if that is what you came for.
 **The five sources**
 
 - [Copernicus Marine](#copernicus-marine-the-widest-catalog) —
-  `accessEnvDat()`, 1993–
+  `accessCopernicus()`, 1993–
   - [Variable names](#variable-names) — request `SST` rather than
     `thetao`
   - [Satellite or model?](#satellite-or-model)
@@ -192,7 +192,7 @@ Request variables by name and let the catalog find the product for you:
 ``` r
 library(datamatch)
 
-env <- accessEnvDat(
+env <- accessCopernicus(
   vars = c("SST", "SSS", "MLD"),          # no product_id, no dataset_id
   years = 2003:2017,
   months = 1:12,
@@ -212,7 +212,7 @@ datasets on different grids. Asking for both at once is an error, not a
 download:
 
 ``` r
-accessEnvDat(vars = c("SST", "CHL"), ...)
+accessCopernicus(vars = c("SST", "CHL"), ...)
 #> Error: These variables come from different Copernicus datasets and cannot be
 #>   fetched together.
 ```
@@ -223,10 +223,10 @@ another:
 ``` r
 bb <- list(xmin = -76, xmax = -65, ymin = 35, ymax = 45)
 
-phys <- accessEnvDat(vars = c("SST", "SSS", "MLD"),
+phys <- accessCopernicus(vars = c("SST", "SSS", "MLD"),
                      years = 2003:2017, months = 1:12, bounding_box = bb)
 
-bio  <- accessEnvDat(vars = c("CHL", "NO3"),
+bio  <- accessCopernicus(vars = c("CHL", "NO3"),
                      years = 2003:2017, months = 1:12, bounding_box = bb)
 
 matched <- matchData(observations, phys)
@@ -264,7 +264,7 @@ There is also `frequency = "hourly"`, which only the wind variables have
 month into all of its days:
 
 ``` r
-sst <- accessEnvDat(vars = c("SST", "MLD"), frequency = "daily",
+sst <- accessCopernicus(vars = c("SST", "MLD"), frequency = "daily",
                     years = 2015, months = 4:6, bounding_box = bb)
 ```
 
@@ -283,7 +283,7 @@ is better fetched a season at a time.
 downloaded:
 
 ``` r
-accessEnvDat(vars = "SST", dates = c("20150402", "20150517"), bounding_box = bb)
+accessCopernicus(vars = "SST", dates = c("20150402", "20150517"), bounding_box = bb)
 ```
 
 **This is the argument to use when matching daily data to
@@ -292,7 +292,7 @@ as “the 1st and 15th” does not describe them. Take the dates from the
 observations themselves:
 
 ``` r
-env <- accessEnvDat(vars = "SST", dates = unique(observations$date),
+env <- accessCopernicus(vars = "SST", dates = unique(observations$date),
                     bounding_box = bb)
 
 matched <- matchData(observations, env)
@@ -313,11 +313,11 @@ any sequence of dates will do:
 
 ``` r
 # Weekly through a decade: 574 downloads rather than 4,017
-accessEnvDat(vars = "SST", bounding_box = bb,
+accessCopernicus(vars = "SST", bounding_box = bb,
              dates = seq(as.Date("2005-01-01"), as.Date("2015-12-31"), by = "week"))
 
 # Or the same day each month, if that is genuinely what you want
-accessEnvDat(vars = "SST", bounding_box = bb,
+accessCopernicus(vars = "SST", bounding_box = bb,
              dates = seq(as.Date("2005-01-15"), as.Date("2015-12-15"), by = "month"))
 ```
 
@@ -331,8 +331,8 @@ monthly composites only, and asking for them daily is refused before
 anything is downloaded rather than failing at the API. Daily `CHL` comes
 from the *gap-free* interpolated ocean colour dataset rather than the
 monthly composite — its cloud gaps are already filled by Copernicus, so
-`fill_satellite_gaps()` has nothing to do on it. `accessEnvDat()` says
-so when it makes that substitution.
+`fill_satellite_gaps()` has nothing to do on it. `accessCopernicus()`
+says so when it makes that substitution.
 
 `variable_dataset(vars, frequency = "daily")` shows which dataset each
 variable would come from, and `NA` where there is none.
@@ -351,10 +351,10 @@ has the timings and what raising it actually buys.
 
 ## Copernicus Marine, the widest catalog
 
-`accessEnvDat()`. The widest catalog and the longest record: physics,
-biogeochemistry, satellite ocean colour, and surface wind and stress,
-from 1993 with a forecast running ten days ahead. It is the only source
-needing an account, and the one the Quick start above uses.
+`accessCopernicus()`. The widest catalog and the longest record:
+physics, biogeochemistry, satellite ocean colour, and surface wind and
+stress, from 1993 with a forecast running ten days ahead. It is the only
+source needing an account, and the one the Quick start above uses.
 
 #### Variable names
 
@@ -446,7 +446,7 @@ variable_dictionary()
 #>   dataset:   cmems_obs-wind_glo_phy_my_l4_P1M
 #>   docs:      https://data.marine.copernicus.eu/product/WIND_GLO_PHY_CLIMATE_L4_MY_012_003/description
 #> 
-#> Pass a name to accessEnvDat(vars = ...), or the Copernicus code.
+#> Pass a name to accessCopernicus(vars = ...), or the Copernicus code.
 #> With every variable from one product, product_id and dataset_id can be
 #> omitted - they are inferred from the names.
 #> Full descriptions: as.data.frame(variable_dictionary())$description
@@ -487,11 +487,11 @@ as_markdown(variable_dictionary())
 | TAUY | northward_stress | Northward wind stress | N/m2 |
 | TAU | wind_stress_magnitude | Wind stress magnitude | N/m2 |
 
-Pass those names to `accessEnvDat()` and the result comes back with them
-as column names, rather than the Copernicus codes:
+Pass those names to `accessCopernicus()` and the result comes back with
+them as column names, rather than the Copernicus codes:
 
 ``` r
-env <- accessEnvDat(
+env <- accessCopernicus(
   vars = c("SST", "SSS", "MLD"),
   years = 2003:2017,
   months = 1:12,
@@ -511,12 +511,12 @@ Mixing them is refused before anything is downloaded, rather than
 failing obscurely at the API:
 
 ``` r
-accessEnvDat(vars = c("SST", "CHL"), ...)
+accessCopernicus(vars = c("SST", "CHL"), ...)
 #> Error: These variables come from different Copernicus datasets and cannot be
 #>   fetched together:
 #>     SST  ->  cmems_mod_glo_phy_my_0.083deg_P1M-m
 #>     CHL  ->  cmems_mod_glo_bgc_my_0.25deg_P1M-m
-#>   Call accessEnvDat() once per dataset.
+#>   Call accessCopernicus() once per dataset.
 ```
 
 Existing calls need no change. Anything outside the dictionary is passed
@@ -546,7 +546,7 @@ scatterometer retrievals blended with an ECMWF model background. They
 are fetched like anything else:
 
 ``` r
-wind <- accessEnvDat(vars = c("WSPD", "UWND", "VWND", "TAU"),
+wind <- accessCopernicus(vars = c("WSPD", "UWND", "VWND", "TAU"),
                      years = 2003:2017, months = 1:12, bounding_box = bb)
 ```
 
@@ -582,7 +582,7 @@ quietly substituted. Fetch hourly and aggregate, which also leaves the
 choice of summary with you:
 
 ``` r
-hourly <- accessEnvDat(vars = c("UWND", "VWND"), frequency = "hourly",
+hourly <- accessCopernicus(vars = c("UWND", "VWND"), frequency = "hourly",
                        dates = unique(observations$date), bounding_box = bb)
 
 daily <- upscale_time(hourly, to = "day")                  # the day's mean
@@ -637,7 +637,7 @@ seasons and latitudes where cloud is persistent. `fill_satellite_gaps()`
 substitutes the model equivalent where the satellite saw nothing, and
 records the source of every value.
 
-**`accessEnvDat()` fetches one dataset per call**, on that dataset’s
+**`accessCopernicus()` fetches one dataset per call**, on that dataset’s
 native grid. It does not resample, and it refuses to fetch variables
 from different datasets together rather than quietly reconciling them.
 
@@ -673,7 +673,7 @@ The same variables can be requested from the analysis-and-forecast
 products, which run to about ten days ahead:
 
 ``` r
-env <- accessEnvDat(
+env <- accessCopernicus(
   vars = c("SST", "MLD"),
   years = 2026, months = 8,
   bounding_box = list(xmin = -76, xmax = -65, ymin = 35, ymax = 45),
@@ -903,7 +903,7 @@ matched <- matchData(observations, bottom)
 
 Two reasons to reach for it. HYCOM publishes **`salinity_bottom` and
 `water_temp_bottom` as fields**, so `BOTS` costs nothing here — where
-GLORYS12V1 has no bottom salinity at all and `accessEnvDat()` must
+GLORYS12V1 has no bottom salinity at all and `accessCopernicus()` must
 derive one from the full depth column. And it is an **independent
 model**, so agreement between it and Copernicus is evidence about a
 result in a way that either alone is not.
@@ -1183,11 +1183,11 @@ bb <- list(xmin = -70, xmax = -66, ymin = 41, ymax = 44)
 years <- 2010:2014
 
 # 1. Physical and biological variables come from different Copernicus datasets,
-#    so they are two calls. accessEnvDat() refuses to mix them in one.
-phys <- accessEnvDat(vars = c("SST", "SSS", "MLD"),
+#    so they are two calls. accessCopernicus() refuses to mix them in one.
+phys <- accessCopernicus(vars = c("SST", "SSS", "MLD"),
                      years = years, months = 1:12, bounding_box = bb)
 
-bio  <- accessEnvDat(vars = c("CHL", "NO3"),
+bio  <- accessCopernicus(vars = c("CHL", "NO3"),
                      years = years, months = 1:12, bounding_box = bb)
 
 # 2. Seafloor terrain: static, fetched once for the area.
@@ -1211,7 +1211,7 @@ attached:
 Three things about this that are worth understanding rather than
 copying.
 
-**The two `accessEnvDat()` calls are not an inconvenience to work
+**The two `accessCopernicus()` calls are not an inconvenience to work
 around.** `SST` and `CHL` live in different datasets on different grids:
 0.083° for the physics, 0.25° for the biogeochemistry. The package
 refuses to fetch them together rather than quietly reconciling two grids
@@ -1287,7 +1287,8 @@ page for each.
 
 |  |  |
 |----|----|
-| `accessEnvDat()` | Copernicus Marine: physics, biogeochemistry, ocean colour, wind |
+| `accessCopernicus()` | Copernicus Marine: physics, biogeochemistry, ocean colour, wind |
+| `accessEnvDat()` | the old name for `accessCopernicus()`; works, and warns |
 | `accessFVCOM()` | FVCOM / NECOFS on an unstructured mesh |
 | `accessHYCOM()` | HYCOM GOFS 3.1, with sea-floor fields |
 | `accessCCMP()` | CCMP six-hourly surface winds |
@@ -1401,7 +1402,7 @@ monthly.
 
 Bottom salinity is derived from the whole depth column, which is a
 different request from the single level a surface variable wants. Call
-`accessEnvDat()` once for `BOTS` and once for the rest, then chain
+`accessCopernicus()` once for `BOTS` and once for the rest, then chain
 `matchData()`. See [Bottom salinity](#bottom-salinity).
 
 **`The download did not return: uo, vo`**
@@ -1439,7 +1440,7 @@ was affected and how to check.
 
 - [derivoce](https://github.com/chross22/derivoce) — derived covariates
   (gradients, FTLE/FSLE, front and isobath distances, lags, integrals)
-  computed from what `accessEnvDat()` returns
+  computed from what `accessCopernicus()` returns
 
 ## References
 

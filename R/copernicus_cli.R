@@ -1,6 +1,6 @@
 #' Where downloaded Copernicus files are kept
 #'
-#' Copernicus subsets are slow to fetch and rarely change, so `accessEnvDat()`
+#' Copernicus subsets are slow to fetch and rarely change, so `accessCopernicus()`
 #' writes each one to disk and reads it back on later calls. This resolves where
 #' that cache lives.
 #'

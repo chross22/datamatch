@@ -13,7 +13,7 @@ copernicus_cache(...)
 the resolved path, with its parent directory created if needed
 }
 \description{
-Copernicus subsets are slow to fetch and rarely change, so \code{accessEnvDat()}
+Copernicus subsets are slow to fetch and rarely change, so \code{accessCopernicus()}
 writes each one to disk and reads it back on later calls. This resolves where
 that cache lives.
 }

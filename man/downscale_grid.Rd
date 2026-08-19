@@ -14,7 +14,7 @@ downscale_grid(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object on a regular grid, from \code{\link[=accessEnvDat]{accessEnvDat()}},
+\item{env_dat}{an \code{sf} POINT object on a regular grid, from \code{\link[=accessCopernicus]{accessCopernicus()}},
 \code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=accessCCMP]{accessCCMP()}} or \code{\link[=accessERDDAP]{accessERDDAP()}}. Not \code{\link[=accessFVCOM]{accessFVCOM()}}:
 its mesh is unstructured, so there are no rows and columns to aggregate
 over - match it to points, or regrid a regular product onto it.}

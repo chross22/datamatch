@@ -14,7 +14,7 @@ upscale_grid(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object on a regular grid, from \code{\link[=accessEnvDat]{accessEnvDat()}},
+\item{env_dat}{an \code{sf} POINT object on a regular grid, from \code{\link[=accessCopernicus]{accessCopernicus()}},
 \code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=accessCCMP]{accessCCMP()}} or \code{\link[=accessERDDAP]{accessERDDAP()}}. Not \code{\link[=accessFVCOM]{accessFVCOM()}}:
 its mesh is unstructured, so there are no rows and columns to aggregate
 over - match it to points, or regrid a regular product onto it.}
@@ -85,8 +85,8 @@ fraction alongside each variable and judge for yourself.
 
 \examples{
 \dontrun{
-chl <- accessEnvDat(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
-sst <- accessEnvDat(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
+chl <- accessCopernicus(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
+sst <- accessCopernicus(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
 
 # Satellite CHL (4 km) onto the physics grid (0.083 degrees)
 chl_coarse <- upscale_grid(chl, to = sst)

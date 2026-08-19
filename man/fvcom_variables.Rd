@@ -39,7 +39,7 @@ and 90,415 on GOM3 — so a variable of each kind cannot land in one table
 without interpolating one onto the other.
 
 \code{\link[=accessFVCOM]{accessFVCOM()}} refuses to fetch the two together rather than interpolating on
-your behalf, in the same spirit as \code{\link[=accessEnvDat]{accessEnvDat()}} refusing to mix two
+your behalf, in the same spirit as \code{\link[=accessCopernicus]{accessCopernicus()}} refusing to mix two
 Copernicus grids. Fetch each and chain \code{\link[=matchData]{matchData()}}, which matches to the
 nearest point whichever mesh it belongs to.
 }

@@ -10,7 +10,7 @@ time_columns()
 \if{html}{\out{<char>}} the reserved time column names, coarsest first
 }
 \description{
-Everything else in an \code{\link[=accessEnvDat]{accessEnvDat()}} result is a covariate, so this is what
+Everything else in an \code{\link[=accessCopernicus]{accessCopernicus()}} result is a covariate, so this is what
 separates the two. Named in one place because getting it wrong is quiet:
 anything omitted here is aggregated, regridded, and plotted as though it were
 data, and \code{HOUR} averaged across a day gives 11.5 in a column that looks like

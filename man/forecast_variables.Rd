@@ -46,5 +46,5 @@ names(forecast_variables())
 forecast_variables()$BOTT$variable   # "tob", not "bottomT"
 }
 \seealso{
-\code{\link[=accessEnvDat]{accessEnvDat()}}, which takes \code{mode = "forecast"}
+\code{\link[=accessCopernicus]{accessCopernicus()}}, which takes \code{mode = "forecast"}
 }

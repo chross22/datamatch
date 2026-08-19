@@ -47,7 +47,7 @@ per requested variable
 \description{
 Downloads the CCMP wind analysis from Remote Sensing Systems and returns it
 as an \code{sf} point object with one row per grid cell and time step — the same
-shape \code{\link[=accessEnvDat]{accessEnvDat()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}} and \code{\link[=accessERDDAP]{accessERDDAP()}}
+shape \code{\link[=accessCopernicus]{accessCopernicus()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}} and \code{\link[=accessERDDAP]{accessERDDAP()}}
 return, so
 \code{\link[=matchData]{matchData()}} joins it unchanged.
 }
@@ -124,6 +124,6 @@ matched <- matchData(observations, wind)
 }
 }
 \seealso{
-\code{\link[=ccmp_variables]{ccmp_variables()}}, \code{\link[=accessEnvDat]{accessEnvDat()}} for the Copernicus wind, which
+\code{\link[=ccmp_variables]{ccmp_variables()}}, \code{\link[=accessCopernicus]{accessCopernicus()}} for the Copernicus wind, which
 carries stress
 }

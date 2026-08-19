@@ -8,7 +8,7 @@ plot_env(env_dat, var = NULL, time = 1, palette = "viridis", main = NULL, ...)
 }
 \arguments{
 \item{env_dat}{an \code{sf} POINT object from any access function -
-\code{\link[=accessEnvDat]{accessEnvDat()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=accessCCMP]{accessCCMP()}} or
+\code{\link[=accessCopernicus]{accessCopernicus()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=accessCCMP]{accessCCMP()}} or
 \code{\link[=accessERDDAP]{accessERDDAP()}}}
 
 \item{var}{which variable to map; \code{NULL} uses the first covariate column}
@@ -48,7 +48,7 @@ about which month it is.
 
 \examples{
 \dontrun{
-env <- accessEnvDat(vars = c("SST", "CHL"), years = 2010, months = 1:12,
+env <- accessCopernicus(vars = c("SST", "CHL"), years = 2010, months = 1:12,
                     bounding_box = bb)
 
 plot_env(env)                                  # first variable, first step

@@ -8,7 +8,7 @@ plot_series(env_dat, vars = NULL, fun = mean, spread = TRUE, ...)
 }
 \arguments{
 \item{env_dat}{an \code{sf} POINT object from any access function -
-\code{\link[=accessEnvDat]{accessEnvDat()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=accessCCMP]{accessCCMP()}} or
+\code{\link[=accessCopernicus]{accessCopernicus()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=accessCCMP]{accessCCMP()}} or
 \code{\link[=accessERDDAP]{accessERDDAP()}}}
 
 \item{vars}{which variables to plot; \code{NULL} uses all covariate columns. Each
@@ -35,7 +35,7 @@ inshore and cold offshore.
 }
 \examples{
 \dontrun{
-env <- accessEnvDat(vars = c("SST", "MLD"), years = 2003:2017, months = 1:12,
+env <- accessCopernicus(vars = c("SST", "MLD"), years = 2003:2017, months = 1:12,
                     bounding_box = bb)
 
 plot_series(env)

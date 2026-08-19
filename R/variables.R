@@ -4,7 +4,7 @@
 
 #' The columns that stamp a row in time rather than describe conditions
 #'
-#' Everything else in an [accessEnvDat()] result is a covariate, so this is what
+#' Everything else in an [accessCopernicus()] result is a covariate, so this is what
 #' separates the two. Named in one place because getting it wrong is quiet:
 #' anything omitted here is aggregated, regridded, and plotted as though it were
 #' data, and `HOUR` averaged across a day gives 11.5 in a column that looks like
@@ -56,7 +56,7 @@ day_of_year_names <- c(
 #'
 #' @section Monthly, daily and hourly:
 #' `dataset_id` is the monthly mean; `daily_dataset_id` is the daily one, which
-#' [accessEnvDat()] uses when given `frequency = "daily"`, and
+#' [accessCopernicus()] uses when given `frequency = "daily"`, and
 #' `hourly_dataset_id` the hourly one. Either is `NA` where no such equivalent
 #' exists, and those gaps are not incidental:
 #'
@@ -90,13 +90,13 @@ day_of_year_names <- c(
 #'
 #' The two are the same quantity by construction but not the same number: one is
 #' the deepest wet level of a 50-level grid, the other Copernicus's own sea-floor
-#' diagnostic. [accessEnvDat()] says which it used.
+#' diagnostic. [accessCopernicus()] says which it used.
 #'
 #' `CHL` is the case worth reading twice. Daily ocean colour is not the monthly
 #' product at a finer step: it is `l4-gapfree`, the space-time interpolated
 #' field, because a single day of a single sensor is mostly cloud. The daily
 #' values are therefore already gap-filled by Copernicus, and running
-#' [fill_satellite_gaps()] over them fills nothing. [accessEnvDat()] says so
+#' [fill_satellite_gaps()] over them fills nothing. [accessCopernicus()] says so
 #' when it makes the substitution.
 #'
 #' Copernicus revises dataset identifiers periodically. If a fetch fails with an
@@ -352,7 +352,7 @@ product_url <- function(product_id) {
 #' @examples
 #' names(forecast_variables())
 #' forecast_variables()$BOTT$variable   # "tob", not "bottomT"
-#' @seealso [accessEnvDat()], which takes `mode = "forecast"`
+#' @seealso [accessCopernicus()], which takes `mode = "forecast"`
 #' @export
 forecast_variables <- function() {
   phy <- "GLOBAL_ANALYSISFORECAST_PHY_001_024"
@@ -489,7 +489,7 @@ print.datamatch_dictionary <- function(x, ...) {
     rows <- flat$product == product
     cat("\n", product, "\n", sep = "")
     cat("  variables: ", paste(flat$name[rows], collapse = ", "), "\n", sep = "")
-    # The dataset identifier is what accessEnvDat() actually requests, and what
+    # The dataset identifier is what accessCopernicus() actually requests, and what
     # has to be corrected by hand when Copernicus revises one. A product can
     # serve more than one - ocean colour splits plankton from primary production
     # - so they are separated rather than run together into one unreadable
@@ -499,7 +499,7 @@ print.datamatch_dictionary <- function(x, ...) {
     cat("  docs:      ", product_url(product), "\n", sep = "")
   }
 
-  cat("\nPass a name to accessEnvDat(vars = ...), or the Copernicus code.\n")
+  cat("\nPass a name to accessCopernicus(vars = ...), or the Copernicus code.\n")
   cat("With every variable from one product, product_id and dataset_id can be\n")
   cat("omitted - they are inferred from the names.\n")
   cat("Full descriptions: as.data.frame(variable_dictionary())$description\n")
@@ -701,7 +701,7 @@ infer_dataset <- function(vars, mode = c("reanalysis", "forecast"),
                   "than the reanalysis does, so a set that fetches in one ",
                   "request as reanalysis may need several as forecast.")
          },
-         "\nCall accessEnvDat() once per dataset.", call. = FALSE)
+         "\nCall accessCopernicus() once per dataset.", call. = FALSE)
   }
 
   entry <- catalog_entry(vars[1], mode = mode)
@@ -845,7 +845,7 @@ catalog_entry <- function(var, mode = "reanalysis") {
 #' refusing. Fetching the column and taking its surface for the other variables
 #' would download fifty times the data to discard it. Issuing a second, quieter
 #' download behind one call would break the rule the rest of the package holds
-#' to, that one `accessEnvDat()` call is one dataset request.
+#' to, that one `accessCopernicus()` call is one dataset request.
 #'
 #' So it is an error, in the same spirit as mixing two products, and the fix is
 #' the same: call twice and chain [matchData()].
@@ -867,7 +867,7 @@ derived_request <- function(vars, mode = "reanalysis") {
     stop(paste(vars[derived], collapse = ", "),
          " must be fetched on its own.\nIt is derived from the full depth ",
          "column, which is a different request from the surface\nfields ",
-         paste(vars[-derived], collapse = ", "), " need. Call accessEnvDat() ",
+         paste(vars[-derived], collapse = ", "), " need. Call accessCopernicus() ",
          "once for each and chain\nmatchData().", call. = FALSE)
   }
 

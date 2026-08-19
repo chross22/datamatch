@@ -11,6 +11,7 @@ reference:
     not the same number - each function's help says what its source is and is
     not good for.
   contents:
+  - accessCopernicus
   - accessEnvDat
   - accessFVCOM
   - accessHYCOM

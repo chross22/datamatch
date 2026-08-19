@@ -25,7 +25,7 @@
 #' without interpolating one onto the other.
 #'
 #' [accessFVCOM()] refuses to fetch the two together rather than interpolating on
-#' your behalf, in the same spirit as [accessEnvDat()] refusing to mix two
+#' your behalf, in the same spirit as [accessCopernicus()] refusing to mix two
 #' Copernicus grids. Fetch each and chain [matchData()], which matches to the
 #' nearest point whichever mesh it belongs to.
 #'
@@ -472,7 +472,7 @@ fvcom_read_variable <- function(handle, entry, step, layers, keep) {
 #'
 #' Reads an unstructured-mesh FVCOM archive over OPeNDAP and returns it as an
 #' `sf` point object with one row per mesh point and time step — the same shape
-#' [accessEnvDat()] returns, so [matchData()] joins it unchanged.
+#' [accessCopernicus()] returns, so [matchData()] joins it unchanged.
 #'
 #' @section What this is, and when to prefer it:
 #' NECOFS is a regional coastal model on a triangular mesh that refines toward
@@ -497,7 +497,7 @@ fvcom_read_variable <- function(handle, entry, step, layers, keep) {
 #' @section Bottom salinity:
 #' `BOTS` costs nothing here. FVCOM's sigma coordinate makes the deepest layer
 #' the sea floor at every node, so bottom salinity is a layer index rather than
-#' the derivation [accessEnvDat()] needs against GLORYS. If bottom properties are
+#' the derivation [accessCopernicus()] needs against GLORYS. If bottom properties are
 #' the point of the analysis, this is the cheaper source for them.
 #'
 #' @section Reading other regions:
@@ -599,7 +599,7 @@ fvcom_read_variable <- function(handle, entry, step, layers, keep) {
 #'                         months = 1:12, bounding_box = bb)
 #' matched <- matchData(matched, currents)
 #' }
-#' @seealso [fvcom_variables()] for what can be read, [accessEnvDat()],
+#' @seealso [fvcom_variables()] for what can be read, [accessCopernicus()],
 #'   [accessHYCOM()], [accessCCMP()] and [accessERDDAP()] for the other sources,
 #'   [matchData()] for joining any of them to observations
 #' @export

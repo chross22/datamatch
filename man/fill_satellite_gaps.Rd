@@ -8,7 +8,7 @@ fill_satellite_gaps(satellite, model, vars, rescale = FALSE)
 }
 \arguments{
 \item{satellite}{an \code{sf} POINT object of satellite data from
-\code{\link[=accessEnvDat]{accessEnvDat()}}}
+\code{\link[=accessCopernicus]{accessCopernicus()}}}
 
 \item{model}{an \code{sf} POINT object of the model equivalent, over the same
 period. It need not be on the same grid: values are taken from the nearest
@@ -55,8 +55,8 @@ rests on observed or simulated cells.
 
 \examples{
 \dontrun{
-chl_sat <- accessEnvDat(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
-chl_mod <- accessEnvDat(vars = "CHL_MODEL", years = 2010, months = 1:12,
+chl_sat <- accessCopernicus(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
+chl_mod <- accessCopernicus(vars = "CHL_MODEL", years = 2010, months = 1:12,
                         bounding_box = bb)
 
 filled <- fill_satellite_gaps(chl_sat, chl_mod, c(CHL = "CHL_MODEL"))

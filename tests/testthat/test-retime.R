@@ -1,4 +1,4 @@
-# Daily data over whole months, in the shape accessEnvDat() returns for a daily
+# Daily data over whole months, in the shape accessCopernicus() returns for a daily
 # product. `value` is a function of the date, so period aggregates are known
 # analytically.
 daily_series <- function(months = 1:3, year = 2020L,
@@ -265,7 +265,7 @@ test_that("missing values are skipped rather than poisoning the aggregate", {
 
 # ---- hourly to daily --------------------------------------------------------
 
-# Hourly data in the shape accessEnvDat(frequency = "hourly") returns: the daily
+# Hourly data in the shape accessCopernicus(frequency = "hourly") returns: the daily
 # calendar plus an HOUR column.
 hourly_series <- function(days = 1:2, month = 6L, year = 2015L,
                           value = function(h) h,

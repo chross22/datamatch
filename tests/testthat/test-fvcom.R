@@ -152,7 +152,7 @@ test_that("the FVCOM dictionary prints without claiming a Copernicus product", {
   expect_false(result$visible)
   expect_true(any(grepl("FVCOM variables", output)))
   # The Copernicus footer would be untrue here.
-  expect_false(any(grepl("accessEnvDat", output)))
+  expect_false(any(grepl("accessCopernicus", output)))
   expect_true(any(grepl("node surface", output)))
 })
 

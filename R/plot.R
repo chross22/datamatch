@@ -16,7 +16,7 @@
 #' about which month it is.
 #'
 #' @param env_dat an `sf` POINT object from any access function -
-#'   [accessEnvDat()], [accessFVCOM()], [accessHYCOM()], [accessCCMP()] or
+#'   [accessCopernicus()], [accessFVCOM()], [accessHYCOM()], [accessCCMP()] or
 #'   [accessERDDAP()]
 #' @param var which variable to map; `NULL` uses the first covariate column
 #' @param time which time step, as an index or a named vector of
@@ -29,7 +29,7 @@
 #' @return the `SpatRaster` that was plotted, invisibly
 #' @examples
 #' \dontrun{
-#' env <- accessEnvDat(vars = c("SST", "CHL"), years = 2010, months = 1:12,
+#' env <- accessCopernicus(vars = c("SST", "CHL"), years = 2010, months = 1:12,
 #'                     bounding_box = bb)
 #'
 #' plot_env(env)                                  # first variable, first step
@@ -70,7 +70,7 @@ plot_env <- function(env_dat, var = NULL, time = 1, palette = "viridis",
 #' [fill_satellite_gaps()] is worth the seam it introduces.
 #'
 #' @param env_dat an `sf` POINT object from any access function -
-#'   [accessEnvDat()], [accessFVCOM()], [accessHYCOM()], [accessCCMP()] or
+#'   [accessCopernicus()], [accessFVCOM()], [accessHYCOM()], [accessCCMP()] or
 #'   [accessERDDAP()]
 #' @param vars which variables to show; `NULL` uses all covariate columns
 #' @param main plot title
@@ -79,7 +79,7 @@ plot_env <- function(env_dat, var = NULL, time = 1, palette = "viridis",
 #'   step per variable
 #' @examples
 #' \dontrun{
-#' chl <- accessEnvDat(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
+#' chl <- accessCopernicus(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
 #'
 #' plot_coverage(chl)
 #' # The winter months are the ones to be careful with.
@@ -137,7 +137,7 @@ plot_coverage <- function(env_dat, vars = NULL, main = "Data coverage by time st
 #' inshore and cold offshore.
 #'
 #' @param env_dat an `sf` POINT object from any access function -
-#'   [accessEnvDat()], [accessFVCOM()], [accessHYCOM()], [accessCCMP()] or
+#'   [accessCopernicus()], [accessFVCOM()], [accessHYCOM()], [accessCCMP()] or
 #'   [accessERDDAP()]
 #' @param vars which variables to plot; `NULL` uses all covariate columns. Each
 #'   gets its own panel, since covariates rarely share units.
@@ -147,7 +147,7 @@ plot_coverage <- function(env_dat, vars = NULL, main = "Data coverage by time st
 #' @return a data frame of the plotted series, invisibly
 #' @examples
 #' \dontrun{
-#' env <- accessEnvDat(vars = c("SST", "MLD"), years = 2003:2017, months = 1:12,
+#' env <- accessCopernicus(vars = c("SST", "MLD"), years = 2003:2017, months = 1:12,
 #'                     bounding_box = bb)
 #'
 #' plot_series(env)

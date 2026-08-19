@@ -265,6 +265,21 @@
 * The contents list was rebuilt to match, and every internal link checked — two
   pointed at sections that had moved to a vignette.
 
+## Breaking changes
+
+* **`accessEnvDat()` is now `accessCopernicus()`.** The old name dates from when
+  Copernicus was the only source. With five, "access environmental data" reads as
+  though it fetches from all of them, sitting beside `accessFVCOM()`,
+  `accessHYCOM()`, `accessCCMP()` and `accessERDDAP()`, which each say what they
+  read.
+
+  `accessEnvDat()` still works and warns, on the same reasoning as the
+  `speciesDat`/`envDat` arguments in `matchData()`: taupatch and any script
+  written against the old name keep working, and their authors find out that the
+  name moved rather than discovering it when the alias is eventually removed.
+  Nothing else changes — the arguments, the result, and the `copernicus:` source
+  tag are all as they were.
+
 ## Bug fixes
 
 * **`upscale_time()` and `downscale_time()` did not record the step they

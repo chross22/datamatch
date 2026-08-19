@@ -148,9 +148,9 @@ layer_depths <- function(x) {
 
 #' Download one day's subset, returning any failure rather than raising it
 #'
-#' Defined at the top level rather than as a closure inside [accessEnvDat()] so
+#' Defined at the top level rather than as a closure inside [accessCopernicus()] so
 #' that its enclosing environment is this package's namespace. A closure would
-#' carry `accessEnvDat()`'s whole evaluation frame — including the cluster
+#' carry `accessCopernicus()`'s whole evaluation frame — including the cluster
 #' object itself — to every worker when it is serialised.
 #'
 #' Errors are caught and returned as text. Under [parallel::parLapplyLB()] an
@@ -231,7 +231,7 @@ without_calendar_warning <- function(expr) {
 #' from the read is left alone, since a file that is genuinely unreadable should
 #' still say so.
 #'
-#' @param item <list> one work item, as built by [accessEnvDat()]
+#' @param item <list> one work item, as built by [accessCopernicus()]
 #' @param vars <char> variable codes, in the order they were requested
 #' @return a data frame of one grid, with `YEAR`, `MONTH` and `DAY`
 #' @keywords internal
@@ -263,7 +263,7 @@ read_day <- function(item, vars) {
 #' local zone, which silently relabels every hour by the local offset and moves
 #' some of them onto the neighbouring day.
 #'
-#' @param item <list> one work item, as built by [accessEnvDat()]
+#' @param item <list> one work item, as built by [accessCopernicus()]
 #' @param vars <char> variable codes, in the order they were requested
 #' @return a data frame of 24 grids, with `YEAR`, `MONTH`, `DAY` and `HOUR`
 #' @keywords internal
@@ -322,7 +322,7 @@ read_day_hourly <- function(item, vars) {
 #' returned alongside the value rather than left to be assumed, in a
 #' `<name>_depth` column.
 #'
-#' @param item <list> one work item, as built by [accessEnvDat()]
+#' @param item <list> one work item, as built by [accessCopernicus()]
 #' @param code <char> the Copernicus code fetched, e.g. `so`
 #' @param name <char> what to call the result column, e.g. `BOTS`
 #' @return a data frame with the value, the depth it came from, `YEAR`, `MONTH`
@@ -408,7 +408,7 @@ read_day_deepest <- function(item, code, name) {
 #' is in it:
 #'
 #' ```
-#' accessEnvDat(
+#' accessCopernicus(
 #'   vars = c("SST", "SSS", "MLD"),
 #'   years = 2003:2017, months = 1:12,
 #'   bounding_box = list(xmin = -76, xmax = -65, ymin = 35, ymax = 45)
@@ -427,7 +427,7 @@ read_day_deepest <- function(item, code, name) {
 #' daily datasets instead, expanding each requested month into its days.
 #'
 #' ```
-#' accessEnvDat(vars = c("SST", "MLD"), frequency = "daily",
+#' accessCopernicus(vars = c("SST", "MLD"), frequency = "daily",
 #'              years = 2015, months = 4:6,
 #'              bounding_box = list(xmin = -70, xmax = -65, ymin = 42, ymax = 45))
 #' ```
@@ -442,7 +442,7 @@ read_day_deepest <- function(item, code, name) {
 #' fetch, so only the days that matter are downloaded:
 #'
 #' ```
-#' accessEnvDat(vars = "SST", dates = c("20150402", "20150517", "20150623"),
+#' accessCopernicus(vars = "SST", dates = c("20150402", "20150517", "20150623"),
 #'              bounding_box = bb)
 #' ```
 #'
@@ -451,7 +451,7 @@ read_day_deepest <- function(item, code, name) {
 #' not describe them. Take the dates from the observations themselves:
 #'
 #' ```
-#' accessEnvDat(vars = "SST", dates = unique(observations$date), bounding_box = bb)
+#' accessCopernicus(vars = "SST", dates = unique(observations$date), bounding_box = bb)
 #' ```
 #'
 #' `YYYYMMDD` strings, `YYYY-MM-DD` strings, and `Date` objects are all accepted,
@@ -478,7 +478,7 @@ read_day_deepest <- function(item, code, name) {
 #' published as monthly composites only, and asking for them daily is refused
 #' before anything is downloaded. Daily `CHL` comes from the gap-free
 #' interpolated ocean colour dataset rather than the monthly composite, which
-#' [accessEnvDat()] reports when it happens — see [copernicus_variables()].
+#' [accessCopernicus()] reports when it happens — see [copernicus_variables()].
 #'
 #' @section Hourly wind:
 #' `frequency = "hourly"` fetches the hourly wind product. It is the only step
@@ -490,7 +490,7 @@ read_day_deepest <- function(item, code, name) {
 #' Observations must then carry an hour of their own, on UTC.
 #'
 #' ```
-#' wind <- accessEnvDat(vars = c("UWND", "VWND"), frequency = "hourly",
+#' wind <- accessCopernicus(vars = c("UWND", "VWND"), frequency = "hourly",
 #'                      dates = unique(observations$date), bounding_box = bb)
 #' ```
 #'
@@ -594,7 +594,7 @@ read_day_deepest <- function(item, code, name) {
 #'   column when the fetch was hourly, and a `<var>_depth` column for a derived
 #'   bottom variable
 #' @export
-accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars,
+accessCopernicus <- function(product_id = NULL, dataset_id = NULL, vars,
                          years = NULL, months = NULL,
                          bounding_box, depth = c(0,1),
                          overwrite = FALSE, n_workers = 4,
@@ -853,4 +853,39 @@ accessEnvDat <- function(product_id = NULL, dataset_id = NULL, vars,
   # there would make matchData() join by month and quietly ignore the day.
   attr(out, "datamatch_step") <- step
   stamp_source(out, "copernicus", dataset_id)
+}
+
+#' Fetch Copernicus data (deprecated name)
+#'
+#' `accessEnvDat()` is the old name for [accessCopernicus()]. It still works and
+#' warns; it will be removed in a later version.
+#'
+#' @section Why it was renamed:
+#' The name dates from when Copernicus was the only source. With five, "access
+#' environmental data" reads as though it fetches from all of them, sitting
+#' beside [accessFVCOM()], [accessHYCOM()], [accessCCMP()] and [accessERDDAP()],
+#' which each say what they read. `accessCopernicus()` says the same.
+#'
+#' Nothing else changes: the arguments, the result, and the `copernicus:` source
+#' tag are all as they were.
+#'
+#' @param ... passed to [accessCopernicus()]
+#' @return whatever [accessCopernicus()] returns
+#' @examples
+#' \dontrun{
+#' # Both do the same thing; the first warns.
+#' env <- accessEnvDat(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
+#' env <- accessCopernicus(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
+#' }
+#' @seealso [accessCopernicus()]
+#' @export
+accessEnvDat <- function(...) {
+  # Warned rather than silently forwarded, on the same reasoning as the
+  # speciesDat/envArg arguments in matchData(): taupatch and any script written
+  # against the old name keep working, and their authors find out that the name
+  # moved rather than discovering it when the alias is eventually removed.
+  warning("`accessEnvDat()` is now `accessCopernicus()`, which says which source ",
+          "it reads.\nThe old name still works but will be removed in a later ",
+          "version.", call. = FALSE)
+  accessCopernicus(...)
 }

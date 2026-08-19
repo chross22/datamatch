@@ -144,7 +144,7 @@ download_ccmp_day <- function(spec, day, destination) {
 #'
 #' Downloads the CCMP wind analysis from Remote Sensing Systems and returns it
 #' as an `sf` point object with one row per grid cell and time step — the same
-#' shape [accessEnvDat()], [accessFVCOM()], [accessHYCOM()] and [accessERDDAP()]
+#' shape [accessCopernicus()], [accessFVCOM()], [accessHYCOM()] and [accessERDDAP()]
 #' return, so
 #' [matchData()] joins it unchanged.
 #'
@@ -228,7 +228,7 @@ download_ccmp_day <- function(spec, day, destination) {
 #'
 #' matched <- matchData(observations, wind)
 #' }
-#' @seealso [ccmp_variables()], [accessEnvDat()] for the Copernicus wind, which
+#' @seealso [ccmp_variables()], [accessCopernicus()] for the Copernicus wind, which
 #'   carries stress
 #' @export
 accessCCMP <- function(vars, years = NULL, months = NULL, bounding_box,
@@ -257,7 +257,7 @@ accessCCMP <- function(vars, years = NULL, months = NULL, bounding_box,
          if (any(unknown %in% c("TAUX", "TAUY", "TAU"))) {
            paste0("\nCCMP carries no wind stress. It cannot be derived from ",
                   "these winds without\nchoosing a drag coefficient. Use the ",
-                  "Copernicus wind for stress: see accessEnvDat().")
+                  "Copernicus wind for stress: see accessCopernicus().")
          }, call. = FALSE)
   }
   entries <- catalog[vars]

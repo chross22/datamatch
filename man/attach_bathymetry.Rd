@@ -25,7 +25,7 @@ observation at a location regardless of its date.
 }
 \details{
 Accepts either a plain data frame with coordinate columns or an \code{sf} POINT
-object, so it works on observations and on \code{accessEnvDat()} output alike.
+object, so it works on observations and on \code{accessCopernicus()} output alike.
 }
 \examples{
 \dontrun{

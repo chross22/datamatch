@@ -3,7 +3,7 @@
 #' Everything that is not a time column or the geometry.
 #'
 #' @param env_dat an `sf` POINT object from any access function -
-#'   [accessEnvDat()], [accessFVCOM()], [accessHYCOM()], [accessCCMP()] or
+#'   [accessCopernicus()], [accessFVCOM()], [accessHYCOM()], [accessCCMP()] or
 #'   [accessERDDAP()]
 #' @return character vector of covariate column names
 #' @examples
@@ -48,7 +48,7 @@ covariate_columns <- function(env_dat) {
 #' }
 #'
 #' @param satellite an `sf` POINT object of satellite data from
-#'   [accessEnvDat()]
+#'   [accessCopernicus()]
 #' @param model an `sf` POINT object of the model equivalent, over the same
 #'   period. It need not be on the same grid: values are taken from the nearest
 #'   model cell within each time step.
@@ -60,8 +60,8 @@ covariate_columns <- function(env_dat) {
 #'   variable recording `"satellite"` or `"model"`
 #' @examples
 #' \dontrun{
-#' chl_sat <- accessEnvDat(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
-#' chl_mod <- accessEnvDat(vars = "CHL_MODEL", years = 2010, months = 1:12,
+#' chl_sat <- accessCopernicus(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
+#' chl_mod <- accessCopernicus(vars = "CHL_MODEL", years = 2010, months = 1:12,
 #'                         bounding_box = bb)
 #'
 #' filled <- fill_satellite_gaps(chl_sat, chl_mod, c(CHL = "CHL_MODEL"))

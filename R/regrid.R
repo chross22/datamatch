@@ -9,7 +9,7 @@
 #' trade-off you want. See [upscale_grid()] for what that choice costs.
 #'
 #' @param env_dat an `sf` POINT object from any access function -
-#'   [accessEnvDat()], [accessFVCOM()], [accessHYCOM()], [accessCCMP()] or
+#'   [accessCopernicus()], [accessFVCOM()], [accessHYCOM()], [accessCCMP()] or
 #'   [accessERDDAP()]
 #' @return named numeric vector `c(x = , y = )` in the units of the object's CRS,
 #'   degrees for every access function here. `NA` in a direction with only one
@@ -71,7 +71,7 @@ grid_resolution <- function(env_dat) {
 #' aggregate whatever is present, and `keep_counts = TRUE` to get the coverage
 #' fraction alongside each variable and judge for yourself.
 #'
-#' @param env_dat an `sf` POINT object on a regular grid, from [accessEnvDat()],
+#' @param env_dat an `sf` POINT object on a regular grid, from [accessCopernicus()],
 #'   [accessHYCOM()], [accessCCMP()] or [accessERDDAP()]. Not [accessFVCOM()]:
 #'   its mesh is unstructured, so there are no rows and columns to aggregate
 #'   over - match it to points, or regrid a regular product onto it.
@@ -90,8 +90,8 @@ grid_resolution <- function(env_dat) {
 #'   `YEAR`/`MONTH`/`DAY` columns as the input
 #' @examples
 #' \dontrun{
-#' chl <- accessEnvDat(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
-#' sst <- accessEnvDat(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
+#' chl <- accessCopernicus(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
+#' sst <- accessCopernicus(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
 #'
 #' # Satellite CHL (4 km) onto the physics grid (0.083 degrees)
 #' chl_coarse <- upscale_grid(chl, to = sst)
@@ -269,7 +269,7 @@ regrid_step <- function(coords, values, vars, methods, target, crs, direction,
     encoded[[v]] <- as.integer(factor(encoded[[v]], levels = cat_levels[[v]]))
   }
 
-  # accessEnvDat() ends in as.data.frame(x, xy = TRUE), whose default drops rows
+  # accessCopernicus() ends in as.data.frame(x, xy = TRUE), whose default drops rows
   # that are NA in every layer. Gappy satellite data therefore arrives with
   # *absent rows* rather than NA ones; terra::rast(type = "xyz") reinstates them
   # as NA cells, which is what the aggregation and the coverage count both need.
@@ -278,7 +278,7 @@ regrid_step <- function(coords, values, vars, methods, target, crs, direction,
     terra::rast(xyz, type = "xyz", crs = sf::st_crs(crs)$wkt),
     error = function(e) {
       stop("Could not read the source as a regular grid: ", conditionMessage(e),
-           "\nRegridding needs data on a regular grid, as accessEnvDat() returns.",
+           "\nRegridding needs data on a regular grid, as accessCopernicus() returns.",
            call. = FALSE)
     }
   )

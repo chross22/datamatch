@@ -1,4 +1,4 @@
-# A regular grid of points over a fixed area, in the shape accessEnvDat() returns.
+# A regular grid of points over a fixed area, in the shape accessCopernicus() returns.
 # `value` is a function of position, so what an aggregation should produce is
 # known analytically rather than by comparison with the code under test.
 grid_of <- function(res, months = 1L, value = function(x, y) y,

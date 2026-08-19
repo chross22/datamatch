@@ -10,7 +10,7 @@
 #' HYCOM serves `salinity_bottom` and `water_temp_bottom` as variables in their
 #' own right, so `BOTS` and `BOTT` are ordinary requests here. That is the one
 #' place HYCOM is plainly easier than the Copernicus reanalysis, which publishes
-#' bottom temperature but no bottom salinity and makes [accessEnvDat()] derive
+#' bottom temperature but no bottom salinity and makes [accessCopernicus()] derive
 #' one from the full depth column. If bottom salinity over 1994–2015 is what you
 #' need, this is the cheapest source for it.
 #'
@@ -46,7 +46,7 @@ hycom_variables <- function() {
     BOTS = entry("salinity_bottom", "Bottom salinity", "PSU",
                  paste("Salinity at the sea floor, published as its own field.",
                        "The Copernicus reanalysis has no equivalent and has to",
-                       "derive one; see accessEnvDat().")),
+                       "derive one; see accessCopernicus().")),
     SSH = entry("surf_el", "Sea surface height", "m",
                 "Water surface elevation above the model geoid."),
     UO = entry("water_u", "Eastward current velocity", "m/s",
@@ -389,7 +389,7 @@ hycom_read_variable <- function(handle, entry, step, lon_window, lat_window) {
 #' Access HYCOM output from the GOFS 3.1 reanalysis
 #'
 #' Reads HYCOM over OPeNDAP and returns it as an `sf` point object with one row
-#' per grid cell and time step — the same shape [accessEnvDat()], [accessCCMP()],
+#' per grid cell and time step — the same shape [accessCopernicus()], [accessCCMP()],
 #' [accessERDDAP()] and
 #' [accessFVCOM()] return, so [matchData()] joins it unchanged.
 #'
@@ -490,7 +490,7 @@ hycom_read_variable <- function(handle, entry, step, lon_window, lat_window) {
 #'                      dates = "2010-06-15", bounding_box = bb)
 #' daily <- upscale_time(steps, to = "day")
 #' }
-#' @seealso [hycom_variables()] for what can be read, [accessEnvDat()],
+#' @seealso [hycom_variables()] for what can be read, [accessCopernicus()],
 #'   [accessFVCOM()], [accessCCMP()] and [accessERDDAP()] for the other sources,
 #'   [matchData()] for joining any of them
 #' @export

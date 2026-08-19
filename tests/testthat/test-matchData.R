@@ -18,7 +18,7 @@ make_observations <- function(year_col = "YEAR", month_col = "MONTH", day_col = 
 }
 
 # Environmental data: a small grid of points per YEAR/MONTH/DAY (matching
-# accessEnvDat()'s real daily-resolution output shape), each carrying a
+# accessCopernicus()'s real daily-resolution output shape), each carrying a
 # "thetao" value. Grid points are placed exactly on top of the species points
 # so nearest-feature matching is deterministic. Jan has two days (1 and 15,
 # matching the two January species points below) with deliberately different

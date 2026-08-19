@@ -6,7 +6,7 @@
 # stack overflows - which is what every test in this file used to do, regardless
 # of how the helper captured the original function first.
 #
-# Writing a real raster to a temp file and pointing accessEnvDat at it avoids the
+# Writing a real raster to a temp file and pointing accessCopernicus at it avoids the
 # problem entirely, and exercises the actual read path rather than a stand-in.
 # Only `copernicus_cache` (where the file lives), `fs::file_exists` (whether it
 # counts as cached), and the downloader itself need mocking. All three are
@@ -74,7 +74,7 @@ test_that("a single requested variable passes through unchanged", {
   expect_equal(unname(terra::values(ordered)[1]), 6.2)
 })
 
-# Builds a real raster file with one layer per variable. accessEnvDat assigns
+# Builds a real raster file with one layer per variable. accessCopernicus assigns
 # column names positionally from `vars` after reading, so only the layer *count*
 # has to match.
 write_fake_raster <- function(vars) {
@@ -86,7 +86,7 @@ write_fake_raster <- function(vars) {
   path
 }
 
-test_that("accessEnvDat returns an sf object with correct columns (monthly dataset)", {
+test_that("accessCopernicus returns an sf object with correct columns (monthly dataset)", {
   vars <- c("thetao", "so")
   raster_path <- write_fake_raster(vars)
 
@@ -96,7 +96,7 @@ test_that("accessEnvDat returns an sf object with correct columns (monthly datas
     .package = "fs"
   )
 
-  result <- accessEnvDat(
+  result <- accessCopernicus(
     product_id = "GLOBAL_TEST",
     dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1M-m", # "M" -> monthly
     vars = vars,
@@ -113,7 +113,7 @@ test_that("accessEnvDat returns an sf object with correct columns (monthly datas
   expect_equal(unique(result$DAY), 1) # monthly dataset -> only day 1 pulled
 })
 
-test_that("accessEnvDat loops over all days for a daily dataset", {
+test_that("accessCopernicus loops over all days for a daily dataset", {
   vars <- c("thetao")
   raster_path <- write_fake_raster(vars)
 
@@ -123,7 +123,7 @@ test_that("accessEnvDat loops over all days for a daily dataset", {
     .package = "fs"
   )
 
-  result <- accessEnvDat(
+  result <- accessCopernicus(
     product_id = "GLOBAL_TEST",
     dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1D-m", # "D" -> daily
     vars = vars,
@@ -135,7 +135,7 @@ test_that("accessEnvDat loops over all days for a daily dataset", {
   expect_equal(sort(unique(result$DAY)), 1:29)
 })
 
-test_that("accessEnvDat calls the downloader when data are not cached locally", {
+test_that("accessCopernicus calls the downloader when data are not cached locally", {
   vars <- c("thetao")
   raster_path <- write_fake_raster(vars)
   download_called <- FALSE
@@ -154,7 +154,7 @@ test_that("accessEnvDat calls the downloader when data are not cached locally", 
     }
   )
 
-  accessEnvDat(
+  accessCopernicus(
     product_id = "GLOBAL_TEST",
     dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1M-m",
     vars = vars,
@@ -166,7 +166,7 @@ test_that("accessEnvDat calls the downloader when data are not cached locally", 
   expect_true(download_called)
 })
 
-test_that("accessEnvDat re-downloads when overwrite = TRUE, even if cached", {
+test_that("accessCopernicus re-downloads when overwrite = TRUE, even if cached", {
   vars <- c("thetao")
   raster_path <- write_fake_raster(vars)
   download_called <- FALSE
@@ -183,7 +183,7 @@ test_that("accessEnvDat re-downloads when overwrite = TRUE, even if cached", {
     }
   )
 
-  accessEnvDat(
+  accessCopernicus(
     product_id = "GLOBAL_TEST",
     dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1M-m",
     vars = vars,
@@ -196,7 +196,7 @@ test_that("accessEnvDat re-downloads when overwrite = TRUE, even if cached", {
   expect_true(download_called)
 })
 
-test_that("accessEnvDat does not download when data are already cached", {
+test_that("accessCopernicus does not download when data are already cached", {
   vars <- c("thetao")
   raster_path <- write_fake_raster(vars)
   download_called <- FALSE
@@ -213,7 +213,7 @@ test_that("accessEnvDat does not download when data are already cached", {
     }
   )
 
-  accessEnvDat(
+  accessCopernicus(
     product_id = "GLOBAL_TEST",
     dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1M-m",
     vars = vars,
@@ -226,7 +226,7 @@ test_that("accessEnvDat does not download when data are already cached", {
   expect_false(download_called)
 })
 
-test_that("accessEnvDat covers every requested year and month", {
+test_that("accessCopernicus covers every requested year and month", {
   vars <- c("thetao")
   raster_path <- write_fake_raster(vars)
 
@@ -236,7 +236,7 @@ test_that("accessEnvDat covers every requested year and month", {
     .package = "fs"
   )
 
-  result <- accessEnvDat(
+  result <- accessCopernicus(
     product_id = "GLOBAL_TEST",
     dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1M-m",
     vars = vars,
@@ -262,7 +262,7 @@ test_that("catalog names become the result's column names", {
     .package = "fs"
   )
 
-  result <- accessEnvDat(
+  result <- accessCopernicus(
     product_id = "GLOBAL_TEST",
     dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1M-m",
     vars = c("SST", "SSS"),
@@ -290,7 +290,7 @@ test_that("the product and dataset are inferred from catalog names", {
     .package = "fs"
   )
 
-  result <- accessEnvDat(
+  result <- accessCopernicus(
     vars = c("SST", "SSS"),
     years = 2020, months = 1,
     bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45)
@@ -311,7 +311,7 @@ test_that("mixing datasets is refused before any download is attempted", {
   )
 
   expect_error(
-    accessEnvDat(vars = c("SST", "CHL"), years = 2020, months = 1,
+    accessCopernicus(vars = c("SST", "CHL"), years = 2020, months = 1,
                  bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45)),
     "different Copernicus datasets"
   )
@@ -332,7 +332,7 @@ test_that("a depth range spanning several levels is an error, end to end", {
   )
 
   expect_error(
-    accessEnvDat(
+    accessCopernicus(
       product_id = "GLOBAL_TEST",
       dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1M-m",
       vars = "SST",
@@ -356,7 +356,7 @@ test_that("a variable missing from the download names it, not the depth range", 
   )
 
   expect_error(
-    accessEnvDat(
+    accessCopernicus(
       product_id = "GLOBAL_TEST",
       dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1M-m",
       vars = c("SST", "SSS", "UO", "VO"),
@@ -391,7 +391,7 @@ test_that("only the days that are not cached are downloaded", {
     }
   )
 
-  accessEnvDat(
+  accessCopernicus(
     product_id = "GLOBAL_TEST",
     dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1D-m",
     vars = "thetao",
@@ -423,7 +423,7 @@ test_that("one day's failure does not abandon the rest", {
   )
 
   expect_error(
-    accessEnvDat(
+    accessCopernicus(
       product_id = "GLOBAL_TEST",
       dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1D-m",
       vars = "thetao",
@@ -438,7 +438,7 @@ test_that("one day's failure does not abandon the rest", {
   expect_equal(length(attempted), 31)
   # And the error says which one, so the cause is findable.
   expect_error(
-    accessEnvDat(
+    accessCopernicus(
       product_id = "GLOBAL_TEST",
       dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1D-m",
       vars = "thetao", years = 2020, months = 1,
@@ -466,7 +466,7 @@ test_that("nothing is downloaded, and no cluster started, when all days are cach
     .package = "parallel"
   )
 
-  result <- accessEnvDat(
+  result <- accessCopernicus(
     product_id = "GLOBAL_TEST",
     dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1D-m",
     vars = "thetao",
@@ -495,7 +495,7 @@ test_that("frequency = 'daily' selects the daily dataset and expands the month",
     }
   )
 
-  result <- accessEnvDat(
+  result <- accessCopernicus(
     vars = "SST",
     years = 2020, months = 2,       # leap year -> 29 days
     bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
@@ -519,7 +519,7 @@ test_that("the monthly default is unchanged", {
     }
   )
 
-  result <- accessEnvDat(
+  result <- accessCopernicus(
     vars = "SST",
     years = 2020, months = 2,
     bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
@@ -539,7 +539,7 @@ test_that("an explicit dataset_id wins over frequency, with a warning", {
   local_mocked_bindings(file_exists = function(...) TRUE, .package = "fs")
 
   expect_warning(
-    result <- accessEnvDat(
+    result <- accessCopernicus(
       product_id = "GLOBAL_TEST",
       dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1M-m",   # monthly
       vars = "thetao",
@@ -560,7 +560,7 @@ test_that("a variable with no daily dataset is refused before downloading", {
 
   # PP is a monthly composite; the daily ocean colour dataset has no such field.
   expect_error(
-    accessEnvDat(
+    accessCopernicus(
       vars = "PP", years = 2020, months = 1,
       bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
       frequency = "daily"
@@ -570,7 +570,7 @@ test_that("a variable with no daily dataset is refused before downloading", {
 
   # And the phytoplankton types, which the daily dataset does not carry either.
   expect_error(
-    accessEnvDat(
+    accessCopernicus(
       vars = c("DIATO", "DINO"), years = 2020, months = 1,
       bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
       frequency = "daily"
@@ -587,7 +587,7 @@ test_that("dates fetches exactly the dates named", {
   local_mocked_bindings(copernicus_cache = function(...) raster_path)
   local_mocked_bindings(file_exists = function(...) TRUE, .package = "fs")
 
-  result <- accessEnvDat(
+  result <- accessCopernicus(
     vars = "SST",
     bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
     dates = c("20200103", "20200217", "20200326")
@@ -616,7 +616,7 @@ test_that("YYYYMMDD, YYYY-MM-DD and Date objects all work", {
                      c("2020-01-03", "2020-02-17"),
                      as.Date(c("2020-01-03", "2020-02-17")),
                      c(20200103, 20200217))) {
-    result <- accessEnvDat(vars = "SST", bounding_box = bb, dates = dates)
+    result <- accessCopernicus(vars = "SST", bounding_box = bb, dates = dates)
     expect_equal(sort(unique(result$DAY)), wanted)
   }
 })
@@ -627,7 +627,7 @@ test_that("dates are sorted and deduplicated", {
   local_mocked_bindings(copernicus_cache = function(...) raster_path)
   local_mocked_bindings(file_exists = function(...) TRUE, .package = "fs")
 
-  result <- accessEnvDat(
+  result <- accessCopernicus(
     vars = "SST",
     bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
     dates = c("20200217", "20200103", "20200217")
@@ -642,11 +642,11 @@ test_that("a date the calendar does not have is an error naming it", {
   # leaving the gap to surface much later as a missing row.
   bb <- list(xmin = -70, xmax = -60, ymin = 40, ymax = 45)
 
-  expect_error(accessEnvDat(vars = "SST", bounding_box = bb, dates = "20200230"),
+  expect_error(accessCopernicus(vars = "SST", bounding_box = bb, dates = "20200230"),
                "20200230")
-  expect_error(accessEnvDat(vars = "SST", bounding_box = bb, dates = "banana"),
+  expect_error(accessCopernicus(vars = "SST", bounding_box = bb, dates = "banana"),
                "could not be read as dates")
-  expect_error(accessEnvDat(vars = "SST", bounding_box = bb, dates = character(0)),
+  expect_error(accessCopernicus(vars = "SST", bounding_box = bb, dates = character(0)),
                "names no dates")
 })
 
@@ -655,7 +655,7 @@ test_that("Dates coerced to numbers by c() are diagnosed as such", {
   # this ever sees it. Being told a five-digit number is not a date is not
   # helpful unless the cause is named.
   expect_error(
-    accessEnvDat(vars = "SST",
+    accessCopernicus(vars = "SST",
                  bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
                  dates = c("18310", "18311")),
     "turned into numbers"
@@ -675,7 +675,7 @@ test_that("dates implies daily, without frequency being given", {
     }
   )
 
-  result <- accessEnvDat(
+  result <- accessCopernicus(
     vars = "SST",
     bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
     dates = c("20200103", "20200115"), n_workers = 1
@@ -691,7 +691,7 @@ test_that("dates with an explicit frequency = 'monthly' is a contradiction", {
   )
 
   expect_error(
-    accessEnvDat(
+    accessCopernicus(
       vars = "SST",
       bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
       dates = "20200103", frequency = "monthly"
@@ -705,11 +705,11 @@ test_that("dates alongside years or months is refused", {
   bb <- list(xmin = -70, xmax = -60, ymin = 40, ymax = 45)
 
   expect_error(
-    accessEnvDat(vars = "SST", years = 2020, bounding_box = bb, dates = "20200103"),
+    accessCopernicus(vars = "SST", years = 2020, bounding_box = bb, dates = "20200103"),
     "already names which time steps"
   )
   expect_error(
-    accessEnvDat(vars = "SST", months = 1, bounding_box = bb, dates = "20200103"),
+    accessCopernicus(vars = "SST", months = 1, bounding_box = bb, dates = "20200103"),
     "already names which time steps"
   )
 })
@@ -717,9 +717,9 @@ test_that("dates alongside years or months is refused", {
 test_that("years and months are still required without dates", {
   bb <- list(xmin = -70, xmax = -60, ymin = 40, ymax = 45)
 
-  expect_error(accessEnvDat(vars = "SST", months = 1, bounding_box = bb),
+  expect_error(accessCopernicus(vars = "SST", months = 1, bounding_box = bb),
                "are required")
-  expect_error(accessEnvDat(vars = "SST", years = 2020, bounding_box = bb),
+  expect_error(accessCopernicus(vars = "SST", years = 2020, bounding_box = bb),
                "are required")
 })
 
@@ -733,7 +733,7 @@ test_that("dates on an explicitly monthly dataset_id fetches those months", {
   local_mocked_bindings(file_exists = function(...) TRUE, .package = "fs")
 
   expect_warning(
-    result <- accessEnvDat(
+    result <- accessCopernicus(
       product_id = "GLOBAL_TEST",
       dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1M-m",
       vars = "thetao",
@@ -757,7 +757,7 @@ test_that("the step is recorded, so sparse dates are not read as monthly", {
   local_mocked_bindings(copernicus_cache = function(...) raster_path)
   local_mocked_bindings(file_exists = function(...) TRUE, .package = "fs")
 
-  result <- accessEnvDat(
+  result <- accessCopernicus(
     vars = "SST",
     bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
     dates = c("20200103", "20200217", "20200326")
@@ -766,7 +766,7 @@ test_that("the step is recorded, so sparse dates are not read as monthly", {
   expect_equal(attr(result, "datamatch_step"), "day")
   expect_equal(detect_temporal_resolution(result), "day")
 
-  monthly <- accessEnvDat(
+  monthly <- accessCopernicus(
     vars = "SST", years = 2020, months = 1:3,
     bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45)
   )
@@ -789,7 +789,7 @@ test_that("the monthly default still needs nothing said about it", {
   )
 
   expect_silent(
-    result <- accessEnvDat(
+    result <- accessCopernicus(
       vars = "SST", years = 2020, months = 1:3,
       bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
       n_workers = 1
@@ -814,7 +814,7 @@ test_that("only the named dates are downloaded", {
     }
   )
 
-  accessEnvDat(
+  accessCopernicus(
     vars = "SST",
     bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
     dates = c("20200115", "20200103", "20200217"), n_workers = 1
@@ -841,7 +841,7 @@ test_that("dates outside a dataset's coverage are explained, not just reported",
   )
 
   err <- tryCatch(
-    accessEnvDat(vars = "SST",
+    accessCopernicus(vars = "SST",
                  bounding_box = list(xmin = -70, xmax = -60, ymin = 40, ymax = 45),
                  dates = "20260715", n_workers = 1),
     error = function(e) conditionMessage(e))
@@ -936,4 +936,40 @@ test_that("read_day_deepest refuses a file with no depth column to search", {
   item <- list(ofile = path, year = 2015L, month = 6L, day = 1L)
   expect_error(read_day_deepest(item, code = "so", name = "BOTS"),
                "no depth axis")
+})
+
+# ---- the old name -----------------------------------------------------------
+
+test_that("accessEnvDat still works and says it moved", {
+  # taupatch and any script written against the old name must keep working, and
+  # their authors should find out now rather than when the alias is removed.
+  expect_warning(
+    try(accessEnvDat(vars = "SST", years = 2010, months = 6,
+                     bounding_box = list(xmin = -70, xmax = -66,
+                                         ymin = 41, ymax = 44),
+                     dates = "2010-06-15"), silent = TRUE),
+    "now `accessCopernicus\\(\\)`")
+
+  # It forwards everything, so the same call fails the same way through either
+  # name - here on the dates/years contradiction, which is checked before any
+  # network access.
+  through_alias <- tryCatch(
+    suppressWarnings(accessEnvDat(vars = "SST", years = 2010, months = 6,
+                                  dates = "2010-06-15",
+                                  bounding_box = list(xmin = -70, xmax = -66,
+                                                      ymin = 41, ymax = 44))),
+    error = function(e) conditionMessage(e))
+  direct <- tryCatch(
+    accessCopernicus(vars = "SST", years = 2010, months = 6,
+                     dates = "2010-06-15",
+                     bounding_box = list(xmin = -70, xmax = -66,
+                                         ymin = 41, ymax = 44)),
+    error = function(e) conditionMessage(e))
+  expect_equal(through_alias, direct)
+})
+
+test_that("both names are exported", {
+  exports <- getNamespaceExports("datamatch")
+  expect_true("accessCopernicus" %in% exports)
+  expect_true("accessEnvDat" %in% exports)
 })

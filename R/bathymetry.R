@@ -65,7 +65,7 @@ bathymetry_variables <- function() {
 #'     \doi{10.32614/CRAN.package.marmap}
 #' }
 #'
-#' The bounding box takes the same shape as `accessEnvDat()`'s, so a single
+#' The bounding box takes the same shape as `accessCopernicus()`'s, so a single
 #' definition of the study area serves both.
 #'
 #' @section Caching:
@@ -203,7 +203,7 @@ bathymetry_layers <- function(bathy) {
 #' observation at a location regardless of its date.
 #'
 #' Accepts either a plain data frame with coordinate columns or an `sf` POINT
-#' object, so it works on observations and on `accessEnvDat()` output alike.
+#' object, so it works on observations and on `accessCopernicus()` output alike.
 #'
 #' @param dat a data frame with coordinate columns, or an `sf` POINT object
 #' @param bathy a `SpatRaster` from `fetch_bathymetry()`

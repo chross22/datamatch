@@ -21,7 +21,7 @@ but not run, because each needs a network and some need several gigabytes.
 
 ## The five, side by side
 
-| | `accessEnvDat()` | `accessFVCOM()` | `accessHYCOM()` | `accessCCMP()` | `accessERDDAP()` |
+| | `accessCopernicus()` | `accessFVCOM()` | `accessHYCOM()` | `accessCCMP()` | `accessERDDAP()` |
 |---|---|---|---|---|---|
 | Source | Copernicus Marine | NECOFS / any FVCOM | HYCOM GOFS 3.1 | RSS CCMP v3.1 | NOAA ERDDAP |
 | Kind | global reanalysis, forecast, satellite | regional coastal model | global model | wind analysis | satellite analysis |
@@ -57,7 +57,7 @@ model you fit — works unchanged:
 ```{r shared, eval = FALSE}
 bb <- list(xmin = -70, xmax = -66, ymin = 41, ymax = 44)
 
-copernicus <- accessEnvDat(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
+copernicus <- accessCopernicus(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
 fvcom      <- accessFVCOM(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
 hycom      <- accessHYCOM(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
 ```
@@ -116,11 +116,11 @@ quantity from a model `SST`, not a better measurement of the same one.
 ```{r bots, eval = FALSE}
 # Copernicus reanalysis: derived. Fetches ~50 depth levels to keep the deepest
 # wet one, so it must be fetched alone, and reports the depth it used.
-bots <- accessEnvDat(vars = "BOTS", years = 2010, months = 1:12, bounding_box = bb)
+bots <- accessCopernicus(vars = "BOTS", years = 2010, months = 1:12, bounding_box = bb)
 bots$BOTS_depth
 
 # Copernicus forecast: published outright as `sob`, no derivation.
-accessEnvDat(vars = c("BOTT", "BOTS"), years = 2026, months = 7,
+accessCopernicus(vars = c("BOTT", "BOTS"), years = 2026, months = 7,
              bounding_box = bb, mode = "forecast")
 
 # FVCOM: the deepest sigma layer is the sea floor everywhere. Free.
@@ -182,7 +182,7 @@ The pattern is the same as chaining two Copernicus products: each call adds
 columns and leaves the row count alone.
 
 ```{r together, eval = FALSE}
-matched <- matchData(observations, accessEnvDat(vars = c("SST", "MLD"),
+matched <- matchData(observations, accessCopernicus(vars = c("SST", "MLD"),
                                                 years = 2010, months = 1:12,
                                                 bounding_box = bb))
 matched <- matchData(matched, accessHYCOM(vars = "BOTS", years = 2010,
@@ -238,7 +238,7 @@ Phytoplankton functional types come from the same satellite plankton dataset as
 `CHL`, so they can be fetched together:
 
 ```{r pft, eval = FALSE}
-env <- accessEnvDat(
+env <- accessCopernicus(
   vars = c("CHL", "DIATO", "DINO"),   # one request, one dataset
   years = 2003:2017, months = 1:12,
   bounding_box = list(xmin = -76, xmax = -65, ymin = 35, ymax = 45)
@@ -257,7 +257,7 @@ floor and no salinity counterpart. So it is derived: the full salinity column is
 fetched and the deepest wet level in each cell kept.
 
 ```{r bots-readme, eval = FALSE}
-bots <- accessEnvDat(vars = "BOTS", years = 2010:2014, months = 1:12,
+bots <- accessCopernicus(vars = "BOTS", years = 2010:2014, months = 1:12,
                      bounding_box = bb)
 #> BOTS is not published by this product. Deriving it from the full 'so' column
 #> and keeping the deepest wet level in each cell; the depth used comes back as
@@ -282,7 +282,7 @@ publishes sea-floor salinity outright, so `BOTS` is an ordinary variable there,
 fetches alongside `BOTT`, and returns no `BOTS_depth`:
 
 ```{r bots-forecast, eval = FALSE}
-accessEnvDat(vars = c("BOTT", "BOTS"), years = 2026, months = 8,
+accessCopernicus(vars = c("BOTT", "BOTS"), years = 2026, months = 8,
              bounding_box = bb, mode = "forecast")
 ```
 

@@ -9,7 +9,7 @@
 #' This is the route to a daily wind field. Copernicus publishes its L4 wind
 #' hourly and monthly and nothing between, so `frequency = "daily"` is refused
 #' for the wind variables; aggregating the hourly field is how a daily mean is
-#' produced, and doing it here rather than inside [accessEnvDat()] keeps the
+#' produced, and doing it here rather than inside [accessCopernicus()] keeps the
 #' choice of summary — mean wind, or the day's maximum gust — with the caller.
 #'
 #' The `HOUR` column is consumed rather than carried through: it is the axis
@@ -53,7 +53,7 @@
 #' present, and `keep_counts = TRUE` to see how many steps were behind each value.
 #'
 #' @param env_dat an `sf` POINT object from any access function -
-#'   [accessEnvDat()], [accessFVCOM()], [accessHYCOM()], [accessCCMP()] or
+#'   [accessCopernicus()], [accessFVCOM()], [accessHYCOM()], [accessCCMP()] or
 #'   [accessERDDAP()]
 #' @param to the target period: `"day"`, `"month"`, or `"year"`. `"day"` requires
 #'   hourly input, which only the wind variables have.
@@ -67,11 +67,11 @@
 #' @return an `sf` POINT object with one row per cell per target period. Daily
 #'   output keeps its `YEAR`/`MONTH`/`DAY` and drops `HOUR`; monthly output is
 #'   stamped `DAY = 1`; annual output `MONTH = 1, DAY = 1`, matching what
-#'   [accessEnvDat()] returns for non-daily products so that
+#'   [accessCopernicus()] returns for non-daily products so that
 #'   [matchData()] reads the resolution back correctly.
 #' @examples
 #' \dontrun{
-#' daily <- accessEnvDat(vars = "SST", years = 2010, months = 1:12,
+#' daily <- accessCopernicus(vars = "SST", years = 2010, months = 1:12,
 #'                       dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1D-m",
 #'                       bounding_box = bb)
 #'
@@ -142,7 +142,7 @@ upscale_time <- function(env_dat, to = c("month", "year", "day"), vars = NULL,
   }
 
   out <- sf::st_as_sf(out, coords = c("x", "y"), crs = sf::st_crs(env_dat))
-  # Record the step, as accessEnvDat() does. Inferring it back from the result
+  # Record the step, as accessCopernicus() does. Inferring it back from the result
   # fails on a single period: one day of hourly data aggregated to daily is one
   # day in one month, which is indistinguishable by inspection from monthly, and
   # detect_temporal_resolution() falls back to "month". matchData() would then
@@ -198,7 +198,7 @@ upscale_time <- function(env_dat, to = c("month", "year", "day"), vars = NULL,
 #' @return an `sf` POINT object with one row per cell per target step
 #' @examples
 #' \dontrun{
-#' monthly <- accessEnvDat(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
+#' monthly <- accessCopernicus(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
 #'
 #' # Daily steps, each carrying its month's value
 #' daily <- downscale_time(monthly, to = "day")

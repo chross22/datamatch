@@ -109,7 +109,7 @@ test_that("attach_bathymetry works on sf points as well as data frames", {
   plain <- data.frame(lon = c(-69.5, -67.5), lat = c(42.0, 42.5))
   spatial <- sf::st_as_sf(plain, coords = c("lon", "lat"), crs = 4326)
 
-  # accessEnvDat() returns sf, observations are usually a plain data frame;
+  # accessCopernicus() returns sf, observations are usually a plain data frame;
   # both must work without the caller converting first.
   from_plain <- attach_bathymetry(plain, layers, "DEPTH")
   from_sf <- attach_bathymetry(spatial, layers, "DEPTH")

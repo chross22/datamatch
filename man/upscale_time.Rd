@@ -15,7 +15,7 @@ upscale_time(
 }
 \arguments{
 \item{env_dat}{an \code{sf} POINT object from any access function -
-\code{\link[=accessEnvDat]{accessEnvDat()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=accessCCMP]{accessCCMP()}} or
+\code{\link[=accessCopernicus]{accessCopernicus()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=accessCCMP]{accessCCMP()}} or
 \code{\link[=accessERDDAP]{accessERDDAP()}}}
 
 \item{to}{the target period: \code{"day"}, \code{"month"}, or \code{"year"}. \code{"day"} requires
@@ -36,7 +36,7 @@ steps behind each value}
 an \code{sf} POINT object with one row per cell per target period. Daily
 output keeps its \code{YEAR}/\code{MONTH}/\code{DAY} and drops \code{HOUR}; monthly output is
 stamped \code{DAY = 1}; annual output \verb{MONTH = 1, DAY = 1}, matching what
-\code{\link[=accessEnvDat]{accessEnvDat()}} returns for non-daily products so that
+\code{\link[=accessCopernicus]{accessCopernicus()}} returns for non-daily products so that
 \code{\link[=matchData]{matchData()}} reads the resolution back correctly.
 }
 \description{
@@ -50,7 +50,7 @@ place.
 This is the route to a daily wind field. Copernicus publishes its L4 wind
 hourly and monthly and nothing between, so \code{frequency = "daily"} is refused
 for the wind variables; aggregating the hourly field is how a daily mean is
-produced, and doing it here rather than inside \code{\link[=accessEnvDat]{accessEnvDat()}} keeps the
+produced, and doing it here rather than inside \code{\link[=accessCopernicus]{accessCopernicus()}} keeps the
 choice of summary — mean wind, or the day's maximum gust — with the caller.
 
 The \code{HOUR} column is consumed rather than carried through: it is the axis
@@ -100,7 +100,7 @@ present, and \code{keep_counts = TRUE} to see how many steps were behind each va
 
 \examples{
 \dontrun{
-daily <- accessEnvDat(vars = "SST", years = 2010, months = 1:12,
+daily <- accessCopernicus(vars = "SST", years = 2010, months = 1:12,
                       dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1D-m",
                       bounding_box = bb)
 
