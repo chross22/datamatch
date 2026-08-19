@@ -289,6 +289,8 @@ accessCCMP <- function(vars, years = NULL, months = NULL, bounding_box,
     days <- sort(unique(days))
   }
 
+  stop_if_future(days, paste("CCMP", version))
+
   before_record <- days < spec$start
   if (all(before_record)) {
     stop("CCMP ", version, " begins ", format(spec$start),

@@ -601,6 +601,8 @@ accessHYCOM <- function(vars, years = NULL, months = NULL, bounding_box,
     days <- sort(unique(days))
   }
 
+  stop_if_future(days, "HYCOM")
+
   if (continuous) {
     day_archive <- hycom_archive_per_day(days, archives)
     uncovered <- is.na(day_archive)

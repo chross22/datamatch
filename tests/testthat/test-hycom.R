@@ -198,10 +198,17 @@ test_that("a request outside an archive names the ones that hold it", {
                            bounding_box = bb),
                "every requested day is outside it")
 
-  # Past every archive, there is nothing to point at.
-  expect_error(accessHYCOM(vars = "BOTS", dates = "2030-06-15",
+  # Past every archive, there is nothing to point at. The date has to be in the
+  # past for this to be the message that comes back: a future one is caught
+  # earlier, by the check that it has not happened yet, which is the more useful
+  # thing to say about it.
+  expect_error(accessHYCOM(vars = "BOTS", dates = "2025-06-15",
                            bounding_box = bb),
                "No archive in hycom_archives")
+
+  expect_error(accessHYCOM(vars = "BOTS", dates = "2030-06-15",
+                           bounding_box = bb),
+               "have not happened yet")
 })
 
 test_that("the longitude window handles both of HYCOM's conventions", {

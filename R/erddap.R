@@ -346,6 +346,8 @@ accessERDDAP <- function(vars, years = NULL, months = NULL, bounding_box,
     days <- sort(unique(days))
   }
 
+  stop_if_future(days, paste("The ERDDAP dataset", spec$label %||% dataset))
+
   outside <- days < spec$start | (!is.na(spec$end) & days > spec$end)
   if (any(outside)) {
     span <- paste0(format(spec$start), " to ",

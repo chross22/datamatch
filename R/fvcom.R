@@ -689,6 +689,7 @@ accessFVCOM <- function(vars, years = NULL, months = NULL, bounding_box,
            "`months` are not\nused with it.", call. = FALSE)
     }
     dates <- parse_dates(dates)
+    stop_if_future(dates, "FVCOM")
     years <- as.integer(format(dates, "%Y"))
     months <- as.integer(format(dates, "%m"))
     wanted <- unique(paste(years, months, sep = "-"))

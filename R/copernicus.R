@@ -1,3 +1,42 @@
+#' Refuse days that have not happened yet
+#'
+#' A date in the future cannot have been observed, and outside a forecast
+#' horizon it cannot have been modelled either. Left unchecked, a request for
+#' one costs a download attempt per day and then an error from the server about
+#' exceeding the dataset coordinates, which says nothing about the actual
+#' mistake - usually a typo in a year, or a projection window that ran past the
+#' end of the record.
+#'
+#' Checked before anything is fetched, so the cost is a second rather than
+#' however long the failed downloads took to give up.
+#'
+#' @param days <Date> the days a call is about to fetch
+#' @param source <char> the source name, for the message
+#' @param ahead <integer> how many days past today this source can legitimately
+#'   reach. Zero for anything observational; about ten for a Copernicus
+#'   analysis-and-forecast product.
+#' @return invisibly `NULL`; called for the error
+#' @keywords internal
+stop_if_future <- function(days, source, ahead = 0L) {
+  today <- Sys.Date()
+  horizon <- today + ahead
+  future <- !is.na(days) & days > horizon
+  if (!any(future)) return(invisible(NULL))
+
+  furthest <- max(days[future])
+  reach <- if (ahead > 0) {
+    paste0("It reaches about ", ahead, " days past today, to ",
+           format(horizon), ".")
+  } else {
+    paste0("It reaches today, ", format(today), ", at the furthest.")
+  }
+
+  stop(sum(future), " requested day(s) have not happened yet - the furthest is ",
+       format(furthest), ".\n  ", source, " cannot have data for them. ", reach,
+       "\n  If this came from a projection window, it is asking for months no ",
+       "covariate can exist for.", call. = FALSE)
+}
+
 
 #' Parse the `dates` argument into a sorted, unique vector of dates
 #'
@@ -672,6 +711,20 @@ accessCopernicus <- function(vars, years = NULL, months = NULL,
   } else if (is.null(years) || is.null(months)) {
     stop("`years` and `months` are required, unless `dates` names the exact ",
          "dates to fetch.", call. = FALSE)
+  }
+
+  # A reanalysis reaches today at best; the analysis-and-forecast products run
+  # about ten days past it. Either way a date beyond that has not happened, and
+  # asking for it is a typo in a year or a projection window that ran off the
+  # end of the record - both worth catching here rather than after a download
+  # attempt per day.
+  horizon_days <- if (mode == "forecast") 10L else 0L
+  if (!is.null(dates)) {
+    stop_if_future(dates, "Copernicus", ahead = horizon_days)
+  } else {
+    # For whole months, the month has to have begun to hold anything at all.
+    latest_month <- as.Date(sprintf("%04d-%02d-01", max(years), max(months)))
+    stop_if_future(latest_month, "Copernicus", ahead = horizon_days)
   }
 
   # `vars` may be catalog names ("SST") or raw Copernicus codes ("thetao").
