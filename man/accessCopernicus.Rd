@@ -5,27 +5,21 @@
 \title{Access environmental data from Copernicus Marine Service}
 \usage{
 accessCopernicus(
-  product_id = NULL,
-  dataset_id = NULL,
   vars,
   years = NULL,
   months = NULL,
   bounding_box,
-  depth = c(0, 1),
-  overwrite = FALSE,
-  n_workers = 4,
-  frequency = c("monthly", "daily", "hourly"),
   dates = NULL,
-  mode = c("reanalysis", "forecast")
+  frequency = c("monthly", "daily", "hourly"),
+  depth = c(0, 1),
+  mode = c("reanalysis", "forecast"),
+  product_id = NULL,
+  dataset_id = NULL,
+  n_workers = 4,
+  overwrite = FALSE
 )
 }
 \arguments{
-\item{product_id}{\if{html}{\out{<char>}} product identification string from the Copernicus
-Marine Data Store. Optional when \code{vars} are catalog names.}
-
-\item{dataset_id}{\if{html}{\out{<char>}} dataset identification string from the Copernicus
-Marine Data Store. Optional when \code{vars} are catalog names.}
-
 \item{vars}{\if{html}{\out{<char>}} variables to access: names from \code{\link[=variable_dictionary]{variable_dictionary()}},
 raw Copernicus variable codes, or a mixture}
 
@@ -37,31 +31,37 @@ given.}
 
 \item{bounding_box}{\if{html}{\out{<list>}} named list of spatial coordinates of bounding box}
 
-\item{depth}{\if{html}{\out{<numeric>}} depth range to access (in meters). Widened to the whole
-water column for a derived variable such as \code{BOTS}, which needs it, unless
-given explicitly.}
-
-\item{overwrite}{\if{html}{\out{<logical>}} whether or not to overwrite the data if it exists locally}
-
-\item{n_workers}{\if{html}{\out{<integer>}} how many days to download at once. See the
-Downloading in parallel section. Use \code{n_workers = 1} to download one day at
-a time.}
-
-\item{frequency}{\if{html}{\out{<char>}} \code{"monthly"} (the default) for monthly means,
-\code{"daily"} for daily ones, or \code{"hourly"}, which only the wind variables have.
-See the Monthly and daily data and Hourly wind sections. Ignored when
-\code{dataset_id} is given, since the dataset itself fixes the step.}
-
 \item{dates}{the exact dates to fetch, as \code{YYYYMMDD} strings,
 \code{YYYY-MM-DD} strings, or \code{Date} objects. \code{NULL}, the default, fetches every
 day of the requested months instead. Passing \code{dates} implies
 \code{frequency = "daily"} and replaces \code{years} and \code{months}, which must then not
 be given. See the Fetching specific dates section.}
 
+\item{frequency}{\if{html}{\out{<char>}} \code{"monthly"} (the default) for monthly means,
+\code{"daily"} for daily ones, or \code{"hourly"}, which only the wind variables have.
+See the Monthly and daily data and Hourly wind sections. Ignored when
+\code{dataset_id} is given, since the dataset itself fixes the step.}
+
+\item{depth}{\if{html}{\out{<numeric>}} depth range to access (in meters). Widened to the whole
+water column for a derived variable such as \code{BOTS}, which needs it, unless
+given explicitly.}
+
 \item{mode}{\if{html}{\out{<char>}} \code{"reanalysis"} (the default) for the multi-year hindcast,
 or \code{"forecast"} for the analysis-and-forecast products, which run to about
 ten days ahead. See \code{\link[=forecast_variables]{forecast_variables()}} for which variables have a
 forecast equivalent and how the identifiers differ.}
+
+\item{product_id}{\if{html}{\out{<char>}} product identification string from the Copernicus
+Marine Data Store. Optional when \code{vars} are catalog names.}
+
+\item{dataset_id}{\if{html}{\out{<char>}} dataset identification string from the Copernicus
+Marine Data Store. Optional when \code{vars} are catalog names.}
+
+\item{n_workers}{\if{html}{\out{<integer>}} how many days to download at once. See the
+Downloading in parallel section. Use \code{n_workers = 1} to download one day at
+a time.}
+
+\item{overwrite}{\if{html}{\out{<logical>}} whether or not to overwrite the data if it exists locally}
 }
 \value{
 \if{html}{\out{<sf object>}} sf object containing requested environmental data from

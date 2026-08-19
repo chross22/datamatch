@@ -382,6 +382,30 @@ read_day_deepest <- function(item, code, name) {
   out
 }
 
+# Catches the pre-0.2.0 argument order, where product_id and dataset_id came
+# first. Those identifiers are structurally unlike any variable name - the
+# dictionary names are short and upper-case, the raw Copernicus codes short and
+# lower-case - so a `vars` that looks like an identifier is a positional call
+# written against the old signature, not a variable anyone meant to request.
+stop_if_legacy_positional <- function(vars) {
+  if (!is.character(vars) || length(vars) != 1) return(invisible(NULL))
+
+  looks_like_id <- grepl("^(cmems_|GLOBAL_|OCEANCOLOUR_|WIND_|MULTIOBS_)", vars) ||
+    grepl("^[A-Z]+(_[A-Z0-9]+){3,}$", vars)
+
+  if (looks_like_id) {
+    stop("`vars` looks like a product or dataset identifier: ", vars, "\n",
+         "  accessCopernicus() used to take product_id and dataset_id first. It now ",
+         "starts with\n  `vars`, matching accessFVCOM(), accessHYCOM(), accessCCMP() ",
+         "and accessERDDAP().\n",
+         "  Name the arguments: accessCopernicus(vars = ..., product_id = ", vars, ", ...)\n",
+         "  Both identifiers can usually be dropped entirely - they are inferred from ",
+         "the\n  variable names. See variable_dictionary().",
+         call. = FALSE)
+  }
+  invisible(NULL)
+}
+
 #' Access environmental data from Copernicus Marine Service
 #'
 #' Downloads a Copernicus dataset over a bounding box and time range, and returns
@@ -474,6 +498,7 @@ read_day_deepest <- function(item, code, name) {
 #' instants or aggregates.
 #'
 
+
 #' Not every variable has a daily equivalent. `PH`, `PP`, `DIATO` and `DINO` are
 #' published as monthly composites only, and asking for them daily is refused
 #' before anything is downloaded. Daily `CHL` comes from the gap-free
@@ -558,10 +583,6 @@ read_day_deepest <- function(item, code, name) {
 #' successful ones stay in the cache, and the error names each day that failed —
 #' so re-running the same call retries only those.
 #'
-#' @param product_id <char> product identification string from the Copernicus
-#'   Marine Data Store. Optional when `vars` are catalog names.
-#' @param dataset_id <char> dataset identification string from the Copernicus
-#'   Marine Data Store. Optional when `vars` are catalog names.
 #' @param vars <char> variables to access: names from [variable_dictionary()],
 #'   raw Copernicus variable codes, or a mixture
 #' @param years <numeric> years of data to access. Required unless `dates` is
@@ -569,38 +590,49 @@ read_day_deepest <- function(item, code, name) {
 #' @param months <numeric> months of data to access. Required unless `dates` is
 #'   given.
 #' @param bounding_box <list> named list of spatial coordinates of bounding box
-#' @param depth <numeric> depth range to access (in meters). Widened to the whole
-#'   water column for a derived variable such as `BOTS`, which needs it, unless
-#'   given explicitly.
-#' @param overwrite <logical> whether or not to overwrite the data if it exists locally
-#' @param mode <char> `"reanalysis"` (the default) for the multi-year hindcast,
-#'   or `"forecast"` for the analysis-and-forecast products, which run to about
-#'   ten days ahead. See [forecast_variables()] for which variables have a
-#'   forecast equivalent and how the identifiers differ.
-#' @param frequency <char> `"monthly"` (the default) for monthly means,
-#'   `"daily"` for daily ones, or `"hourly"`, which only the wind variables have.
-#'   See the Monthly and daily data and Hourly wind sections. Ignored when
-#'   `dataset_id` is given, since the dataset itself fixes the step.
 #' @param dates the exact dates to fetch, as `YYYYMMDD` strings,
 #'   `YYYY-MM-DD` strings, or `Date` objects. `NULL`, the default, fetches every
 #'   day of the requested months instead. Passing `dates` implies
 #'   `frequency = "daily"` and replaces `years` and `months`, which must then not
 #'   be given. See the Fetching specific dates section.
+#' @param frequency <char> `"monthly"` (the default) for monthly means,
+#'   `"daily"` for daily ones, or `"hourly"`, which only the wind variables have.
+#'   See the Monthly and daily data and Hourly wind sections. Ignored when
+#'   `dataset_id` is given, since the dataset itself fixes the step.
+#' @param depth <numeric> depth range to access (in meters). Widened to the whole
+#'   water column for a derived variable such as `BOTS`, which needs it, unless
+#'   given explicitly.
+#' @param mode <char> `"reanalysis"` (the default) for the multi-year hindcast,
+#'   or `"forecast"` for the analysis-and-forecast products, which run to about
+#'   ten days ahead. See [forecast_variables()] for which variables have a
+#'   forecast equivalent and how the identifiers differ.
+#' @param product_id <char> product identification string from the Copernicus
+#'   Marine Data Store. Optional when `vars` are catalog names.
+#' @param dataset_id <char> dataset identification string from the Copernicus
+#'   Marine Data Store. Optional when `vars` are catalog names.
 #' @param n_workers <integer> how many days to download at once. See the
 #'   Downloading in parallel section. Use `n_workers = 1` to download one day at
 #'   a time.
+#' @param overwrite <logical> whether or not to overwrite the data if it exists locally
 #' @return <sf object> sf object containing requested environmental data from
 #'   Copernicus Marine Service, with `YEAR`/`MONTH`/`DAY` columns, an `HOUR`
 #'   column when the fetch was hourly, and a `<var>_depth` column for a derived
 #'   bottom variable
 #' @export
-accessCopernicus <- function(product_id = NULL, dataset_id = NULL, vars,
-                         years = NULL, months = NULL,
-                         bounding_box, depth = c(0,1),
-                         overwrite = FALSE, n_workers = 4,
+accessCopernicus <- function(vars, years = NULL, months = NULL,
+                         bounding_box, dates = NULL,
                          frequency = c("monthly", "daily", "hourly"),
-                         dates = NULL,
-                         mode = c("reanalysis", "forecast")) {
+                         depth = c(0,1),
+                         mode = c("reanalysis", "forecast"),
+                         product_id = NULL, dataset_id = NULL,
+                         n_workers = 4, overwrite = FALSE) {
+  # product_id and dataset_id led this signature until 0.2.0, when the argument
+  # order was brought into line with the other four access functions. A script
+  # written against the old order and calling positionally would now put a
+  # product identifier into `vars` and fetch nothing, so it is caught here
+  # rather than left to fail somewhere downstream.
+  if (!missing(vars)) stop_if_legacy_positional(vars)
+
   mode <- match.arg(mode)
   # Recorded before match.arg(), which assigns to `frequency` and so makes
   # missing(frequency) FALSE from that point on.

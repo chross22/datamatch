@@ -1,5 +1,26 @@
 # datamatch 0.2.0
 
+## Breaking changes
+
+* **`accessCopernicus()` takes its arguments in the same order as the other four
+  access functions.** It led with `product_id` and `dataset_id`, where
+  `accessFVCOM()`, `accessHYCOM()`, `accessCCMP()` and `accessERDDAP()` all lead
+  with `vars`. All five now open `vars, years, months, bounding_box, dates`, put
+  `frequency` sixth where the source has more than one step, and end with
+  `overwrite`; the source-specific arguments sit between. Swapping one access
+  function for another is now a rename rather than a rewrite.
+
+  Calls that name their arguments — every example in the documentation, and
+  every call in datamatch, taupatch, derivoce and msomgom — are unaffected.
+  A call written positionally against the old order would now put a product
+  identifier into `vars`, which would fetch nothing rather than fail, so that
+  case is caught at the call with a message saying what changed.
+
+  `product_id` and `dataset_id` can usually be dropped entirely; they are
+  inferred from the variable names.
+
+  A new test file pins the shared order, so the five cannot drift apart again.
+
 ## Documentation
 
 * **The README is now a front door rather than a manual.** It had grown to 1,618
