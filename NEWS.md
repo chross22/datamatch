@@ -1,5 +1,26 @@
 # datamatch 0.2.0
 
+## New features
+
+* **`accessHYCOM(archive = "continuous")` reads across the archives.** HYCOM
+  reaches 1994 to September 2024, but only as a reanalysis followed by a chain of
+  shorter operational experiments, and until now that meant one call per archive.
+  `"continuous"` picks an archive per day — the reanalysis wherever it reaches,
+  the earliest-starting operational archive after that — so a single call spans
+  the record.
+
+  It is opt-in, and the default is unchanged, because the seam is real: crossing
+  out of the reanalysis leaves one internally consistent hindcast for the model
+  as it was running at the time, so a step in a series across that date can be
+  the change of run rather than a change in the ocean. The call warns once,
+  naming the day it happens and the archives it used.
+
+  **Provenance is recorded per row** for such a fetch, rather than once for the
+  object, so a value from the operational model never claims to be the
+  reanalysis. `source_of()` reports every run present, and `matchData()` carries
+  the per-row tag into `<var>_source`. A continuous read that never leaves one
+  archive is stamped once, as before.
+
 ## Breaking changes
 
 * **`accessCopernicus()` takes its arguments in the same order as the other four

@@ -192,6 +192,11 @@ matchData <- function(dat, source,
   # column straight across - would get silently mismatched rows. The original
   # position is carried through and used to restore the order at the end.
   #
+  # A fetch spanning several archives records its source per row rather than
+  # once for the object, so that column has to ride through the join with the
+  # variables. Empty for the usual single-archive fetch.
+  row_source_col <- if (!is.null(row_sources(source))) ".datamatch_source" else character(0)
+
   # The name is deliberately awkward so it cannot collide with a real column.
   order_key <- ".datamatch_row_order"
   dat[[order_key]] <- seq_len(nrow(dat))
@@ -209,13 +214,13 @@ matchData <- function(dat, source,
     }
 
     rows <- dat[in_period, ]
-    source_slice <- source[source_in_period, c(source_vars)]
+    source_slice <- source[source_in_period, c(source_vars, row_source_col)]
 
     if (nrow(source_slice) == 0) {
       # st_nearest_feature cannot join against an empty set, so fill the matched
       # columns with NA rather than dropping the rows. Dropping them would
       # silently change the row count of the result.
-      for (v in source_vars) rows[[v]] <- NA
+      for (v in c(source_vars, row_source_col)) rows[[v]] <- NA
       unmatched_periods <- c(unmatched_periods,
                              paste(unlist(periods[i, , drop = TRUE]), collapse = "-"))
       matched[[i]] <- rows
@@ -267,12 +272,19 @@ matchData <- function(dat, source,
   # whether it holds a global reanalysis, a regional coastal model or an
   # independent global model - and once several are chained onto one table, the
   # only other record of it is the caller's memory of which calls they made.
-  provenance <- source_of(source)
-  if (record_source && !is.na(provenance)) {
+  # Per row where the fetch spanned archives, one value for the whole object
+  # otherwise. The per-row form matters because a continuous HYCOM fetch crosses
+  # from a reanalysis into the model as it was running at the time, and which
+  # side of that seam a value came from is a property of the row, not the fetch.
+  per_row <- if (length(row_source_col)) matched_data[[".datamatch_source"]] else NULL
+  provenance <- if (!is.null(per_row)) per_row else source_of(source)
+
+  if (record_source && !all(is.na(provenance))) {
     for (v in source_vars) {
       matched_data[[paste0(v, "_source")]] <- provenance
     }
   }
+  if (length(row_source_col)) matched_data[[".datamatch_source"]] <- NULL
 
   matched_data
 }

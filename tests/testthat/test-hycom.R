@@ -223,3 +223,81 @@ test_that("the longitude window handles both of HYCOM's conventions", {
   regional <- seq(280, 300, by = 0.08)
   expect_error(hycom_lon_window(regional, 20, 30), "selects no longitude")
 })
+
+# Reading across archives. The network is not needed for any of this: what is
+# checked is which archive each day is assigned to, that the seam is announced,
+# and that provenance survives per row rather than collapsing to one label.
+
+test_that("a continuous read prefers the reanalysis wherever it reaches", {
+  archives <- hycom_archives()
+
+  # 2014-07-01 onward is covered by GLBv563 as well, but GLBv53X runs to the end
+  # of 2015 and is one consistent hindcast, so it wins while it lasts.
+  chosen <- datamatch:::hycom_archive_per_day(
+    as.Date(c("1995-01-01", "2014-08-01", "2015-12-31")), archives)
+  expect_equal(unname(chosen), rep("GLBv53X", 3))
+})
+
+test_that("a continuous read falls through to the operational archives after 2015", {
+  archives <- hycom_archives()
+
+  chosen <- datamatch:::hycom_archive_per_day(as.Date("2019-06-15"), archives)
+  expect_true(chosen %in% hycom_covering("2019-06-15"))
+  expect_false(chosen == "GLBv53X")
+
+  # Every day of the stated record gets an archive.
+  spread <- seq(as.Date("1994-06-01"), as.Date("2024-06-01"), by = "3 months")
+  chosen <- datamatch:::hycom_archive_per_day(spread, archives)
+  expect_false(any(is.na(chosen)))
+})
+
+test_that("days outside every archive come back NA rather than being invented", {
+  archives <- hycom_archives()
+  expect_true(is.na(datamatch:::hycom_archive_per_day(as.Date("1980-01-01"), archives)))
+  expect_true(is.na(datamatch:::hycom_archive_per_day(as.Date("2030-01-01"), archives)))
+})
+
+test_that("an unknown archive names 'continuous' among the options", {
+  expect_error(
+    accessHYCOM(vars = "SST", dates = "2010-06-15", archive = "nope",
+                bounding_box = list(xmin = -70, xmax = -66, ymin = 41, ymax = 44)),
+    "continuous"
+  )
+})
+
+test_that("provenance is per row when a fetch spans archives", {
+  # stamp_source() is where the two cases part: one tag for the object when a
+  # fetch came from one archive, one tag per row when it did not.
+  d <- sf::st_as_sf(
+    data.frame(x = c(1, 2, 3), y = c(1, 2, 3), SST = c(4, 5, 6)),
+    coords = c("x", "y"), crs = 4326)
+
+  one <- stamp_source(d, "hycom", "GLBv53X")
+  expect_equal(source_of(one), "hycom:GLBv53X")
+  expect_null(datamatch:::row_sources(one))
+
+  many <- stamp_source(d, "hycom", c("GLBv53X", "GLBv53X", "GLBy930"))
+  expect_equal(datamatch:::row_sources(many),
+               c("hycom:GLBv53X", "hycom:GLBv53X", "hycom:GLBy930"))
+  expect_equal(source_of(many), "hycom:GLBv53X+hycom:GLBy930")
+})
+
+test_that("matchData carries a per-row source into <var>_source", {
+  source_dat <- sf::st_as_sf(
+    data.frame(x = c(-69, -67), y = c(42, 43), SST = c(8, 9),
+               YEAR = c(2015L, 2019L), MONTH = c(6L, 6L), DAY = c(15L, 15L)),
+    coords = c("x", "y"), crs = 4326)
+  source_dat <- stamp_source(source_dat, "hycom", c("GLBv53X", "GLBy930"))
+
+  obs <- sf::st_as_sf(
+    data.frame(x = c(-69, -67), y = c(42, 43),
+               YEAR = c(2015L, 2019L), MONTH = c(6L, 6L), DAY = c(15L, 15L)),
+    coords = c("x", "y"), crs = 4326)
+
+  matched <- matchData(obs, source_dat, temporal_resolution = "day")
+
+  expect_equal(nrow(matched), 2)
+  expect_equal(matched$SST_source, c("hycom:GLBv53X", "hycom:GLBy930"))
+  # The bookkeeping column does not survive into the result.
+  expect_false(".datamatch_source" %in% names(matched))
+})

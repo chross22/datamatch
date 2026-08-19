@@ -300,9 +300,26 @@ hycom_covering("2019-06-15")
 #> [1] "GLBv930" "GLBy930"
 ```
 
-The seam that matters is the **run**, not the grid. Note also that some
-three-hourly steps are simply absent, so a daily request at a missing hour skips
-that day and warns.
+`archive = "continuous"` reads across the archives instead, spanning the whole
+1994–2024 record in one call. It is opt-in because **the seam that matters is
+the run, not the grid**: crossing out of the reanalysis leaves one consistent
+hindcast for the model as it was running at the time, so a step in a series
+across that date can be the change of run rather than the ocean. The call warns
+once, naming the day it happens, and records the archive on every row:
+
+
+``` r
+env <- accessHYCOM(vars = "BOTS", years = 2014:2019, months = 6,
+                   bounding_box = bb, archive = "continuous")
+source_of(env)
+#> "hycom:GLBv53X+hycom:GLBv930"
+```
+
+`matchData()` carries that into `<var>_source` per row, so a value from the
+operational model never claims to be the reanalysis.
+
+Note also that some three-hourly steps are simply absent, so a daily request at
+a missing hour skips that day and warns.
 
 ## CCMP
 

@@ -386,6 +386,31 @@ hycom_read_variable <- function(handle, entry, step, lon_window, lat_window) {
   values[lon_window$keep, , drop = FALSE]
 }
 
+#' Choose one archive per day, for a continuous read
+#'
+#' Prefers the reanalysis wherever it reaches, because it is one internally
+#' consistent run; falls back to the operational archive that starts earliest
+#' among those covering the day, so the result crosses as few seams as it can.
+#'
+#' @param days <Date> the days to place
+#' @param archives <list> [hycom_archives()]
+#' @return <char> one archive name per day, `NA` where none covers it
+#' @keywords internal
+hycom_archive_per_day <- function(days, archives) {
+  starts <- do.call(c, lapply(archives, function(a) a$start))
+  kinds <- vapply(archives, function(a) a$kind, character(1))
+
+  vapply(days, function(day) {
+    covering <- hycom_covering(day)
+    if (length(covering) == 0) return(NA_character_)
+
+    reanalysis <- covering[kinds[covering] == "reanalysis"]
+    if (length(reanalysis) > 0) return(reanalysis[[1]])
+
+    covering[order(starts[covering])][[1]]
+  }, character(1))
+}
+
 #' Access HYCOM output from the GOFS 3.1 reanalysis
 #'
 #' Reads HYCOM over OPeNDAP and returns it as an `sf` point object with one row
@@ -442,7 +467,31 @@ hycom_read_variable <- function(handle, entry, step, lon_window, lat_window) {
 #'                       bounding_box = bb, archive = "GLBy930")
 #' ```
 #'
-#' One archive is read per call, and a request falling outside the one named is
+#' @section Reading across archives:
+#'
+#' `archive = "continuous"` spans the whole 1994–2024 record in one call, rather
+#' than one archive per call. It is opt-in because the seam is real: crossing out
+#' of `GLBv53X` leaves an internally consistent reanalysis for the model as it
+#' was running at the time, so a step in a series across that date can be the
+#' change of run rather than a change in the ocean. The call warns once, naming
+#' the day it happens.
+#'
+#' The grids mostly agree — `GLBv0.08` and `GLBy0.08` hold the same 126 latitudes
+#' between 40 and 45 °N — so on a mid-latitude shelf the cells line up across the
+#' seam. It is the run that changes, not the geometry.
+#'
+#' Provenance is recorded per row rather than per fetch, so a value from the
+#' operational model never claims to be the reanalysis. [matchData()] carries
+#' that into `<var>_source`.
+#'
+#' ```r
+#' env <- accessHYCOM(vars = "BOTS", years = 2014:2019, months = 6,
+#'                    bounding_box = bb, archive = "continuous")
+#' source_of(env)
+#' #> [1] "hycom:GLBv53X+hycom:GLBv563+hycom:GLBv930"
+#' ```
+#'
+#' One archive is read per call otherwise, and a request falling outside the one named is
 #' told which others hold it rather than being stitched to them silently. The
 #' archives overlap, so where two cover a date there is a real choice between
 #' the more consistent run and the more recent one, and crossing from the
@@ -468,9 +517,13 @@ hycom_read_variable <- function(handle, entry, step, lon_window, lat_window) {
 #'   `"3hourly"` for every step. Neither is a mean; see the Three-hourly section.
 #' @param hour <integer> which UTC hour to take when `frequency = "daily"`. Must
 #'   be a multiple of 3, since that is the model's step.
-#' @param archive <char> which archive to read, from [hycom_archives()]. The
-#'   default is the 1994–2015 reanalysis; later years live in the operational
-#'   archives, which [hycom_covering()] will name for a given date.
+#' @param archive <char> which archive to read, from [hycom_archives()], or
+#'   `"continuous"` to read across them. The default is the 1994–2015
+#'   reanalysis; later years live in the operational archives, which
+#'   [hycom_covering()] will name for a given date. `"continuous"` picks an
+#'   archive per day — the reanalysis wherever it reaches, the earliest-starting
+#'   operational archive after that — and warns once, naming the day the run
+#'   changes. Every row records the archive it came from; see [source_of()].
 #' @param overwrite <logical> re-read time steps already cached
 #' @return <sf object> one row per grid cell per time step, with `YEAR`, `MONTH`
 #'   and `DAY`, an `HOUR` column when `frequency = "3hourly"`, and a column per
@@ -500,11 +553,16 @@ accessHYCOM <- function(vars, years = NULL, months = NULL, bounding_box,
   frequency <- match.arg(frequency)
 
   archives <- hycom_archives()
-  if (!archive %in% names(archives)) {
+  continuous <- identical(archive, "continuous")
+  if (!continuous && !archive %in% names(archives)) {
     stop("Unknown archive '", archive, "'. Available: ",
-         paste(names(archives), collapse = ", "), call. = FALSE)
+         paste(names(archives), collapse = ", "),
+         ", or \"continuous\" to read across them.", call. = FALSE)
   }
-  spec <- archives[[archive]]
+  # A continuous read still needs one spec for the checks that precede knowing
+  # which days are wanted. The reanalysis is the reference: it is the default,
+  # the longest single run, and every archive here shares its 3-hourly step.
+  spec <- if (continuous) archives[["GLBv53X"]] else archives[[archive]]
 
   catalog <- hycom_variables()
   unknown <- setdiff(vars, names(catalog))
@@ -543,7 +601,45 @@ accessHYCOM <- function(vars, years = NULL, months = NULL, bounding_box,
     days <- sort(unique(days))
   }
 
-  outside <- days < spec$start | days > spec$end
+  if (continuous) {
+    day_archive <- hycom_archive_per_day(days, archives)
+    uncovered <- is.na(day_archive)
+    if (all(uncovered)) {
+      stop("No archive in hycom_archives() covers any of the requested days. ",
+           "HYCOM here runs ", format(min(vapply(archives, function(a) a$start, as.Date(NA)))),
+           " to ", format(max(vapply(archives, function(a) a$end, as.Date(NA)))), ".",
+           call. = FALSE)
+    }
+    if (any(uncovered)) {
+      warning(sum(uncovered), " day(s) fall in the gap between HYCOM archives ",
+              "and were skipped.", call. = FALSE)
+      days <- days[!uncovered]
+      day_archive <- day_archive[!uncovered]
+    }
+
+    # The seam that matters is the run, not the grid: crossing out of the
+    # reanalysis means leaving one internally consistent hindcast for the model
+    # as it was running at the time. Said once, naming the day it happens, since
+    # it is a property of the series rather than of any one value.
+    kinds <- vapply(archives[day_archive], function(a) a$kind, character(1))
+    if (length(unique(kinds)) > 1) {
+      first_op <- which(kinds != "reanalysis")[1]
+      warning("This fetch crosses from the HYCOM reanalysis into the operational ",
+              "archives on ", format(days[first_op]), ".\n",
+              "  They are different runs, not a continuation: the reanalysis is one ",
+              "consistent\n  hindcast, the operational archives are the model as it ",
+              "was running at the time.\n",
+              "  A step in a series across that date can be the change of run rather ",
+              "than the ocean.\n",
+              "  Archives used: ", paste(unique(day_archive), collapse = " -> "), ".\n",
+              "  Every row records which one it came from; see source_of().",
+              call. = FALSE)
+    }
+    outside <- rep(FALSE, length(days))
+  } else {
+    day_archive <- rep(archive, length(days))
+    outside <- days < spec$start | days > spec$end
+  }
   if (any(outside)) {
     # The archives overlap and no single one reaches from 1994 to the present,
     # so "outside this archive" is usually "inside a different one". Naming them
@@ -568,6 +664,7 @@ accessHYCOM <- function(vars, years = NULL, months = NULL, bounding_box,
     warning(sum(outside), " day(s) outside this archive (", format(spec$start),
             " to ", format(spec$end), ") are skipped.", advice, call. = FALSE)
     days <- days[!outside]
+    day_archive <- day_archive[!outside]
   }
 
   if (inherits(bounding_box, c("sf", "sfc"))) {
@@ -586,18 +683,26 @@ accessHYCOM <- function(vars, years = NULL, months = NULL, bounding_box,
           collapse = ","),
     frequency, if (frequency == "daily") hour else "all", sep = "|"))
 
-  paths <- vapply(days, function(day) {
-    copernicus_cache("hycom", paste0(archive, "_", format(day, "%Y%m%d"), "_",
+  paths <- vapply(seq_along(days), function(i) {
+    copernicus_cache("hycom", paste0(day_archive[i], "_",
+                                     format(days[i], "%Y%m%d"), "_",
                                      key, ".rds"))
   }, character(1))
 
-  # One connection per year, opened only if that year has something missing.
+  # One connection per archive-year, opened only if it has something missing.
+  # A continuous read groups by archive as well as year, because two archives
+  # can both hold the same year and they are different files.
   needed <- if (overwrite) rep(TRUE, length(days)) else !file.exists(paths)
-  by_year <- split(seq_along(days), format(days, "%Y"))
+  by_year <- split(seq_along(days),
+                   paste(day_archive, format(days, "%Y"), sep = "\r"))
 
   for (year_label in names(by_year)) {
     index <- by_year[[year_label]]
     if (!any(needed[index])) next
+
+    parts <- strsplit(year_label, "\r", fixed = TRUE)[[1]]
+    spec <- archives[[parts[[1]]]]
+    year_label <- parts[[2]]
 
     handle <- hycom_open(spec, as.integer(year_label))
     times <- hycom_times(handle)
@@ -651,10 +756,22 @@ accessHYCOM <- function(vars, years = NULL, months = NULL, bounding_box,
             "skipped.", call. = FALSE)
   }
 
-  out <- sf::st_as_sf(dplyr::bind_rows(lapply(paths[usable], readRDS)),
-                      coords = c("x", "y"), crs = sf::st_crs(4326))
+  frames <- lapply(which(usable), function(i) {
+    frame <- readRDS(paths[i])
+    frame$.archive <- day_archive[i]
+    frame
+  })
+  out <- dplyr::bind_rows(frames)
+  archive_per_row <- out$.archive
+  out$.archive <- NULL
+
+  out <- sf::st_as_sf(out, coords = c("x", "y"), crs = sf::st_crs(4326))
   attr(out, "datamatch_step") <- if (frequency == "3hourly") "hour" else "day"
-  stamp_source(out, "hycom", archive)
+
+  # One tag for a single-archive read, one per row for a continuous one, so a
+  # row that came from the operational model never claims to be the reanalysis.
+  stamp_source(out, "hycom",
+               if (continuous) archive_per_row else archive)
 }
 
 #' Printable dictionary of HYCOM variables

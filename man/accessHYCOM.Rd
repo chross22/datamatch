@@ -36,9 +36,13 @@ strings, or \code{Date} objects}
 \item{hour}{\if{html}{\out{<integer>}} which UTC hour to take when \code{frequency = "daily"}. Must
 be a multiple of 3, since that is the model's step.}
 
-\item{archive}{\if{html}{\out{<char>}} which archive to read, from \code{\link[=hycom_archives]{hycom_archives()}}. The
-default is the 1994–2015 reanalysis; later years live in the operational
-archives, which \code{\link[=hycom_covering]{hycom_covering()}} will name for a given date.}
+\item{archive}{\if{html}{\out{<char>}} which archive to read, from \code{\link[=hycom_archives]{hycom_archives()}}, or
+\code{"continuous"} to read across them. The default is the 1994–2015
+reanalysis; later years live in the operational archives, which
+\code{\link[=hycom_covering]{hycom_covering()}} will name for a given date. \code{"continuous"} picks an
+archive per day — the reanalysis wherever it reaches, the earliest-starting
+operational archive after that — and warns once, naming the day the run
+changes. Every row records the archive it came from; see \code{\link[=source_of]{source_of()}}.}
 
 \item{overwrite}{\if{html}{\out{<logical>}} re-read time steps already cached}
 }
@@ -104,8 +108,33 @@ says which span a given date:
 recent <- accessHYCOM(vars = "BOTS", dates = "2019-06-15",
                       bounding_box = bb, archive = "GLBy930")
 }\if{html}{\out{</div>}}
+}
 
-One archive is read per call, and a request falling outside the one named is
+\section{Reading across archives}{
+
+
+\code{archive = "continuous"} spans the whole 1994–2024 record in one call, rather
+than one archive per call. It is opt-in because the seam is real: crossing out
+of \code{GLBv53X} leaves an internally consistent reanalysis for the model as it
+was running at the time, so a step in a series across that date can be the
+change of run rather than a change in the ocean. The call warns once, naming
+the day it happens.
+
+The grids mostly agree — \code{GLBv0.08} and \code{GLBy0.08} hold the same 126 latitudes
+between 40 and 45 °N — so on a mid-latitude shelf the cells line up across the
+seam. It is the run that changes, not the geometry.
+
+Provenance is recorded per row rather than per fetch, so a value from the
+operational model never claims to be the reanalysis. \code{\link[=matchData]{matchData()}} carries
+that into \verb{<var>_source}.
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{env <- accessHYCOM(vars = "BOTS", years = 2014:2019, months = 6,
+                   bounding_box = bb, archive = "continuous")
+source_of(env)
+#> [1] "hycom:GLBv53X+hycom:GLBv563+hycom:GLBv930"
+}\if{html}{\out{</div>}}
+
+One archive is read per call otherwise, and a request falling outside the one named is
 told which others hold it rather than being stitched to them silently. The
 archives overlap, so where two cover a date there is a real choice between
 the more consistent run and the more recent one, and crossing from the
