@@ -88,7 +88,7 @@ several gigabytes.</p>
 </colgroup>
 <thead><tr class="header">
 <th></th>
-<th><code><a href="../reference/accessEnvDat.html">accessEnvDat()</a></code></th>
+<th><code><a href="../reference/accessCopernicus.html">accessCopernicus()</a></code></th>
 <th><code><a href="../reference/accessFVCOM.html">accessFVCOM()</a></code></th>
 <th><code><a href="../reference/accessHYCOM.html">accessHYCOM()</a></code></th>
 <th><code><a href="../reference/accessCCMP.html">accessCCMP()</a></code></th>
@@ -193,7 +193,7 @@ resampling, plotting, and whatever model you fit — works unchanged:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bb</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>xmin <span class="op">=</span> <span class="op">-</span><span class="fl">70</span>, xmax <span class="op">=</span> <span class="op">-</span><span class="fl">66</span>, ymin <span class="op">=</span> <span class="fl">41</span>, ymax <span class="op">=</span> <span class="fl">44</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">copernicus</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"SST"</span>, years <span class="op">=</span> <span class="fl">2010</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>, bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
+<span><span class="va">copernicus</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/accessCopernicus.html">accessCopernicus</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"SST"</span>, years <span class="op">=</span> <span class="fl">2010</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>, bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
 <span><span class="va">fvcom</span>      <span class="op">&lt;-</span> <span class="fu"><a href="../reference/accessFVCOM.html">accessFVCOM</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"SST"</span>, years <span class="op">=</span> <span class="fl">2010</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>, bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
 <span><span class="va">hycom</span>      <span class="op">&lt;-</span> <span class="fu"><a href="../reference/accessHYCOM.html">accessHYCOM</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"SST"</span>, years <span class="op">=</span> <span class="fl">2010</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>, bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span></code></pre></div>
 <p>All three produce an <code>SST</code> column. <strong>They are three
@@ -250,11 +250,11 @@ different amounts:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Copernicus reanalysis: derived. Fetches ~50 depth levels to keep the deepest</span></span>
 <span><span class="co"># wet one, so it must be fetched alone, and reports the depth it used.</span></span>
-<span><span class="va">bots</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"BOTS"</span>, years <span class="op">=</span> <span class="fl">2010</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>, bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
+<span><span class="va">bots</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/accessCopernicus.html">accessCopernicus</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"BOTS"</span>, years <span class="op">=</span> <span class="fl">2010</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>, bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
 <span><span class="va">bots</span><span class="op">$</span><span class="va">BOTS_depth</span></span>
 <span></span>
 <span><span class="co"># Copernicus forecast: published outright as `sob`, no derivation.</span></span>
-<span><span class="fu"><a href="../reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BOTT"</span>, <span class="st">"BOTS"</span><span class="op">)</span>, years <span class="op">=</span> <span class="fl">2026</span>, months <span class="op">=</span> <span class="fl">7</span>,</span>
+<span><span class="fu"><a href="../reference/accessCopernicus.html">accessCopernicus</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BOTT"</span>, <span class="st">"BOTS"</span><span class="op">)</span>, years <span class="op">=</span> <span class="fl">2026</span>, months <span class="op">=</span> <span class="fl">7</span>,</span>
 <span>             bounding_box <span class="op">=</span> <span class="va">bb</span>, mode <span class="op">=</span> <span class="st">"forecast"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># FVCOM: the deepest sigma layer is the sea floor everywhere. Free.</span></span>
@@ -341,7 +341,7 @@ difference between the Gulf of Maine and the Indian Ocean.</p>
 <p>The pattern is the same as chaining two Copernicus products: each
 call adds columns and leaves the row count alone.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">matched</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/matchData.html">matchData</a></span><span class="op">(</span><span class="va">observations</span>, <span class="fu"><a href="../reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SST"</span>, <span class="st">"MLD"</span><span class="op">)</span>,</span>
+<code class="sourceCode R"><span><span class="va">matched</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/matchData.html">matchData</a></span><span class="op">(</span><span class="va">observations</span>, <span class="fu"><a href="../reference/accessCopernicus.html">accessCopernicus</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SST"</span>, <span class="st">"MLD"</span><span class="op">)</span>,</span>
 <span>                                                years <span class="op">=</span> <span class="fl">2010</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>,</span>
 <span>                                                bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">matched</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/matchData.html">matchData</a></span><span class="op">(</span><span class="va">matched</span>, <span class="fu"><a href="../reference/accessHYCOM.html">accessHYCOM</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"BOTS"</span>, years <span class="op">=</span> <span class="fl">2010</span>,</span>
@@ -359,17 +359,233 @@ after 2013, HYCOM after 2015, <code>LCR</code> after 2014 — so that last
 line is worth running before fitting anything.</p>
 </div>
 <div class="section level2">
-<h2 id="citing-what-you-used">Citing what you used<a class="anchor" aria-label="anchor" href="#citing-what-you-used"></a>
+<h2 id="what-to-cite">What to cite<a class="anchor" aria-label="anchor" href="#what-to-cite"></a>
 </h2>
-<p>Every source here is somebody else’s work, and the obligation travels
-with the data rather than with this package:</p>
+<p>Every source here is somebody else’s work, and the obligation to cite
+travels with the data rather than with this package. <strong>Cite
+whichever products you actually fetched from.</strong> Several catalogs
+carry their references at runtime:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/fvcom_archives.html">fvcom_archives</a></span><span class="op">(</span><span class="op">)</span><span class="op">$</span><span class="va">GOM3</span><span class="op">$</span><span class="va">reference</span></span>
 <span><span class="fu"><a href="../reference/hycom_archives.html">hycom_archives</a></span><span class="op">(</span><span class="op">)</span><span class="op">$</span><span class="va">GLBv53X</span><span class="op">$</span><span class="va">reference</span></span>
 <span><span class="fu"><a href="../reference/ccmp_versions.html">ccmp_versions</a></span><span class="op">(</span><span class="op">)</span><span class="op">$</span><span class="va">`v03.1`</span><span class="op">$</span><span class="va">reference</span></span>
 <span><span class="fu"><a href="../reference/index_dictionary.html">index_dictionary</a></span><span class="op">(</span><span class="op">)</span>          <span class="co"># carries the climate index references</span></span></code></pre></div>
-<p>The README’s References section lists the Copernicus product DOIs.
-Cite whichever you actually fetched from.</p>
+<div class="section level3">
+<h3 id="copernicus-marine-service">Copernicus Marine Service<a class="anchor" aria-label="anchor" href="#copernicus-marine-service"></a>
+</h3>
+<p><a href="https://help.marine.copernicus.eu/en/articles/4444611-how-to-cite-copernicus-marine-products-and-services" class="external-link">Copernicus
+asks for a specific form</a>, including the access date:</p>
+<blockquote>
+<p><em>Product Title</em>. E.U. Copernicus Marine Service Information
+(CMEMS). Marine Data Store (MDS). DOI: 10.48670/moi-xxxxx (Accessed on
+DD MMM YYYY)</p>
+</blockquote>
+<p>Reanalysis products, used by default:</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>Product</th>
+<th>Supplies</th>
+<th>DOI</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Global Ocean Physics Reanalysis (GLORYS12V1)</td>
+<td>
+<code>SST</code>, <code>SSS</code>, <code>BOTT</code>,
+<code>BOTS</code>, <code>UO</code>, <code>VO</code>, <code>SSH</code>,
+<code>MLD</code>, <code>SIC</code>
+</td>
+<td><a href="https://doi.org/10.48670/moi-00021" class="external-link">10.48670/moi-00021</a></td>
+</tr>
+<tr class="even">
+<td>Global Ocean Biogeochemistry Hindcast</td>
+<td>
+<code>CHL_MODEL</code>, <code>NPP_MODEL</code>, <code>NO3</code>,
+<code>PO4</code>, <code>O2</code>, <code>PH</code>
+</td>
+<td><a href="https://doi.org/10.48670/moi-00019" class="external-link">10.48670/moi-00019</a></td>
+</tr>
+<tr class="odd">
+<td>Global Ocean Colour (Copernicus-GlobColour)</td>
+<td>satellite <code>CHL</code>, <code>PP</code>, <code>DIATO</code>,
+<code>DINO</code>
+</td>
+<td><a href="https://doi.org/10.48670/moi-00281" class="external-link">10.48670/moi-00281</a></td>
+</tr>
+<tr class="even">
+<td>Global Ocean Monthly Mean Sea Surface Wind and Stress</td>
+<td>
+<code>WSPD</code>, <code>UWND</code>, <code>VWND</code>,
+<code>TAUX</code>, <code>TAUY</code>, <code>TAU</code>
+</td>
+<td><a href="https://doi.org/10.48670/moi-00181" class="external-link">10.48670/moi-00181</a></td>
+</tr>
+<tr class="odd">
+<td>Global Ocean Hourly Reprocessed Sea Surface Wind and Stress</td>
+<td>the same, with <code>frequency = "hourly"</code>
+</td>
+<td><a href="https://doi.org/10.48670/moi-00185" class="external-link">10.48670/moi-00185</a></td>
+</tr>
+</tbody>
+</table>
+<p><code>BOTS</code> is derived from GLORYS’s salinity field rather than
+published by it, so it carries that product’s citation like any other
+variable taken from it.</p>
+<p>The two wind products are separate records with separate DOIs. A
+study using monthly wind cites the first; one using hourly wind, or a
+daily field aggregated from it, cites the second.</p>
+<p>Analysis-and-forecast products, used with
+<code>mode = "forecast"</code>:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Product</th>
+<th>DOI</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Global Ocean Physics Analysis and Forecast</td>
+<td><a href="https://doi.org/10.48670/moi-00016" class="external-link">10.48670/moi-00016</a></td>
+</tr>
+<tr class="even">
+<td>Global Ocean Biogeochemistry Analysis and Forecast</td>
+<td><a href="https://doi.org/10.48670/moi-00015" class="external-link">10.48670/moi-00015</a></td>
+</tr>
+</tbody>
+</table>
+<p><code><a href="../reference/variable_dataset.html">variable_dataset()</a></code> says which product a variable came
+from, so only the ones you used need citing. Downloads go through the <a href="https://toolbox-docs.marine.copernicus.eu/" class="external-link">Copernicus Marine
+Toolbox</a>, which publishes no DOI of its own — cite the products.</p>
+</div>
+<div class="section level3">
+<h3 id="ocean-and-wind-models">Ocean and wind models<a class="anchor" aria-label="anchor" href="#ocean-and-wind-models"></a>
+</h3>
+<ul>
+<li><p><strong>FVCOM / NECOFS</strong> — Chen C, Beardsley RC, Cowles G
+(2006). An unstructured grid, finite-volume coastal ocean model (FVCOM)
+system. <em>Oceanography</em> <strong>19</strong>(1):78–89. <a href="https://doi.org/10.5670/oceanog.2006.92" class="external-link uri">https://doi.org/10.5670/oceanog.2006.92</a></p></li>
+<li><p><strong>HYCOM / GOFS 3.1</strong> — Chassignet EP, Hurlburt HE,
+Smedstad OM, Halliwell GR, Hogan PJ, Wallcraft AJ, Baraille R, Bleck R
+(2007). The HYCOM (HYbrid Coordinate Ocean Model) data assimilative
+system. <em>Journal of Marine Systems</em> <strong>65</strong>:60–83. <a href="https://doi.org/10.1016/j.jmarsys.2005.09.016" class="external-link uri">https://doi.org/10.1016/j.jmarsys.2005.09.016</a></p></li>
+<li><p><strong>CCMP</strong> — Mears C, Lee T, Ricciardulli L, Wang X,
+Wentz F (2022). Improving the Accuracy of the Cross-Calibrated
+Multi-Platform (CCMP) Ocean Vector Winds. <em>Remote Sensing</em>
+<strong>14</strong>(17):4230. <a href="https://doi.org/10.3390/rs14174230" class="external-link uri">https://doi.org/10.3390/rs14174230</a></p></li>
+<li><p><strong>MUR</strong> — Chin TM, Vazquez-Cuervo J, Armstrong EM
+(2017). A multi-scale high-resolution analysis of global sea surface
+temperature. <em>Remote Sensing of Environment</em>
+<strong>200</strong>:154–169. <a href="https://doi.org/10.1016/j.rse.2017.07.029" class="external-link uri">https://doi.org/10.1016/j.rse.2017.07.029</a></p></li>
+<li><p><strong>VIIRS gap-filled chlorophyll</strong> — Liu X, Wang M
+(2018). Gap filling of missing data for VIIRS global ocean color
+products using the DINEOF method. <em>IEEE Transactions on Geoscience
+and Remote Sensing</em> <strong>56</strong>:4464–4476. <a href="https://doi.org/10.1109/TGRS.2018.2820423" class="external-link uri">https://doi.org/10.1109/TGRS.2018.2820423</a></p></li>
+</ul>
+<p>Say which archive as well as which model — a value from the HYCOM
+reanalysis and one from an operational experiment are not the same run,
+and <code><a href="../reference/source_of.html">source_of()</a></code> records exactly that.</p>
+</div>
+<div class="section level3">
+<h3 id="seafloor-terrain">Seafloor terrain<a class="anchor" aria-label="anchor" href="#seafloor-terrain"></a>
+</h3>
+<ul>
+<li>NOAA National Centers for Environmental Information (2022).
+<em>ETOPO 2022 15 Arc-Second Global Relief Model</em>. <a href="https://doi.org/10.25921/fd45-gt74" class="external-link uri">https://doi.org/10.25921/fd45-gt74</a>
+</li>
+<li>Pante E, Simon-Bouhet B, Irisson J (2025). <em>marmap: Import, Plot
+and Analyze Bathymetric and Topographic Data</em>. <a href="https://doi.org/10.32614/CRAN.package.marmap" class="external-link uri">https://doi.org/10.32614/CRAN.package.marmap</a>
+</li>
+</ul>
+<p><code><a href="../reference/fetch_bathymetry.html">fetch_bathymetry()</a></code> requests the 60 arc-second bedrock
+grid (<code>ETOPO_2022_v1_60s_bed</code>) through
+<code>marmap</code>.</p>
+</div>
+<div class="section level3">
+<h3 id="climate-indices">Climate indices<a class="anchor" aria-label="anchor" href="#climate-indices"></a>
+</h3>
+<p>Two are the published output of specific work and <strong>should be
+cited when used</strong>:</p>
+<ul>
+<li><p><strong><code>LCR</code></strong> — Jutras M, Dufour CO, Mucci A,
+Talbot LC (2023). Large-scale control of the retroflection of the
+Labrador Current. <em>Nature Communications</em>
+<strong>14</strong>:2623. <a href="https://doi.org/10.1038/s41467-023-38321-y" class="external-link uri">https://doi.org/10.1038/s41467-023-38321-y</a></p></li>
+<li>
+<p><strong><code>AMOC</code></strong> — Moat BI, Smeed DA, Rayner D,
+Johns WE, Smith R, Volkov D, Elipot S, Petit T, Kajtar J, Baringer MO,
+Collins J (2026). <em>Atlantic meridional overturning circulation
+observed by the RAPID-MOCHA-WBTS array at 26°N from 2004 to 2024
+(v2024.1a)</em>. British Oceanographic Data Centre, NERC, UK. <a href="https://doi.org/10.5285/48d0bf43-0598-ceb2-e063-7086abc062f1" class="external-link uri">https://doi.org/10.5285/48d0bf43-0598-ceb2-e063-7086abc062f1</a></p>
+<p>BODC mints a new DOI for each release and retires the old one, so
+this changes when RAPID publishes a new version.
+<code><a href="../reference/index_dictionary.html">index_dictionary()</a></code> carries the current reference.</p>
+</li>
+</ul>
+<p>The other four are operational products with no single paper behind
+them. Credit the provider:</p>
+<ul>
+<li>
+<strong><code>NAO</code></strong>, <strong><code>AO</code></strong>
+— NOAA Climate Prediction Center. <a href="https://www.cpc.ncep.noaa.gov/" class="external-link uri">https://www.cpc.ncep.noaa.gov/</a>
+</li>
+<li>
+<strong><code>AMO</code></strong>, <strong><code>PDO</code></strong>
+— NOAA Physical Sciences Laboratory. <a href="https://psl.noaa.gov/data/climateindices/" class="external-link uri">https://psl.noaa.gov/data/climateindices/</a>
+</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="software-this-is-built-on">Software this is built on<a class="anchor" aria-label="anchor" href="#software-this-is-built-on"></a>
+</h3>
+<ul>
+<li>Pebesma E, Bivand R (2023). <em>Spatial Data Science: With
+Applications in R</em>. Chapman and Hall/CRC. <a href="https://doi.org/10.1201/9780429459016" class="external-link uri">https://doi.org/10.1201/9780429459016</a> — the
+<code>sf</code> reference</li>
+<li>Hijmans R, Brown A, Barbosa M (2026). <em>terra: Spatial Data
+Analysis</em>. <a href="https://doi.org/10.32614/CRAN.package.terra" class="external-link uri">https://doi.org/10.32614/CRAN.package.terra</a>
+</li>
+<li>Pierce D (2025). <em>ncdf4: Interface to Unidata netCDF Format Data
+Files</em>. <a href="https://doi.org/10.32614/CRAN.package.ncdf4" class="external-link uri">https://doi.org/10.32614/CRAN.package.ncdf4</a> — needed for
+<code>AMOC</code>
+</li>
+</ul>
+<p><code>citation("datamatch")</code> gives this package’s own entry,
+and <code><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation()</a></code> works on any of the above.</p>
+</div>
+<div class="section level3">
+<h3 id="keeping-these-current">Keeping these current<a class="anchor" aria-label="anchor" href="#keeping-these-current"></a>
+</h3>
+<p>Citations go stale without anyone touching them. Data centres reissue
+a DOI when a record is superseded and retire the old one, so a reference
+that was correct when written stops resolving on its own. The
+<code>AMOC</code> entry here has already been through that once, when
+BODC published a newer RAPID release.</p>
+<p>Two scheduled workflows watch for it, and open an issue rather than
+editing anything, since choosing a replacement is a judgement about
+which version to track:</p>
+<ul>
+<li>
+<strong>Citation check</strong>, quarterly, resolves every DOI cited
+in the README, the catalogs, and <code>NEWS.md</code>.</li>
+<li>
+<strong>Copernicus catalog check</strong>, monthly, compares the
+variable catalog against the live Copernicus catalogue, since dataset
+identifiers are revised too.</li>
+</ul>
+<p>Both run on demand from the Actions tab, and locally:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># from the package root</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/system.html" class="external-link">system</a></span><span class="op">(</span><span class="st">"Rscript inst/scripts/check_citations.R"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/system.html" class="external-link">system</a></span><span class="op">(</span><span class="st">"Rscript inst/scripts/check_catalog.R"</span><span class="op">)</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="satellite-or-model">Satellite or model?<a class="anchor" aria-label="anchor" href="#satellite-or-model"></a>
@@ -419,8 +635,8 @@ volumetric (mg/m3/day). Substituting one for the other is a units error,
 not a resolution difference.</p>
 <p>Phytoplankton functional types come from the same satellite plankton
 dataset as <code>CHL</code>, so they can be fetched together:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span></span>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/accessCopernicus.html">accessCopernicus</a></span><span class="op">(</span></span>
 <span>  vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"CHL"</span>, <span class="st">"DIATO"</span>, <span class="st">"DINO"</span><span class="op">)</span>,   <span class="co"># one request, one dataset</span></span>
 <span>  years <span class="op">=</span> <span class="fl">2003</span><span class="op">:</span><span class="fl">2017</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>,</span>
 <span>  bounding_box <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>xmin <span class="op">=</span> <span class="op">-</span><span class="fl">76</span>, xmax <span class="op">=</span> <span class="op">-</span><span class="fl">65</span>, ymin <span class="op">=</span> <span class="fl">35</span>, ymax <span class="op">=</span> <span class="fl">45</span><span class="op">)</span></span>
@@ -437,8 +653,8 @@ the same way, because <strong>GLORYS12V1 does not publish it.</strong>
 The reanalysis has temperature at the sea floor and no salinity
 counterpart. So it is derived: the full salinity column is fetched and
 the deepest wet level in each cell kept.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">bots</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"BOTS"</span>, years <span class="op">=</span> <span class="fl">2010</span><span class="op">:</span><span class="fl">2014</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>,</span>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">bots</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/accessCopernicus.html">accessCopernicus</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"BOTS"</span>, years <span class="op">=</span> <span class="fl">2010</span><span class="op">:</span><span class="fl">2014</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>,</span>
 <span>                     bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
 <span><span class="co">#&gt; BOTS is not published by this product. Deriving it from the full 'so' column</span></span>
 <span><span class="co">#&gt; and keeping the deepest wet level in each cell; the depth used comes back as</span></span>
@@ -464,13 +680,13 @@ than the same box of <code>SST</code>.</li>
 product publishes sea-floor salinity outright, so <code>BOTS</code> is
 an ordinary variable there, fetches alongside <code>BOTT</code>, and
 returns no <code>BOTS_depth</code>:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BOTT"</span>, <span class="st">"BOTS"</span><span class="op">)</span>, years <span class="op">=</span> <span class="fl">2026</span>, months <span class="op">=</span> <span class="fl">8</span>,</span>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/accessCopernicus.html">accessCopernicus</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BOTT"</span>, <span class="st">"BOTS"</span><span class="op">)</span>, years <span class="op">=</span> <span class="fl">2026</span>, months <span class="op">=</span> <span class="fl">8</span>,</span>
 <span>             bounding_box <span class="op">=</span> <span class="va">bb</span>, mode <span class="op">=</span> <span class="st">"forecast"</span><span class="op">)</span></span></code></pre></div>
 <p>The two are the same quantity by construction but not the same number
 — one is the deepest level of a 50-level grid, the other Copernicus’s
 own diagnostic — so a record spanning both modes has a seam in it.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/variable_dictionary.html">variable_dictionary</a></span><span class="op">(</span><span class="st">"biogeochemical"</span><span class="op">)</span>        <span class="co"># filter by product</span></span>
 <span><span class="fu"><a href="../reference/variable_dictionary.html">variable_dictionary</a></span><span class="op">(</span><span class="st">"wind"</span><span class="op">)</span>                  <span class="co"># or just the winds</span></span>
 <span><span class="fu"><a href="../reference/fvcom_dictionary.html">fvcom_dictionary</a></span><span class="op">(</span><span class="op">)</span>                           <span class="co"># the FVCOM catalog, for accessFVCOM()</span></span>
@@ -484,6 +700,71 @@ own diagnostic — so a record spanning both modes has a seam in it.</p>
 <span><span class="fu"><a href="../reference/erddap_datasets.html">erddap_datasets</a></span><span class="op">(</span><span class="op">)</span>                            <span class="co"># which ERDDAP datasets ship</span></span>
 <span><span class="fu"><a href="../reference/variable_dataset.html">variable_dataset</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SST"</span>, <span class="st">"CHL"</span><span class="op">)</span><span class="op">)</span>            <span class="co"># which dataset each comes from</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="../reference/variable_dictionary.html">variable_dictionary</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span><span class="op">$</span><span class="va">description</span>  <span class="co"># full descriptions</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="error-messages">Error messages<a class="anchor" aria-label="anchor" href="#error-messages"></a>
+</h2>
+<p>Most of what this package refuses to do, it refuses deliberately.
+These are the messages you are most likely to meet, and what each one
+means.</p>
+<p><strong><code>Could not find the Copernicus Marine client</code></strong></p>
+<p>R cannot see <code>copernicusmarine</code> on its <code>PATH</code>.
+Common when it lives in a conda environment that RStudio does not
+inherit. Point at it directly:</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>datamatch.copernicusmarine <span class="op">=</span> <span class="st">"~/miniconda3/bin/copernicusmarine"</span><span class="op">)</span></span></code></pre></div>
+<p><strong><code>These variables come from different Copernicus datasets</code></strong></p>
+<p>Expected, not a fault. <code>SST</code> is physics and
+<code>CHL</code> is biogeochemistry, on different grids. Fetch them
+separately and chain <code><a href="../reference/matchData.html">matchData()</a></code>, as in <a href="#putting-several-together">Putting several together</a>.
+<code><a href="../reference/variable_dataset.html">variable_dataset()</a></code> shows which dataset each variable comes
+from.</p>
+<p>In forecast mode this happens more often, because the forecast
+products split variables across more datasets than the reanalysis does.
+<code>SST</code> and <code>UO</code> share a dataset as reanalysis but
+not as forecast.</p>
+<p><strong><code>Copernicus publishes no daily dataset for: UWND, VWND</code></strong></p>
+<p>Expected. This wind is published hourly or monthly and nothing
+between. Fetch <code>frequency = "hourly"</code> and aggregate with
+<code>upscale_time(to = "day")</code>. The same message for
+<code>PH</code>, <code>PP</code>, <code>DIATO</code> or
+<code>DINO</code> means the opposite — those are monthly composites, so
+fetch them monthly.</p>
+<p><strong><code>Copernicus publishes no hourly dataset for: WSPD</code></strong></p>
+<p><code>WSPD</code> and <code>TAU</code> are magnitudes the hourly wind
+product does not carry. Fetch <code>UWND</code> and <code>VWND</code>
+hourly and compute the magnitude, or take these monthly.</p>
+<p><strong><code>BOTS must be fetched on its own</code></strong></p>
+<p>Bottom salinity is derived from the whole depth column, which is a
+different request from the single level a surface variable wants. Call
+<code><a href="../reference/accessCopernicus.html">accessCopernicus()</a></code> once for <code>BOTS</code> and once for
+the rest, then chain <code><a href="../reference/matchData.html">matchData()</a></code>. See <a href="#bottom-salinity">Bottom salinity</a>.</p>
+<p><strong><code>These variables sit on different parts of the FVCOM mesh</code></strong></p>
+<p>Scalars sit on mesh nodes and velocities on element centroids, so the
+two kinds cannot be read together. Call <code><a href="../reference/accessFVCOM.html">accessFVCOM()</a></code> once
+for each and chain <code><a href="../reference/matchData.html">matchData()</a></code>.</p>
+<p><strong><code>The download did not return: uo, vo</code></strong></p>
+<p>Those variables were requested but are not in the returned file.
+Either the dataset does not serve them, or they are unavailable at the
+requested depth or date. The message lists what did arrive.</p>
+<p><strong><code>The depth range returned several model levels</code></strong></p>
+<p><code>depth</code> spanned more than one model level, so a variable
+came back on several layers and there is no way to know which was
+wanted. Request a single level with <code>depth = c(0, 1)</code>.</p>
+<p><strong><code>Copernicus download failed after 3 attempt(s)</code></strong></p>
+<p>The request was retried and kept failing. The message carries the
+client’s own output. Rapid repeated downloads can also be rate-limited,
+in which case waiting and re-running works.</p>
+<p><strong><code>Expected N variable column(s) but the download returned M</code></strong></p>
+<p>From a version before the layer-matching fix. Update the package:
+this message blamed the depth range for causes it could not distinguish,
+and the two real ones now report themselves. See
+<code>NEWS.md</code>.</p>
+<p><strong>Values in the wrong range for their column name</strong></p>
+<p>Salinity around 32 in an <code>SST</code> column means you are on a
+version predating the layer-ordering fix, where multi-variable downloads
+could be mislabelled silently. Update and re-fetch. <code>NEWS.md</code>
+describes what was affected and how to check.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

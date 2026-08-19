@@ -30,7 +30,7 @@ Entries come from the global reanalyses: physical variables from
 
 `dataset_id` is the monthly mean; `daily_dataset_id` is the daily one,
 which
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
 uses when given `frequency = "daily"`, and `hourly_dataset_id` the
 hourly one. Either is `NA` where no such equivalent exists, and those
 gaps are not incidental:
@@ -75,7 +75,7 @@ overrides it with the real variable.
 The two are the same quantity by construction but not the same number:
 one is the deepest wet level of a 50-level grid, the other Copernicus's
 own sea-floor diagnostic.
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
 says which it used.
 
 `CHL` is the case worth reading twice. Daily ocean colour is not the
@@ -85,7 +85,7 @@ cloud. The daily values are therefore already gap-filled by Copernicus,
 and running
 [`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md)
 over them fills nothing.
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
 says so when it makes the substitution.
 
 Copernicus revises dataset identifiers periodically. If a fetch fails

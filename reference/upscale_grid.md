@@ -24,7 +24,7 @@ upscale_grid(
 - env_dat:
 
   an `sf` POINT object on a regular grid, from
-  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
+  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
   [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
   [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
   or
@@ -119,8 +119,8 @@ for the other direction,
 
 ``` r
 if (FALSE) { # \dontrun{
-chl <- accessEnvDat(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
-sst <- accessEnvDat(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
+chl <- accessCopernicus(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
+sst <- accessCopernicus(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
 
 # Satellite CHL (4 km) onto the physics grid (0.083 degrees)
 chl_coarse <- upscale_grid(chl, to = sst)

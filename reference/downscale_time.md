@@ -20,7 +20,7 @@ downscale_time(
 - env_dat:
 
   an `sf` POINT object from any access function -
-  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
+  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
   [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
   [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
   [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
@@ -98,7 +98,7 @@ for the other direction,
 
 ``` r
 if (FALSE) { # \dontrun{
-monthly <- accessEnvDat(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
+monthly <- accessCopernicus(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
 
 # Daily steps, each carrying its month's value
 daily <- downscale_time(monthly, to = "day")

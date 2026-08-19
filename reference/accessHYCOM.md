@@ -2,7 +2,7 @@
 
 Reads HYCOM over OPeNDAP and returns it as an `sf` point object with one
 row per grid cell and time step — the same shape
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
 [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md),
 [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
 and
@@ -156,7 +156,7 @@ single aggregation and open once.
 
 [`hycom_variables()`](https://chross22.github.io/datamatch/reference/hycom_variables.md)
 for what can be read,
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
 [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
 [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
 and

@@ -16,7 +16,7 @@ plot_env(env_dat, var = NULL, time = 1, palette = "viridis", main = NULL, ...)
 - env_dat:
 
   an `sf` POINT object from any access function -
-  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
+  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
   [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
   [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
   [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
@@ -77,7 +77,7 @@ for how a variable moves through time
 
 ``` r
 if (FALSE) { # \dontrun{
-env <- accessEnvDat(vars = c("SST", "CHL"), years = 2010, months = 1:12,
+env <- accessCopernicus(vars = c("SST", "CHL"), years = 2010, months = 1:12,
                     bounding_box = bb)
 
 plot_env(env)                                  # first variable, first step

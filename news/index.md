@@ -2,7 +2,52 @@
 
 ## datamatch 0.2.0
 
+### Documentation
+
+- **The README is now a front door rather than a manual.** It had grown
+  to 1,618 lines, much of it duplicating the four vignettes. The
+  per-source deep dives, the full reference list and the error-message
+  guide now live in
+  [`vignette("sources")`](https://chross22.github.io/datamatch/articles/sources.md),
+  and the README keeps orientation, installation, a quick start, and a
+  short section per source — 535 lines.
+
+  The documentation guards move with the content: every export is still
+  named in the README, and the citation guards now read the vignettes as
+  well, so a source is still required to be cited somewhere a reader
+  will meet it.
+
 ### New features
+
+- **The FVCOM mesh itself, through
+  [`fvcom_mesh()`](https://chross22.github.io/datamatch/reference/fvcom_mesh.md).**
+  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md)
+  returns values at points — nodes for scalars, element centroids for
+  velocities — which is what matching needs but is not the grid. Drawing
+  it shows dots where the model has triangles.
+
+  [`fvcom_mesh()`](https://chross22.github.io/datamatch/reference/fvcom_mesh.md)
+  reads the connectivity array a point fetch never touches and returns
+  the triangles as `POLYGON`s, with `DEPTH` per cell. It carries no time
+  dimension: it is the grid. `what = "nodes"` and `"elements"` return
+  the two point sets on their own.
+
+  **[`plot_mesh()`](https://chross22.github.io/datamatch/reference/plot_mesh.md)**
+  draws it — bare, or shaded by a covariate. Pass a fetch as `values`
+  and the spatial join is done for you, which matters more than it
+  sounds: a fetch is subset to the bounding box, so its row order says
+  nothing about the mesh’s element numbering, and joining by position
+  would silently mislabel every cell.
+
+  Node values sit at triangle *corners* and element values at centroids,
+  so the join tests intersection rather than containment — a corner lies
+  on the boundary between cells, and nothing contains it. Joining by
+  containment returned no node values at all.
+
+  A triangle is kept when any vertex is inside the box, so the mesh
+  covers what was asked for rather than stopping short of it, and the
+  edge is ragged by design. `GOM7` remeshes between months, so `date`
+  says which month’s mesh.
 
 - **EML metadata, through
   [`write_eml()`](https://chross22.github.io/datamatch/reference/write_eml.md).**
@@ -294,6 +339,31 @@
 
 - The contents list was rebuilt to match, and every internal link
   checked — two pointed at sections that had moved to a vignette.
+
+### Breaking changes
+
+- **[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+  is now
+  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md).**
+  The old name dates from when Copernicus was the only source. With
+  five, “access environmental data” reads as though it fetches from all
+  of them, sitting beside
+  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
+  [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
+  [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+  and
+  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md),
+  which each say what they read.
+
+  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+  still works and warns, on the same reasoning as the
+  `speciesDat`/`envDat` arguments in
+  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md):
+  taupatch and any script written against the old name keep working, and
+  their authors find out that the name moved rather than discovering it
+  when the alias is eventually removed. Nothing else changes — the
+  arguments, the result, and the `copernicus:` source tag are all as
+  they were.
 
 ### Bug fixes
 

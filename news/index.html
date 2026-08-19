@@ -42,8 +42,22 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="datamatch-020">datamatch 0.2.0<a class="anchor" aria-label="anchor" href="#datamatch-020"></a></h2>
 <div class="section level3">
+<h3 id="documentation-0-2-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-2-0"></a></h3>
+<ul><li>
+<p><strong>The README is now a front door rather than a manual.</strong> It had grown to 1,618 lines, much of it duplicating the four vignettes. The per-source deep dives, the full reference list and the error-message guide now live in <code><a href="../articles/sources.html">vignette("sources")</a></code>, and the README keeps orientation, installation, a quick start, and a short section per source — 535 lines.</p>
+<p>The documentation guards move with the content: every export is still named in the README, and the citation guards now read the vignettes as well, so a source is still required to be cited somewhere a reader will meet it.</p>
+</li>
+</ul></div>
+<div class="section level3">
 <h3 id="new-features-0-2-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-2-0"></a></h3>
 <ul><li>
+<p><strong>The FVCOM mesh itself, through <code><a href="../reference/fvcom_mesh.html">fvcom_mesh()</a></code>.</strong> <code><a href="../reference/accessFVCOM.html">accessFVCOM()</a></code> returns values at points — nodes for scalars, element centroids for velocities — which is what matching needs but is not the grid. Drawing it shows dots where the model has triangles.</p>
+<p><code><a href="../reference/fvcom_mesh.html">fvcom_mesh()</a></code> reads the connectivity array a point fetch never touches and returns the triangles as <code>POLYGON</code>s, with <code>DEPTH</code> per cell. It carries no time dimension: it is the grid. <code>what = "nodes"</code> and <code>"elements"</code> return the two point sets on their own.</p>
+<p><strong><code><a href="../reference/plot_mesh.html">plot_mesh()</a></code></strong> draws it — bare, or shaded by a covariate. Pass a fetch as <code>values</code> and the spatial join is done for you, which matters more than it sounds: a fetch is subset to the bounding box, so its row order says nothing about the mesh’s element numbering, and joining by position would silently mislabel every cell.</p>
+<p>Node values sit at triangle <em>corners</em> and element values at centroids, so the join tests intersection rather than containment — a corner lies on the boundary between cells, and nothing contains it. Joining by containment returned no node values at all.</p>
+<p>A triangle is kept when any vertex is inside the box, so the mesh covers what was asked for rather than stopping short of it, and the edge is ragged by design. <code>GOM7</code> remeshes between months, so <code>date</code> says which month’s mesh.</p>
+</li>
+<li>
 <p><strong>EML metadata, through <code><a href="../reference/write_eml.html">write_eml()</a></code>.</strong> Writes an Ecological Metadata Language document for a matched table — the standard EDI, LTER and DataONE expect alongside a deposited dataset.</p>
 <p>Most of it comes from the data: the bounding box and date range from the object, and an attribute for every column with its definition, units and measurement scale taken from whichever source catalog defines that name. This package’s own conventions are described too, so the time columns, <code>LON</code>/<code>LAT</code> and the <code>_source</code> and <code>_depth</code> columns are not left as bare names.</p>
 <p>The methods section is the part worth having. Because <code><a href="../reference/matchData.html">matchData()</a></code> records <code>&lt;var&gt;_source</code> on every join, a table with several sources chained onto it produces a methods statement naming each and a citation for each — assembled from the source catalogs rather than by hand, which is the most tedious part of depositing a derived dataset and the easiest to get wrong.</p>
@@ -106,7 +120,7 @@
 <li><p><code>variable_dictionary("wind")</code> filters the catalog to the wind variables, and <code>variable_dataset(frequency = "hourly")</code> reports which have an hourly dataset.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="documentation-0-2-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-2-0"></a></h3>
+<h3 id="documentation-0-2-0-1">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-2-0-1"></a></h3>
 <ul><li>
 <p><strong>The README is orientation now, and the depth is in vignettes.</strong> It had grown to 11,600 words — a forty-five minute read — because every capability added a section to it. It is now 9,000, and what left went into two new articles rather than being deleted:</p>
 <ul><li>
@@ -117,6 +131,13 @@
 </li>
 <li><p><strong>A function reference table.</strong> Every export, grouped by what it is for, in one place in the README. That is what the depth moving out required: the README says what each function is and where to read more, rather than explaining every one at length.</p></li>
 <li><p>The contents list was rebuilt to match, and every internal link checked — two pointed at sections that had moved to a vignette.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="breaking-changes-0-2-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-0"></a></h3>
+<ul><li>
+<p><strong><code><a href="../reference/accessEnvDat.html">accessEnvDat()</a></code> is now <code><a href="../reference/accessCopernicus.html">accessCopernicus()</a></code>.</strong> The old name dates from when Copernicus was the only source. With five, “access environmental data” reads as though it fetches from all of them, sitting beside <code><a href="../reference/accessFVCOM.html">accessFVCOM()</a></code>, <code><a href="../reference/accessHYCOM.html">accessHYCOM()</a></code>, <code><a href="../reference/accessCCMP.html">accessCCMP()</a></code> and <code><a href="../reference/accessERDDAP.html">accessERDDAP()</a></code>, which each say what they read.</p>
+<p><code><a href="../reference/accessEnvDat.html">accessEnvDat()</a></code> still works and warns, on the same reasoning as the <code>speciesDat</code>/<code>envDat</code> arguments in <code><a href="../reference/matchData.html">matchData()</a></code>: taupatch and any script written against the old name keep working, and their authors find out that the name moved rather than discovering it when the alias is eventually removed. Nothing else changes — the arguments, the result, and the <code>copernicus:</code> source tag are all as they were.</p>
+</li>
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-0-2-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-2-0"></a></h3>

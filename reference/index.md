@@ -7,8 +7,10 @@ and all returning the same shape. A value of the same name from two of
 them is not the same number - each function’s help says what its source
 is and is not good for.
 
-- [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+- [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
   : Access environmental data from Copernicus Marine Service
+- [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+  : Fetch Copernicus data (deprecated name)
 - [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md)
   : Access FVCOM output from the NECOFS hindcast
 - [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md)
@@ -96,6 +98,8 @@ returns the data it drew.
   : Plot a variable through time
 - [`plot_matched()`](https://chross22.github.io/datamatch/reference/plot_matched.md)
   : Plot observations coloured by a matched covariate
+- [`plot_mesh()`](https://chross22.github.io/datamatch/reference/plot_mesh.md)
+  : Map covariates on an unstructured mesh, or anywhere else
 
 ## Catalogs and lookup
 
@@ -118,6 +122,8 @@ and where it is documented.
   : FVCOM archives this package ships with
 - [`fvcom_archive()`](https://chross22.github.io/datamatch/reference/fvcom_archive.md)
   : Describe any FVCOM archive, so it can be read like a built-in one
+- [`fvcom_mesh()`](https://chross22.github.io/datamatch/reference/fvcom_mesh.md)
+  : Read an FVCOM mesh on its own, with no data on it
 - [`hycom_variables()`](https://chross22.github.io/datamatch/reference/hycom_variables.md)
   : Catalog of HYCOM variables under the same names as the Copernicus
   ones

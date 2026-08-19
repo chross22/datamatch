@@ -23,7 +23,7 @@ upscale_time(
 - env_dat:
 
   an `sf` POINT object from any access function -
-  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
+  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
   [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
   [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
   [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
@@ -59,7 +59,7 @@ upscale_time(
 an `sf` POINT object with one row per cell per target period. Daily
 output keeps its `YEAR`/`MONTH`/`DAY` and drops `HOUR`; monthly output
 is stamped `DAY = 1`; annual output `MONTH = 1, DAY = 1`, matching what
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
 returns for non-daily products so that
 [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
 reads the resolution back correctly.
@@ -70,7 +70,7 @@ This is the route to a daily wind field. Copernicus publishes its L4
 wind hourly and monthly and nothing between, so `frequency = "daily"` is
 refused for the wind variables; aggregating the hourly field is how a
 daily mean is produced, and doing it here rather than inside
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
 keeps the choice of summary — mean wind, or the day's maximum gust —
 with the caller.
 
@@ -135,7 +135,7 @@ for the spatial equivalent
 
 ``` r
 if (FALSE) { # \dontrun{
-daily <- accessEnvDat(vars = "SST", years = 2010, months = 1:12,
+daily <- accessCopernicus(vars = "SST", years = 2010, months = 1:12,
                       dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1D-m",
                       bounding_box = bb)
 

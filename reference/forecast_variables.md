@@ -47,7 +47,7 @@ a prediction.
 
 ## See also
 
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
 which takes `mode = "forecast"`
 
 ## Examples

@@ -116,7 +116,7 @@ variable_dictionary()
 #>   dataset:   cmems_obs-wind_glo_phy_my_l4_P1M
 #>   docs:      https://data.marine.copernicus.eu/product/WIND_GLO_PHY_CLIMATE_L4_MY_012_003/description
 #> 
-#> Pass a name to accessEnvDat(vars = ...), or the Copernicus code.
+#> Pass a name to accessCopernicus(vars = ...), or the Copernicus code.
 #> With every variable from one product, product_id and dataset_id can be
 #> omitted - they are inferred from the names.
 #> Full descriptions: as.data.frame(variable_dictionary())$description
@@ -136,7 +136,7 @@ variable_dictionary("biogeochemical")
 #>   dataset:   cmems_mod_glo_bgc_my_0.25deg_P1M-m
 #>   docs:      https://data.marine.copernicus.eu/product/GLOBAL_MULTIYEAR_BGC_001_029/description
 #> 
-#> Pass a name to accessEnvDat(vars = ...), or the Copernicus code.
+#> Pass a name to accessCopernicus(vars = ...), or the Copernicus code.
 #> With every variable from one product, product_id and dataset_id can be
 #> omitted - they are inferred from the names.
 #> Full descriptions: as.data.frame(variable_dictionary())$description
@@ -156,7 +156,7 @@ variable_dictionary("wind")
 #>   dataset:   cmems_obs-wind_glo_phy_my_l4_P1M
 #>   docs:      https://data.marine.copernicus.eu/product/WIND_GLO_PHY_CLIMATE_L4_MY_012_003/description
 #> 
-#> Pass a name to accessEnvDat(vars = ...), or the Copernicus code.
+#> Pass a name to accessCopernicus(vars = ...), or the Copernicus code.
 #> With every variable from one product, product_id and dataset_id can be
 #> omitted - they are inferred from the names.
 #> Full descriptions: as.data.frame(variable_dictionary())$description

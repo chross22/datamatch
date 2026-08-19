@@ -61,7 +61,7 @@ published:
   [doi:10.32614/CRAN.package.marmap](https://doi.org/10.32614/CRAN.package.marmap)
 
 The bounding box takes the same shape as
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)'s,
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)'s,
 so a single definition of the study area serves both.
 
 ## Caching

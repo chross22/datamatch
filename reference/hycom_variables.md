@@ -23,7 +23,7 @@ HYCOM serves `salinity_bottom` and `water_temp_bottom` as variables in
 their own right, so `BOTS` and `BOTT` are ordinary requests here. That
 is the one place HYCOM is plainly easier than the Copernicus reanalysis,
 which publishes bottom temperature but no bottom salinity and makes
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
 derive one from the full depth column. If bottom salinity over 1994–2015
 is what you need, this is the cheapest source for it.
 

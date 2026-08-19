@@ -43,7 +43,7 @@ land in one table without interpolating one onto the other.
 [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md)
 refuses to fetch the two together rather than interpolating on your
 behalf, in the same spirit as
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
 refusing to mix two Copernicus grids. Fetch each and chain
 [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md),
 which matches to the nearest point whichever mesh it belongs to.

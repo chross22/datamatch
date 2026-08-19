@@ -15,7 +15,7 @@ grid_resolution(env_dat)
 - env_dat:
 
   an `sf` POINT object from any access function -
-  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
+  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
   [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
   [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
   [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)

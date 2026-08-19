@@ -3,7 +3,7 @@
 Reads an unstructured-mesh FVCOM archive over OPeNDAP and returns it as
 an `sf` point object with one row per mesh point and time step — the
 same shape
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
 returns, so
 [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
 joins it unchanged.
@@ -109,7 +109,7 @@ silent interpolation of one onto the other. Fetch each and chain
 `BOTS` costs nothing here. FVCOM's sigma coordinate makes the deepest
 layer the sea floor at every node, so bottom salinity is a layer index
 rather than the derivation
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
 needs against GLORYS. If bottom properties are the point of the
 analysis, this is the cheaper source for them.
 
@@ -189,7 +189,7 @@ aggregation, read one month at a time.
 
 [`fvcom_variables()`](https://chross22.github.io/datamatch/reference/fvcom_variables.md)
 for what can be read,
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
 [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
 [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
 and

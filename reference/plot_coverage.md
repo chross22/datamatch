@@ -16,7 +16,7 @@ plot_coverage(env_dat, vars = NULL, main = "Data coverage by time step", ...)
 - env_dat:
 
   an `sf` POINT object from any access function -
-  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
+  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
   [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
   [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
   [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
@@ -59,7 +59,7 @@ whose `min_coverage` argument acts on the same quantity
 
 ``` r
 if (FALSE) { # \dontrun{
-chl <- accessEnvDat(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
+chl <- accessCopernicus(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
 
 plot_coverage(chl)
 # The winter months are the ones to be careful with.

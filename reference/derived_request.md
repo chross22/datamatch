@@ -34,7 +34,7 @@ worse than refusing. Fetching the column and taking its surface for the
 other variables would download fifty times the data to discard it.
 Issuing a second, quieter download behind one call would break the rule
 the rest of the package holds to, that one
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
 call is one dataset request.
 
 So it is an error, in the same spirit as mixing two products, and the

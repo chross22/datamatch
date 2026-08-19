@@ -23,8 +23,8 @@ Four functions, one pair per axis, plus one for gaps. Each takes a
 
 ``` r
 
-chl <- accessEnvDat(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
-sst <- accessEnvDat(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
+chl <- accessCopernicus(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
+sst <- accessCopernicus(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
 
 # Satellite CHL (4 km) onto the physics grid, so the two can be modelled together
 chl_on_sst <- upscale_grid(chl, to = sst)
@@ -119,8 +119,8 @@ directly.
 
 ``` r
 
-chl_sat <- accessEnvDat(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
-chl_mod <- accessEnvDat(vars = "CHL_MODEL", years = 2010, months = 1:12, bounding_box = bb)
+chl_sat <- accessCopernicus(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
+chl_mod <- accessCopernicus(vars = "CHL_MODEL", years = 2010, months = 1:12, bounding_box = bb)
 
 filled <- fill_satellite_gaps(chl_sat, chl_mod, c(CHL = "CHL_MODEL"))
 table(filled$CHL_source)
@@ -145,7 +145,7 @@ numbers behind a picture are always available.
 
 ``` r
 
-env <- accessEnvDat(vars = c("SST", "CHL"), years = 2010, months = 1:12,
+env <- accessCopernicus(vars = c("SST", "CHL"), years = 2010, months = 1:12,
                     bounding_box = bb)
 
 plot_env(env)                                # first variable, first time step
@@ -236,11 +236,11 @@ so treat these as the shape of it rather than a promise.
 ``` r
 
 # The default. 15 years x 12 months is 180 downloads, four at a time
-accessEnvDat(vars = "SST", years = 2003:2017, months = 1:12, bounding_box = bb)
+accessCopernicus(vars = "SST", years = 2003:2017, months = 1:12, bounding_box = bb)
 
-accessEnvDat(vars = "SST", years = 2003:2017, months = 1:12, bounding_box = bb,
+accessCopernicus(vars = "SST", years = 2003:2017, months = 1:12, bounding_box = bb,
              n_workers = 8)   # more at once
-accessEnvDat(vars = "SST", years = 2003:2017, months = 1:12, bounding_box = bb,
+accessCopernicus(vars = "SST", years = 2003:2017, months = 1:12, bounding_box = bb,
              n_workers = 1)   # one at a time
 ```
 
@@ -252,7 +252,7 @@ Two things it deliberately does not do. It does not re-download what you
 already have: files in the cache are read straight from disk, and a
 fully cached call starts no workers at all. And it does not parallelise
 across calls — each
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
 call is one dataset, so fetching SST and CHL is two calls, run one after
 the other with each parallel inside itself.
 

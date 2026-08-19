@@ -3,7 +3,7 @@
 Downloads the CCMP wind analysis from Remote Sensing Systems and returns
 it as an `sf` point object with one row per grid cell and time step —
 the same shape
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
 [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
 [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md)
 and
@@ -141,7 +141,7 @@ adjustment.
 ## See also
 
 [`ccmp_variables()`](https://chross22.github.io/datamatch/reference/ccmp_variables.md),
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
 for the Copernicus wind, which carries stress
 
 ## Examples

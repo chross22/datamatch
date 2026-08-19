@@ -36,7 +36,7 @@ attach_bathymetry(dat, bathy, vars = NULL, coords = c("lon", "lat"))
 
 Accepts either a plain data frame with coordinate columns or an `sf`
 POINT object, so it works on observations and on
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
 output alike.
 
 ## Examples

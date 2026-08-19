@@ -13,11 +13,11 @@ fetch is the only thing to substitute.
 
 bb <- list(xmin = -70, xmax = -66, ymin = 41, ymax = 44)
 
-env <- accessEnvDat(vars = c("SST", "MLD"), years = 2015, months = 1:12,
+env <- accessCopernicus(vars = c("SST", "MLD"), years = 2015, months = 1:12,
                     bounding_box = bb)
 ```
 
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
 returns one row per grid cell per time step, as an `sf` point object:
 
 ``` r

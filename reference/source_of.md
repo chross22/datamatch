@@ -17,10 +17,12 @@ source_of(x)
 - x:
 
   an object from
-  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
+  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
   [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
   [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
   [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+  or
+  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
 
 ## Value
 

@@ -46,7 +46,7 @@ grid it was computed on.
 [`attach_bathymetry()`](https://chross22.github.io/datamatch/reference/attach_bathymetry.md)
 takes either a plain data frame with coordinate columns or an `sf`
 object, so it works on observations and on
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
 output alike.
 
 ### Climate indices

@@ -78,7 +78,7 @@ produces a failed download rather than an obvious mistake.</p>
 
 
 <p><code>dataset_id</code> is the monthly mean; <code>daily_dataset_id</code> is the daily one, which
-<code><a href="accessEnvDat.html">accessEnvDat()</a></code> uses when given <code>frequency = "daily"</code>, and
+<code><a href="accessCopernicus.html">accessCopernicus()</a></code> uses when given <code>frequency = "daily"</code>, and
 <code>hourly_dataset_id</code> the hourly one. Either is <code>NA</code> where no such equivalent
 exists, and those gaps are not incidental:</p>
 <ul><li><p><strong><code>PH</code></strong> — the daily biogeochemical reanalysis carries <code>chl</code>, <code>no3</code>,
@@ -110,12 +110,12 @@ needed — the analysis-and-forecast product publishes <code>sob</code> directly
 <code><a href="forecast_variables.html">forecast_variables()</a></code> overrides it with the real variable.</p>
 <p>The two are the same quantity by construction but not the same number: one is
 the deepest wet level of a 50-level grid, the other Copernicus's own sea-floor
-diagnostic. <code><a href="accessEnvDat.html">accessEnvDat()</a></code> says which it used.</p>
+diagnostic. <code><a href="accessCopernicus.html">accessCopernicus()</a></code> says which it used.</p>
 <p><code>CHL</code> is the case worth reading twice. Daily ocean colour is not the monthly
 product at a finer step: it is <code>l4-gapfree</code>, the space-time interpolated
 field, because a single day of a single sensor is mostly cloud. The daily
 values are therefore already gap-filled by Copernicus, and running
-<code><a href="fill_satellite_gaps.html">fill_satellite_gaps()</a></code> over them fills nothing. <code><a href="accessEnvDat.html">accessEnvDat()</a></code> says so
+<code><a href="fill_satellite_gaps.html">fill_satellite_gaps()</a></code> over them fills nothing. <code><a href="accessCopernicus.html">accessCopernicus()</a></code> says so
 when it makes the substitution.</p>
 <p>Copernicus revises dataset identifiers periodically. If a fetch fails with an
 unknown-dataset error, check the current identifier on the Copernicus Marine

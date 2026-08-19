@@ -78,10 +78,10 @@ fetch is the only thing to substitute.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">bb</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>xmin <span class="op">=</span> <span class="op">-</span><span class="fl">70</span>, xmax <span class="op">=</span> <span class="op">-</span><span class="fl">66</span>, ymin <span class="op">=</span> <span class="fl">41</span>, ymax <span class="op">=</span> <span class="fl">44</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/accessEnvDat.html">accessEnvDat</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SST"</span>, <span class="st">"MLD"</span><span class="op">)</span>, years <span class="op">=</span> <span class="fl">2015</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>,</span>
+<span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/accessCopernicus.html">accessCopernicus</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SST"</span>, <span class="st">"MLD"</span><span class="op">)</span>, years <span class="op">=</span> <span class="fl">2015</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>,</span>
 <span>                    bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span></code></pre></div>
-<p><code><a href="../reference/accessEnvDat.html">accessEnvDat()</a></code> returns one row per grid cell per time
-step, as an <code>sf</code> point object:</p>
+<p><code><a href="../reference/accessCopernicus.html">accessCopernicus()</a></code> returns one row per grid cell per
+time step, as an <code>sf</code> point object:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">env</span></span>
 <span><span class="co">#&gt; Simple feature collection with 2652 features and 5 fields</span></span>

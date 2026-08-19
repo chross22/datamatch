@@ -16,7 +16,7 @@ read_day_hourly(item, vars)
 - item:
 
   one work item, as built by
-  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
 
 - vars:
 

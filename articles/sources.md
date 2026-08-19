@@ -10,7 +10,7 @@ gigabytes.
 
 ## The five, side by side
 
-|  | [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md) | [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md) | [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md) | [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md) | [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md) |
+|  | [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md) | [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md) | [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md) | [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md) | [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md) |
 |----|----|----|----|----|----|
 | Source | Copernicus Marine | NECOFS / any FVCOM | HYCOM GOFS 3.1 | RSS CCMP v3.1 | NOAA ERDDAP |
 | Kind | global reanalysis, forecast, satellite | regional coastal model | global model | wind analysis | satellite analysis |
@@ -50,7 +50,7 @@ resampling, plotting, and whatever model you fit — works unchanged:
 
 bb <- list(xmin = -70, xmax = -66, ymin = 41, ymax = 44)
 
-copernicus <- accessEnvDat(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
+copernicus <- accessCopernicus(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
 fvcom      <- accessFVCOM(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
 hycom      <- accessHYCOM(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
 ```
@@ -114,11 +114,11 @@ measurement of the same one.
 
 # Copernicus reanalysis: derived. Fetches ~50 depth levels to keep the deepest
 # wet one, so it must be fetched alone, and reports the depth it used.
-bots <- accessEnvDat(vars = "BOTS", years = 2010, months = 1:12, bounding_box = bb)
+bots <- accessCopernicus(vars = "BOTS", years = 2010, months = 1:12, bounding_box = bb)
 bots$BOTS_depth
 
 # Copernicus forecast: published outright as `sob`, no derivation.
-accessEnvDat(vars = c("BOTT", "BOTS"), years = 2026, months = 7,
+accessCopernicus(vars = c("BOTT", "BOTS"), years = 2026, months = 7,
              bounding_box = bb, mode = "forecast")
 
 # FVCOM: the deepest sigma layer is the sea floor everywhere. Free.
@@ -186,7 +186,7 @@ adds columns and leaves the row count alone.
 
 ``` r
 
-matched <- matchData(observations, accessEnvDat(vars = c("SST", "MLD"),
+matched <- matchData(observations, accessCopernicus(vars = c("SST", "MLD"),
                                                 years = 2010, months = 1:12,
                                                 bounding_box = bb))
 matched <- matchData(matched, accessHYCOM(vars = "BOTS", years = 2010,
@@ -205,10 +205,12 @@ Each source fails differently at the edges of its record — FVCOM after
 2013, HYCOM after 2015, `LCR` after 2014 — so that last line is worth
 running before fitting anything.
 
-## Citing what you used
+## What to cite
 
-Every source here is somebody else’s work, and the obligation travels
-with the data rather than with this package:
+Every source here is somebody else’s work, and the obligation to cite
+travels with the data rather than with this package. **Cite whichever
+products you actually fetched from.** Several catalogs carry their
+references at runtime:
 
 ``` r
 
@@ -218,8 +220,165 @@ ccmp_versions()$`v03.1`$reference
 index_dictionary()          # carries the climate index references
 ```
 
-The README’s References section lists the Copernicus product DOIs. Cite
-whichever you actually fetched from.
+### Copernicus Marine Service
+
+[Copernicus asks for a specific
+form](https://help.marine.copernicus.eu/en/articles/4444611-how-to-cite-copernicus-marine-products-and-services),
+including the access date:
+
+> *Product Title*. E.U. Copernicus Marine Service Information (CMEMS).
+> Marine Data Store (MDS). DOI: 10.48670/moi-xxxxx (Accessed on DD MMM
+> YYYY)
+
+Reanalysis products, used by default:
+
+| Product | Supplies | DOI |
+|----|----|----|
+| Global Ocean Physics Reanalysis (GLORYS12V1) | `SST`, `SSS`, `BOTT`, `BOTS`, `UO`, `VO`, `SSH`, `MLD`, `SIC` | [10.48670/moi-00021](https://doi.org/10.48670/moi-00021) |
+| Global Ocean Biogeochemistry Hindcast | `CHL_MODEL`, `NPP_MODEL`, `NO3`, `PO4`, `O2`, `PH` | [10.48670/moi-00019](https://doi.org/10.48670/moi-00019) |
+| Global Ocean Colour (Copernicus-GlobColour) | satellite `CHL`, `PP`, `DIATO`, `DINO` | [10.48670/moi-00281](https://doi.org/10.48670/moi-00281) |
+| Global Ocean Monthly Mean Sea Surface Wind and Stress | `WSPD`, `UWND`, `VWND`, `TAUX`, `TAUY`, `TAU` | [10.48670/moi-00181](https://doi.org/10.48670/moi-00181) |
+| Global Ocean Hourly Reprocessed Sea Surface Wind and Stress | the same, with `frequency = "hourly"` | [10.48670/moi-00185](https://doi.org/10.48670/moi-00185) |
+
+`BOTS` is derived from GLORYS’s salinity field rather than published by
+it, so it carries that product’s citation like any other variable taken
+from it.
+
+The two wind products are separate records with separate DOIs. A study
+using monthly wind cites the first; one using hourly wind, or a daily
+field aggregated from it, cites the second.
+
+Analysis-and-forecast products, used with `mode = "forecast"`:
+
+| Product | DOI |
+|----|----|
+| Global Ocean Physics Analysis and Forecast | [10.48670/moi-00016](https://doi.org/10.48670/moi-00016) |
+| Global Ocean Biogeochemistry Analysis and Forecast | [10.48670/moi-00015](https://doi.org/10.48670/moi-00015) |
+
+[`variable_dataset()`](https://chross22.github.io/datamatch/reference/variable_dataset.md)
+says which product a variable came from, so only the ones you used need
+citing. Downloads go through the [Copernicus Marine
+Toolbox](https://toolbox-docs.marine.copernicus.eu/), which publishes no
+DOI of its own — cite the products.
+
+### Ocean and wind models
+
+- **FVCOM / NECOFS** — Chen C, Beardsley RC, Cowles G (2006). An
+  unstructured grid, finite-volume coastal ocean model (FVCOM) system.
+  *Oceanography* **19**(1):78–89.
+  <https://doi.org/10.5670/oceanog.2006.92>
+
+- **HYCOM / GOFS 3.1** — Chassignet EP, Hurlburt HE, Smedstad OM,
+  Halliwell GR, Hogan PJ, Wallcraft AJ, Baraille R, Bleck R (2007). The
+  HYCOM (HYbrid Coordinate Ocean Model) data assimilative system.
+  *Journal of Marine Systems* **65**:60–83.
+  <https://doi.org/10.1016/j.jmarsys.2005.09.016>
+
+- **CCMP** — Mears C, Lee T, Ricciardulli L, Wang X, Wentz F (2022).
+  Improving the Accuracy of the Cross-Calibrated Multi-Platform (CCMP)
+  Ocean Vector Winds. *Remote Sensing* **14**(17):4230.
+  <https://doi.org/10.3390/rs14174230>
+
+- **MUR** — Chin TM, Vazquez-Cuervo J, Armstrong EM (2017). A
+  multi-scale high-resolution analysis of global sea surface
+  temperature. *Remote Sensing of Environment* **200**:154–169.
+  <https://doi.org/10.1016/j.rse.2017.07.029>
+
+- **VIIRS gap-filled chlorophyll** — Liu X, Wang M (2018). Gap filling
+  of missing data for VIIRS global ocean color products using the DINEOF
+  method. *IEEE Transactions on Geoscience and Remote Sensing*
+  **56**:4464–4476. <https://doi.org/10.1109/TGRS.2018.2820423>
+
+Say which archive as well as which model — a value from the HYCOM
+reanalysis and one from an operational experiment are not the same run,
+and
+[`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
+records exactly that.
+
+### Seafloor terrain
+
+- NOAA National Centers for Environmental Information (2022). *ETOPO
+  2022 15 Arc-Second Global Relief Model*.
+  <https://doi.org/10.25921/fd45-gt74>
+- Pante E, Simon-Bouhet B, Irisson J (2025). *marmap: Import, Plot and
+  Analyze Bathymetric and Topographic Data*.
+  <https://doi.org/10.32614/CRAN.package.marmap>
+
+[`fetch_bathymetry()`](https://chross22.github.io/datamatch/reference/fetch_bathymetry.md)
+requests the 60 arc-second bedrock grid (`ETOPO_2022_v1_60s_bed`)
+through `marmap`.
+
+### Climate indices
+
+Two are the published output of specific work and **should be cited when
+used**:
+
+- **`LCR`** — Jutras M, Dufour CO, Mucci A, Talbot LC (2023).
+  Large-scale control of the retroflection of the Labrador Current.
+  *Nature Communications* **14**:2623.
+  <https://doi.org/10.1038/s41467-023-38321-y>
+
+- **`AMOC`** — Moat BI, Smeed DA, Rayner D, Johns WE, Smith R, Volkov D,
+  Elipot S, Petit T, Kajtar J, Baringer MO, Collins J (2026). *Atlantic
+  meridional overturning circulation observed by the RAPID-MOCHA-WBTS
+  array at 26°N from 2004 to 2024 (v2024.1a)*. British Oceanographic
+  Data Centre, NERC, UK.
+  <https://doi.org/10.5285/48d0bf43-0598-ceb2-e063-7086abc062f1>
+
+  BODC mints a new DOI for each release and retires the old one, so this
+  changes when RAPID publishes a new version.
+  [`index_dictionary()`](https://chross22.github.io/datamatch/reference/index_dictionary.md)
+  carries the current reference.
+
+The other four are operational products with no single paper behind
+them. Credit the provider:
+
+- **`NAO`**, **`AO`** — NOAA Climate Prediction Center.
+  <https://www.cpc.ncep.noaa.gov/>
+- **`AMO`**, **`PDO`** — NOAA Physical Sciences Laboratory.
+  <https://psl.noaa.gov/data/climateindices/>
+
+### Software this is built on
+
+- Pebesma E, Bivand R (2023). *Spatial Data Science: With Applications
+  in R*. Chapman and Hall/CRC. <https://doi.org/10.1201/9780429459016> —
+  the `sf` reference
+- Hijmans R, Brown A, Barbosa M (2026). *terra: Spatial Data Analysis*.
+  <https://doi.org/10.32614/CRAN.package.terra>
+- Pierce D (2025). *ncdf4: Interface to Unidata netCDF Format Data
+  Files*. <https://doi.org/10.32614/CRAN.package.ncdf4> — needed for
+  `AMOC`
+
+`citation("datamatch")` gives this package’s own entry, and
+[`citation()`](https://rdrr.io/r/utils/citation.html) works on any of
+the above.
+
+### Keeping these current
+
+Citations go stale without anyone touching them. Data centres reissue a
+DOI when a record is superseded and retire the old one, so a reference
+that was correct when written stops resolving on its own. The `AMOC`
+entry here has already been through that once, when BODC published a
+newer RAPID release.
+
+Two scheduled workflows watch for it, and open an issue rather than
+editing anything, since choosing a replacement is a judgement about
+which version to track:
+
+- **Citation check**, quarterly, resolves every DOI cited in the README,
+  the catalogs, and `NEWS.md`.
+- **Copernicus catalog check**, monthly, compares the variable catalog
+  against the live Copernicus catalogue, since dataset identifiers are
+  revised too.
+
+Both run on demand from the Actions tab, and locally:
+
+``` r
+
+# from the package root
+system("Rscript inst/scripts/check_citations.R")
+system("Rscript inst/scripts/check_catalog.R")
+```
 
 ## Satellite or model?
 
@@ -245,7 +404,7 @@ dataset as `CHL`, so they can be fetched together:
 
 ``` r
 
-env <- accessEnvDat(
+env <- accessCopernicus(
   vars = c("CHL", "DIATO", "DINO"),   # one request, one dataset
   years = 2003:2017, months = 1:12,
   bounding_box = list(xmin = -76, xmax = -65, ymin = 35, ymax = 45)
@@ -265,7 +424,7 @@ salinity column is fetched and the deepest wet level in each cell kept.
 
 ``` r
 
-bots <- accessEnvDat(vars = "BOTS", years = 2010:2014, months = 1:12,
+bots <- accessCopernicus(vars = "BOTS", years = 2010:2014, months = 1:12,
                      bounding_box = bb)
 #> BOTS is not published by this product. Deriving it from the full 'so' column
 #> and keeping the deepest wet level in each cell; the depth used comes back as
@@ -294,7 +453,7 @@ there, fetches alongside `BOTT`, and returns no `BOTS_depth`:
 
 ``` r
 
-accessEnvDat(vars = c("BOTT", "BOTS"), years = 2026, months = 8,
+accessCopernicus(vars = c("BOTT", "BOTS"), years = 2026, months = 8,
              bounding_box = bb, mode = "forecast")
 ```
 
@@ -318,3 +477,93 @@ erddap_datasets()                            # which ERDDAP datasets ship
 variable_dataset(c("SST", "CHL"))            # which dataset each comes from
 as.data.frame(variable_dictionary())$description  # full descriptions
 ```
+
+## Error messages
+
+Most of what this package refuses to do, it refuses deliberately. These
+are the messages you are most likely to meet, and what each one means.
+
+**`Could not find the Copernicus Marine client`**
+
+R cannot see `copernicusmarine` on its `PATH`. Common when it lives in a
+conda environment that RStudio does not inherit. Point at it directly:
+
+``` r
+
+options(datamatch.copernicusmarine = "~/miniconda3/bin/copernicusmarine")
+```
+
+**`These variables come from different Copernicus datasets`**
+
+Expected, not a fault. `SST` is physics and `CHL` is biogeochemistry, on
+different grids. Fetch them separately and chain
+[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md),
+as in [Putting several together](#putting-several-together).
+[`variable_dataset()`](https://chross22.github.io/datamatch/reference/variable_dataset.md)
+shows which dataset each variable comes from.
+
+In forecast mode this happens more often, because the forecast products
+split variables across more datasets than the reanalysis does. `SST` and
+`UO` share a dataset as reanalysis but not as forecast.
+
+**`Copernicus publishes no daily dataset for: UWND, VWND`**
+
+Expected. This wind is published hourly or monthly and nothing between.
+Fetch `frequency = "hourly"` and aggregate with
+`upscale_time(to = "day")`. The same message for `PH`, `PP`, `DIATO` or
+`DINO` means the opposite — those are monthly composites, so fetch them
+monthly.
+
+**`Copernicus publishes no hourly dataset for: WSPD`**
+
+`WSPD` and `TAU` are magnitudes the hourly wind product does not carry.
+Fetch `UWND` and `VWND` hourly and compute the magnitude, or take these
+monthly.
+
+**`BOTS must be fetched on its own`**
+
+Bottom salinity is derived from the whole depth column, which is a
+different request from the single level a surface variable wants. Call
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+once for `BOTS` and once for the rest, then chain
+[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md).
+See [Bottom salinity](#bottom-salinity).
+
+**`These variables sit on different parts of the FVCOM mesh`**
+
+Scalars sit on mesh nodes and velocities on element centroids, so the
+two kinds cannot be read together. Call
+[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md)
+once for each and chain
+[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md).
+
+**`The download did not return: uo, vo`**
+
+Those variables were requested but are not in the returned file. Either
+the dataset does not serve them, or they are unavailable at the
+requested depth or date. The message lists what did arrive.
+
+**`The depth range returned several model levels`**
+
+`depth` spanned more than one model level, so a variable came back on
+several layers and there is no way to know which was wanted. Request a
+single level with `depth = c(0, 1)`.
+
+**`Copernicus download failed after 3 attempt(s)`**
+
+The request was retried and kept failing. The message carries the
+client’s own output. Rapid repeated downloads can also be rate-limited,
+in which case waiting and re-running works.
+
+**`Expected N variable column(s) but the download returned M`**
+
+From a version before the layer-matching fix. Update the package: this
+message blamed the depth range for causes it could not distinguish, and
+the two real ones now report themselves. See `NEWS.md`.
+
+**Values in the wrong range for their column name**
+
+Salinity around 32 in an `SST` column means you are on a version
+predating the layer-ordering fix, where multi-variable downloads could
+be mislabelled silently. Update and re-fetch. `NEWS.md` describes what
+was affected and how to check.

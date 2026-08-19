@@ -17,7 +17,7 @@ fill_satellite_gaps(satellite, model, vars, rescale = FALSE)
 - satellite:
 
   an `sf` POINT object of satellite data from
-  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
 
 - model:
 
@@ -65,8 +65,8 @@ So this is offered with two safeguards rather than as a silent default:
 
 ``` r
 if (FALSE) { # \dontrun{
-chl_sat <- accessEnvDat(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
-chl_mod <- accessEnvDat(vars = "CHL_MODEL", years = 2010, months = 1:12,
+chl_sat <- accessCopernicus(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
+chl_mod <- accessCopernicus(vars = "CHL_MODEL", years = 2010, months = 1:12,
                         bounding_box = bb)
 
 filled <- fill_satellite_gaps(chl_sat, chl_mod, c(CHL = "CHL_MODEL"))

@@ -34,7 +34,7 @@ matchData(
 - source:
 
   the points to take values from: a grid from any access function —
-  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
+  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
   [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
   [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
   [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
@@ -147,7 +147,7 @@ though they were measurements.
 
 ## See also
 
-[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
+[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
 [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
 [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
 [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
@@ -163,7 +163,7 @@ for covariates that are not matched this way
 
 ``` r
 if (FALSE) { # \dontrun{
-env <- accessEnvDat(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
+env <- accessCopernicus(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
 
 matched <- matchData(observations, env)
 
