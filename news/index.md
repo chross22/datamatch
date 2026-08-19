@@ -4,6 +4,21 @@
 
 ### New features
 
+- **A date that has not happened yet is refused before anything is
+  fetched.** All five access functions now check the requested days
+  against today, and stop if any are past it. Previously a typo in a
+  year, or a projection window that ran off the end of the record, cost
+  a download attempt per day and then an error from the server about
+  exceeding the dataset coordinates - which named neither the date nor
+  the mistake.
+
+  `mode = "forecast"` keeps its horizon: the analysis-and-forecast
+  products run about ten days past today, and dates inside that are
+  still fetched. The check is on the calendar, not on what a given
+  product has published yet - a reanalysis running months behind the
+  present is a separate problem, and one the lag varies too much between
+  products to guess at.
+
 - **`accessHYCOM(archive = "continuous")` reads across the archives.**
   HYCOM reaches 1994 to September 2024, but only as a reanalysis
   followed by a chain of shorter operational experiments, and until now
