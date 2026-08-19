@@ -8,7 +8,7 @@ source_of(x)
 }
 \arguments{
 \item{x}{an object from \code{\link[=accessEnvDat]{accessEnvDat()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}},
-\code{\link[=accessCCMP]{accessCCMP()}}}
+\code{\link[=accessCCMP]{accessCCMP()}} or \code{\link[=accessERDDAP]{accessERDDAP()}}}
 }
 \value{
 \if{html}{\out{<char>}} the source tag, or \code{NA} if the object carries none — which is

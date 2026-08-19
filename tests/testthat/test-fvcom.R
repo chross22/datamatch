@@ -268,3 +268,94 @@ test_that("frequency is refused on a monthly archive rather than ignored", {
                     frequency = "hourly"), silent = TRUE),
     "applies only to sub-daily archives")
 })
+
+# ---- the mesh itself ---------------------------------------------------------
+
+test_that("a mesh spec must carry a url, and the archive must be known", {
+  expect_error(fvcom_mesh(archive = "SCOTIAN"), "Unknown archive")
+  expect_error(fvcom_mesh(archive = "SCOTIAN"), "fvcom_archive")
+  expect_error(fvcom_mesh(archive = list(mesh = "x")), "must carry a `url`")
+})
+
+test_that("the mesh reads as triangles with depth", {
+  skip_if_no_network()
+
+  bb <- list(xmin = -69.5, xmax = -68.5, ymin = 43, ymax = 43.8)
+  mesh <- try(fvcom_mesh(bounding_box = bb), silent = TRUE)
+  skip_if(inherits(mesh, "try-error"), "FVCOM THREDDS server unreachable")
+
+  expect_s3_class(mesh, "sf")
+  # Triangles, not points - which is the whole reason this exists.
+  expect_setequal(as.character(unique(sf::st_geometry_type(mesh))), "POLYGON")
+  expect_true(all(sf::st_is_valid(mesh)))
+  expect_true(all(c("element", "DEPTH") %in% names(mesh)))
+
+  # Gulf of Maine basin depths, and every triangle has one.
+  expect_false(any(is.na(mesh$DEPTH)))
+  expect_true(all(mesh$DEPTH > 0 & mesh$DEPTH < 400))
+
+  # A triangle is kept when any vertex is inside, so the mesh covers the box
+  # rather than stopping short of it - the edge is ragged by design.
+  box <- sf::st_bbox(mesh)
+  expect_lte(box[["xmin"]], bb$xmin)
+  expect_gte(box[["xmax"]], bb$xmax)
+})
+
+test_that("nodes and elements come back as their own point sets", {
+  skip_if_no_network()
+
+  bb <- list(xmin = -69.5, xmax = -68.5, ymin = 43, ymax = 43.8)
+  nodes <- try(fvcom_mesh(bounding_box = bb, what = "nodes"), silent = TRUE)
+  skip_if(inherits(nodes, "try-error"), "FVCOM THREDDS server unreachable")
+  elements <- fvcom_mesh(bounding_box = bb, what = "elements")
+
+  expect_setequal(as.character(unique(sf::st_geometry_type(nodes))), "POINT")
+  expect_true(all(c("node", "DEPTH") %in% names(nodes)))
+  expect_true("element" %in% names(elements))
+  # Roughly twice as many triangles as nodes, as a triangulation gives.
+  expect_gt(nrow(elements), nrow(nodes))
+})
+
+test_that("plot_mesh joins node and element values onto the triangles", {
+  skip_if_no_network()
+
+  bb <- list(xmin = -69.5, xmax = -68.5, ymin = 43, ymax = 43.8)
+  mesh <- try(fvcom_mesh(bounding_box = bb), silent = TRUE)
+  skip_if(inherits(mesh, "try-error"), "FVCOM THREDDS server unreachable")
+
+  path <- tempfile(fileext = ".png")
+  grDevices::png(path); on.exit({grDevices::dev.off(); unlink(path)}, add = TRUE)
+
+  # Node-centred values sit at triangle corners, on the boundary between cells.
+  # st_contains excludes boundaries, so joining that way returned nothing at
+  # all; intersects is what makes a node join work.
+  nodes <- accessFVCOM(vars = "SST", years = 2010, months = 6,
+                       bounding_box = bb)
+  shaded <- plot_mesh(mesh, "SST", values = nodes)
+  expect_false(any(is.na(shaded$SST)))
+  # Each triangle is the mean of its three corners, so it sits inside the range.
+  expect_gte(min(shaded$SST), min(nodes$SST))
+  expect_lte(max(shaded$SST), max(nodes$SST))
+
+  # Element-centred values sit strictly inside one triangle each.
+  elements <- accessFVCOM(vars = "UBAR", years = 2010, months = 6,
+                          bounding_box = bb)
+  by_element <- plot_mesh(mesh, "UBAR", values = elements)
+  expect_true(any(!is.na(by_element$UBAR)))
+  # The ragged-edge triangles have no centroid inside the box, so they stay NA
+  # rather than borrowing a neighbour's value.
+  expect_true(any(is.na(by_element$UBAR)))
+})
+
+test_that("plot_mesh refuses what it cannot do", {
+  square <- sf::st_sf(
+    a = 1, geometry = sf::st_sfc(sf::st_polygon(list(rbind(
+      c(0, 0), c(1, 0), c(1, 1), c(0, 1), c(0, 0)))), crs = 4326))
+
+  expect_error(plot_mesh(data.frame(x = 1)), "must be an sf object")
+  expect_error(plot_mesh(square, values = square), "`var` was not")
+
+  values <- sf::st_sf(B = 1, geometry = sf::st_sfc(sf::st_point(c(0.5, 0.5)),
+                                                   crs = 4326))
+  expect_error(plot_mesh(square, "A", values = values), "no column 'A'")
+})

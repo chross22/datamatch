@@ -19,7 +19,7 @@
 #' most: which model the value came from at all.
 #'
 #' @param x an object from [accessEnvDat()], [accessFVCOM()], [accessHYCOM()],
-#'   [accessCCMP()]
+#'   [accessCCMP()] or [accessERDDAP()]
 #' @return <char> the source tag, or `NA` if the object carries none — which is
 #'   the case for anything built by hand or produced before this was recorded
 #' @examples

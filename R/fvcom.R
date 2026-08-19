@@ -911,3 +911,174 @@ fvcom_dictionary <- function(mesh = c("all", "node", "element")) {
   class(dictionary) <- c("datamatch_dictionary", "data.frame")
   dictionary
 }
+
+#' Read an FVCOM mesh on its own, with no data on it
+#'
+#' [accessFVCOM()] returns values at points — nodes for scalars, element
+#' centroids for velocities. That is what [matchData()] needs, but it is not the
+#' mesh: it is a scatter of the mesh's points, and drawing it shows dots where
+#' the grid is triangles. This returns the triangles themselves, so the grid can
+#' actually be plotted.
+#'
+#' @section Why the points are not enough:
+#' An FVCOM mesh is a triangulation, and which nodes form each triangle lives in
+#' a connectivity array (`nv`) that a point fetch never reads. Without it there
+#' is no way to draw a cell boundary, shade a cell by its value, or show how the
+#' resolution changes across a shelf — all of which are the usual reasons for
+#' looking at an unstructured model in the first place.
+#'
+#' The result carries no time dimension and no covariates. It is the grid.
+#'
+#' @section What comes back:
+#' \itemize{
+#'   \item `"polygons"` (the default) — one `POLYGON` per element, with the
+#'     element index and `DEPTH`, the mean of its three nodes' bathymetry. This
+#'     is what to plot.
+#'   \item `"nodes"` — the mesh nodes as `POINT`s, with `DEPTH`. Scalars such as
+#'     `SST` and `BOTS` live here.
+#'   \item `"elements"` — the element centroids as `POINT`s. Velocities and
+#'     stresses live here.
+#' }
+#'
+#' @section Bounding box:
+#' A triangle is kept when **any** of its three vertices falls inside the box, so
+#' the returned mesh covers the box rather than stopping short of it. The edge is
+#' therefore ragged, and a triangle may extend a little beyond what was asked
+#' for. Clipping to the box exactly would cut triangles into shapes the model
+#' does not have.
+#'
+#' @section Meshes that move:
+#' `GOM3` has one mesh for its whole record. `GOM7` does not — it is operational
+#' output and remeshes between files, carrying 198,594 nodes in January 2025 and
+#' 207,081 from March. For an archive like that the mesh belongs to a particular
+#' month, so `date` says which; it defaults to the start of the record.
+#'
+#' @param archive which archive's mesh: a name from [fvcom_archives()], or a spec
+#'   from [fvcom_archive()]
+#' @param bounding_box <list> optional named list with `xmin`, `xmax`, `ymin`,
+#'   `ymax`, or an `sf`/`sfc` object. `NULL` returns the whole mesh, which for
+#'   GOM3 is 90,415 triangles.
+#' @param what <char> `"polygons"`, `"nodes"`, or `"elements"`
+#' @param date the month whose mesh to read, for an archive that remeshes.
+#'   Ignored for a single-mesh archive.
+#' @return an `sf` object: `POLYGON` for `"polygons"`, `POINT` otherwise, in
+#'   EPSG:4326
+#' @examples
+#' \dontrun{
+#' bb <- list(xmin = -70, xmax = -66, ymin = 41, ymax = 44)
+#'
+#' mesh <- fvcom_mesh(bounding_box = bb)
+#' plot(sf::st_geometry(mesh))                 # the grid itself
+#' plot(mesh["DEPTH"], border = NA)            # shaded by bathymetry
+#'
+#' # Shade the triangles by a fetched value. Join spatially rather than by
+#' # position: accessFVCOM() returns only the points inside the box, so its row
+#' # order does not correspond to the mesh's element numbering.
+#' currents <- accessFVCOM(vars = "UBAR", years = 2010, months = 6,
+#'                         bounding_box = bb)
+#' shaded <- sf::st_join(mesh, currents["UBAR"], join = sf::st_contains)
+#' plot(shaded["UBAR"], border = NA)
+#' }
+#' @seealso [accessFVCOM()] for values on the mesh, [fvcom_archives()]
+#' @export
+fvcom_mesh <- function(archive = "GOM3", bounding_box = NULL,
+                       what = c("polygons", "nodes", "elements"), date = NULL) {
+  what <- match.arg(what)
+
+  if (is.list(archive)) {
+    spec <- archive
+    if (is.null(spec$url)) {
+      stop("An archive given as a list must carry a `url`. Build one with ",
+           "fvcom_archive().", call. = FALSE)
+    }
+  } else {
+    archives <- fvcom_archives()
+    if (!archive %in% names(archives)) {
+      stop("Unknown archive '", archive, "'. Built in: ",
+           paste(names(archives), collapse = ", "),
+           "\nTo read any other, describe it with fvcom_archive(url).",
+           call. = FALSE)
+    }
+    spec <- archives[[archive]]
+  }
+
+  # A per-month archive's url is a template, and its mesh can differ between
+  # months, so some month has to be named. See the Meshes that move section.
+  if (identical(spec$layout, "per_month")) {
+    when <- if (is.null(date)) spec$start else parse_dates(date)[1]
+    spec$url <- sprintf(spec$url, as.integer(format(when, "%Y")),
+                        as.integer(format(when, "%Y")),
+                        as.integer(format(when, "%m")))
+  }
+
+  handle <- fvcom_open(spec)
+  on.exit(ncdf4::nc_close(handle), add = TRUE)
+
+  if (identical(what, "elements")) {
+    coords <- fvcom_coordinates(handle, "element")
+    coords$element <- seq_len(nrow(coords))
+    keep <- if (is.null(bounding_box)) {
+      seq_len(nrow(coords))
+    } else {
+      fvcom_in_box(coords, bounding_box)
+    }
+    return(sf::st_as_sf(coords[keep, , drop = FALSE], coords = c("x", "y"),
+                        crs = sf::st_crs(4326)))
+  }
+
+  nodes <- fvcom_coordinates(handle, "node")
+  nodes$node <- seq_len(nrow(nodes))
+  depth <- if (!is.null(handle$var[["h"]])) {
+    as.numeric(ncdf4::ncvar_get(handle, "h"))
+  } else {
+    rep(NA_real_, nrow(nodes))
+  }
+  nodes$DEPTH <- depth
+
+  if (identical(what, "nodes")) {
+    keep <- if (is.null(bounding_box)) {
+      seq_len(nrow(nodes))
+    } else {
+      fvcom_in_box(nodes, bounding_box)
+    }
+    return(sf::st_as_sf(nodes[keep, , drop = FALSE], coords = c("x", "y"),
+                        crs = sf::st_crs(4326)))
+  }
+
+  if (is.null(handle$var[["nv"]])) {
+    stop("This archive has no `nv` connectivity array, so its triangles cannot ",
+         "be built.\nWithout it the mesh is only a set of points; use ",
+         "what = \"nodes\".", call. = FALSE)
+  }
+  # [nele, 3], one-based node indices - FVCOM is written in Fortran.
+  nv <- ncdf4::ncvar_get(handle, "nv")
+
+  # A triangle is kept when any vertex is inside, so the mesh covers the box
+  # rather than stopping short of it.
+  keep <- if (is.null(bounding_box)) {
+    seq_len(nrow(nv))
+  } else {
+    inside <- rep(FALSE, nrow(nodes))
+    inside[fvcom_in_box(nodes, bounding_box)] <- TRUE
+    which(inside[nv[, 1]] | inside[nv[, 2]] | inside[nv[, 3]])
+  }
+  if (length(keep) == 0) {
+    stop("No mesh triangles fall inside the bounding box.", call. = FALSE)
+  }
+
+  x <- nodes$x
+  y <- nodes$y
+  triangles <- lapply(keep, function(i) {
+    vertices <- nv[i, ]
+    # Closed ring: the first vertex repeated at the end, as sf requires.
+    ring <- cbind(x[c(vertices, vertices[1])], y[c(vertices, vertices[1])])
+    sf::st_polygon(list(ring))
+  })
+
+  out <- sf::st_sf(
+    element = keep,
+    DEPTH = rowMeans(matrix(depth[nv[keep, ]], ncol = 3)),
+    geometry = sf::st_sfc(triangles, crs = sf::st_crs(4326)))
+  attr(out, "datamatch_mesh") <- spec$mesh %||% "unstructured"
+  out
+}

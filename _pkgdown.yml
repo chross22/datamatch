@@ -69,6 +69,7 @@ reference:
   - plot_coverage
   - plot_series
   - plot_matched
+  - plot_mesh
 
 - title: Catalogs and lookup
   desc: >
@@ -82,6 +83,7 @@ reference:
   - fvcom_dictionary
   - fvcom_archives
   - fvcom_archive
+  - fvcom_mesh
   - hycom_variables
   - hycom_dictionary
   - hycom_archives

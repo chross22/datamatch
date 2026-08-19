@@ -34,6 +34,26 @@ Five sources sit behind one interface, sharing one set of variable names:
 | [CCMP](#ccmp-the-long-wind-record) | `accessCCMP()` | surface winds | 6-hourly | 1993–present |
 | [MUR / VIIRS](#mur-and-viirs-through-erddap) | `accessERDDAP()` | satellite SST and chlorophyll | daily | 2002– / 2012– |
 
+### The access functions
+
+Each takes `vars`, a `bounding_box`, and either `years`/`months` or `dates`, and
+each returns one row per cell per time step.
+
+- **`accessEnvDat()`** — Copernicus Marine. The widest catalog: physics,
+  biogeochemistry, satellite ocean colour, wind and stress, monthly to hourly
+  from 1993, with a forecast ten days ahead. The only one needing an account.
+- **`accessFVCOM()`** — FVCOM, an unstructured-mesh coastal model. NECOFS for
+  the Northeast US ships built in; `fvcom_archive(url)` reaches any other FVCOM
+  run. `fvcom_mesh()` returns the triangles themselves, for plotting the grid.
+- **`accessHYCOM()`** — HYCOM GOFS 3.1, an independent global model that
+  publishes sea-floor temperature and salinity as fields. Three-hourly,
+  1994–2024 across archives; `hycom_covering(date)` says which one holds a day.
+- **`accessCCMP()`** — CCMP surface winds, six-hourly from 1993 to the present.
+  The longest wind record here, but no stress.
+- **`accessERDDAP()`** — MUR sea surface temperature at 0.01°, and VIIRS
+  chlorophyll, from NOAA's ERDDAP servers. `erddap_dataset()` reaches any of the
+  thousands of other datasets they host.
+
 All five return the same `sf` shape, so `matchData()` joins any of them to your
 observations and they chain together:
 
@@ -66,6 +86,7 @@ vignette compares the five side by side if that is what you came for.
 
 - [Installation](#installation)
 - [Set up](#set-up) — only Copernicus needs an account
+- [The access functions](#the-access-functions) — what each of the five gives
 - [Quick start](#quick-start)
   - [One call per product](#one-call-per-product)
   - [Monthly, daily, or hourly](#monthly-daily-or-hourly)
@@ -81,6 +102,7 @@ vignette compares the five side by side if that is what you came for.
   - [Spatial and temporal resolution](#spatial-and-temporal-resolution)
   - [Forecasts](#forecasts) — ten days ahead
 - [FVCOM, a regional model on an unstructured mesh](#fvcom-a-regional-model-on-an-unstructured-mesh) — `accessFVCOM()`, 1978–2013 and 2025–
+  - [Plotting the mesh itself](#plotting-the-mesh-itself)
 - [HYCOM, and bottom fields for free](#hycom-and-bottom-fields-for-free) — `accessHYCOM()`, 1994–2024
 - [CCMP, the long wind record](#ccmp-the-long-wind-record) — `accessCCMP()`, six-hourly, 1993–present
 - [MUR and VIIRS, through ERDDAP](#mur-and-viirs-through-erddap) — `accessERDDAP()`, 0.01° satellite SST
@@ -645,7 +667,29 @@ A snapshot is an instant, not a daily mean.
 
 `fvcom_archives()` names what is built in: the GOM3 hindcast (monthly,
 1978–2013) and the GOM7 forecast archive (hourly, 2025–), with nothing between
-them. Reading it needs the `ncdf4` package, a `Suggests`, and a
+them.
+
+### Plotting the mesh itself
+
+`accessFVCOM()` returns values at points — nodes or element centroids — which is
+what matching needs but is not the grid. `fvcom_mesh()` returns the triangles,
+so the mesh can actually be drawn:
+
+```{r fvcom-mesh-plot, eval = FALSE}
+mesh <- fvcom_mesh(bounding_box = bb)
+
+plot_mesh(mesh)                       # the grid itself
+plot_mesh(mesh, "DEPTH")              # shaded by bathymetry
+
+sst <- accessFVCOM(vars = "SST", years = 2010, months = 6, bounding_box = bb)
+plot_mesh(mesh, "SST", values = sst)  # shaded by a fetched covariate
+```
+
+`plot_mesh()` does the spatial join for you, which is worth having: a fetch is
+subset to your box, so its row order says nothing about the mesh's own element
+numbering, and joining by position would silently mislabel every cell. Node
+values sit at triangle *corners* and element values at centroids, and it handles
+both. Reading it needs the `ncdf4` package, a `Suggests`, and a
 network route to a plain-HTTP service on port 8080, which some institutional
 networks block.
 
@@ -1105,6 +1149,7 @@ page for each.
 | `plot_coverage()` | the fraction of cells carrying a value, per step |
 | `plot_series()` | the study area reduced to a series |
 | `plot_matched()` | what the join produced, including what missed |
+| `plot_mesh()` | an FVCOM mesh, bare or shaded by a covariate |
 
 **Other covariates**
 
@@ -1119,7 +1164,7 @@ page for each.
 | | |
 |---|---|
 | `variable_dictionary()`, `copernicus_variables()`, `variable_dataset()`, `forecast_variables()`, `product_url()` | Copernicus |
-| `fvcom_variables()`, `fvcom_dictionary()`, `fvcom_archives()`, `fvcom_archive()` | FVCOM |
+| `fvcom_variables()`, `fvcom_dictionary()`, `fvcom_archives()`, `fvcom_archive()`, `fvcom_mesh()` | FVCOM |
 | `hycom_variables()`, `hycom_dictionary()`, `hycom_archives()`, `hycom_covering()` | HYCOM |
 | `ccmp_variables()`, `ccmp_dictionary()`, `ccmp_versions()` | CCMP |
 | `erddap_datasets()`, `erddap_dictionary()`, `erddap_dataset()` | ERDDAP |

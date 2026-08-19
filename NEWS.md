@@ -2,6 +2,31 @@
 
 ## New features
 
+* **The FVCOM mesh itself, through `fvcom_mesh()`.** `accessFVCOM()` returns
+  values at points — nodes for scalars, element centroids for velocities — which
+  is what matching needs but is not the grid. Drawing it shows dots where the
+  model has triangles.
+
+  `fvcom_mesh()` reads the connectivity array a point fetch never touches and
+  returns the triangles as `POLYGON`s, with `DEPTH` per cell. It carries no time
+  dimension: it is the grid. `what = "nodes"` and `"elements"` return the two
+  point sets on their own.
+
+  **`plot_mesh()`** draws it — bare, or shaded by a covariate. Pass a fetch as
+  `values` and the spatial join is done for you, which matters more than it
+  sounds: a fetch is subset to the bounding box, so its row order says nothing
+  about the mesh's element numbering, and joining by position would silently
+  mislabel every cell.
+
+  Node values sit at triangle *corners* and element values at centroids, so the
+  join tests intersection rather than containment — a corner lies on the
+  boundary between cells, and nothing contains it. Joining by containment
+  returned no node values at all.
+
+  A triangle is kept when any vertex is inside the box, so the mesh covers what
+  was asked for rather than stopping short of it, and the edge is ragged by
+  design. `GOM7` remeshes between months, so `date` says which month's mesh.
+
 * **EML metadata, through `write_eml()`.** Writes an Ecological Metadata
   Language document for a matched table — the standard EDI, LTER and DataONE
   expect alongside a deposited dataset.

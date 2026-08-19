@@ -370,3 +370,125 @@ pretty_steps <- function(n) {
 numeric_for_plot <- function(x) {
   if (is.numeric(x)) x else as.integer(as.factor(x))
 }
+
+#' Map covariates on an unstructured mesh, or anywhere else
+#'
+#' [plot_env()] rasterises, which is right for a regular grid and wrong for an
+#' FVCOM mesh: a triangulation has no rows and columns to rasterise onto, so the
+#' result is either blocky or interpolated over cells the model does not have.
+#' This draws the geometry it is given.
+#'
+#' @section What it is for:
+#' Two jobs. With a mesh from [fvcom_mesh()] and nothing else, it draws the grid
+#' itself — which is how you see where a model resolves a shelf finely and where
+#' it does not. With `var` naming a column, it shades each cell by that value.
+#'
+#' @section Shading a mesh with fetched values:
+#' [accessFVCOM()] returns points and [fvcom_mesh()] returns triangles, so the
+#' two are joined spatially rather than by position — a fetch is subset to the
+#' bounding box, so its row order says nothing about the mesh's own numbering.
+#' Pass `values` and that join is done for you:
+#'
+#' ```
+#' mesh <- fvcom_mesh(bounding_box = bb)
+#' sst  <- accessFVCOM(vars = "SST", years = 2010, months = 6, bounding_box = bb)
+#' plot_mesh(mesh, "SST", values = sst)
+#' ```
+#'
+#' Element-centred values (`UO`, `UBAR`, `TAUX`) sit at the centroid, one per
+#' triangle. Node-centred ones (`SST`, `BOTS`) sit at the *corners*, shared
+#' between the triangles meeting there, so each triangle takes the mean of its
+#' three — which is why the join tests intersection rather than containment: a
+#' corner is on the boundary, and nothing contains it.
+#'
+#' @param x an `sf` object with polygon or point geometry — typically from
+#'   [fvcom_mesh()], but any `sf` object works
+#' @param var which column to shade by; `NULL` draws the bare geometry
+#' @param values optional `sf` object holding the values, from [accessFVCOM()]
+#'   or any access function. Joined to `x` spatially.
+#' @param time which time step of `values` to use, as an index or a named vector
+#'   of `YEAR`/`MONTH`/`DAY`. Only needed when `values` carries more than one.
+#' @param palette a [grDevices::hcl.colors()] palette name
+#' @param border colour for cell edges. `NA` hides them, which is what you want
+#'   on a fine mesh where the edges would otherwise be all you see.
+#' @param main plot title
+#' @param ... passed to [plot()]
+#' @return the `sf` object that was drawn, invisibly, with the joined column if
+#'   `values` was given
+#' @examples
+#' \dontrun{
+#' bb <- list(xmin = -70, xmax = -66, ymin = 41, ymax = 44)
+#' mesh <- fvcom_mesh(bounding_box = bb)
+#'
+#' plot_mesh(mesh)                      # the grid itself
+#' plot_mesh(mesh, "DEPTH")             # shaded by bathymetry
+#'
+#' sst <- accessFVCOM(vars = "SST", years = 2010, months = 6, bounding_box = bb)
+#' plot_mesh(mesh, "SST", values = sst)
+#' }
+#' @seealso [fvcom_mesh()] for the grid, [plot_env()] for regular grids
+#' @export
+plot_mesh <- function(x, var = NULL, values = NULL, time = 1,
+                      palette = "viridis", border = NA, main = NULL, ...) {
+  if (!inherits(x, "sf")) {
+    stop("`x` must be an sf object, such as fvcom_mesh() returns.",
+         call. = FALSE)
+  }
+
+  label <- NULL
+  if (!is.null(values)) {
+    if (is.null(var)) {
+      stop("`values` was given but `var` was not, so there is nothing to take ",
+           "from it.", call. = FALSE)
+    }
+    if (!var %in% names(values)) {
+      stop("`values` has no column '", var, "'.\nIt has: ",
+           paste(covariate_columns(values), collapse = ", "), call. = FALSE)
+    }
+
+    # One time step: a mesh cell can hold one value, so which step must be
+    # settled before the join rather than averaged across silently.
+    steps <- time_steps(values)
+    if (nrow(steps$table) > 1) {
+      step <- select_time_step(values, time)
+      values <- values[step$rows, ]
+      label <- step$label
+    }
+
+    # st_join returns one row per (cell, point) pair, so a cell containing
+    # several points appears several times. The row is marked first so those can
+    # be collapsed back onto the cell they came from.
+    marked <- x
+    marked$.cell <- seq_len(nrow(x))
+    # st_intersects rather than st_contains: node-centred values sit at triangle
+    # *corners*, on the boundary between cells, and st_contains excludes
+    # boundaries - so a node join returned nothing at all. Intersects catches
+    # both, since an element centroid strictly inside a triangle intersects it
+    # too.
+    joined <- sf::st_drop_geometry(
+      sf::st_join(marked, values[var], join = sf::st_intersects))
+
+    # A node-centred variable puts several points in one triangle; an
+    # element-centred one puts exactly its centroid in it. Averaging handles
+    # both, and a triangle containing no point stays NA.
+    averaged <- tapply(joined[[var]], joined$.cell,
+                       function(v) if (all(is.na(v))) NA_real_ else mean(v, na.rm = TRUE))
+    x[[var]] <- as.numeric(averaged[as.character(seq_len(nrow(x)))])
+  }
+
+  if (is.null(var)) {
+    plot(sf::st_geometry(x), border = if (is.na(border)) "grey40" else border,
+         main = main %||% "FVCOM mesh", ...)
+    return(invisible(x))
+  }
+
+  check_columns(x, var)
+  # plot.sf wants a palette *function* it can call with the number of breaks it
+  # chose, not a fixed vector of colours - passing a vector gives "must have one
+  # more break than colour".
+  plot(x[var], pal = function(n) grDevices::hcl.colors(n, palette),
+       border = border,
+       main = main %||% paste0(var, if (!is.null(label)) paste0("  ", label)),
+       ...)
+  invisible(x)
+}
