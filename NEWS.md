@@ -1,5 +1,17 @@
 # datamatch 0.2.0
 
+## Documentation
+
+* **The README is now a front door rather than a manual.** It had grown to 1,618
+  lines, much of it duplicating the four vignettes. The per-source deep dives,
+  the full reference list and the error-message guide now live in
+  `vignette("sources")`, and the README keeps orientation, installation, a quick
+  start, and a short section per source — 535 lines.
+
+  The documentation guards move with the content: every export is still named in
+  the README, and the citation guards now read the vignettes as well, so a source
+  is still required to be cited somewhere a reader will meet it.
+
 ## New features
 
 * **The FVCOM mesh itself, through `fvcom_mesh()`.** `accessFVCOM()` returns

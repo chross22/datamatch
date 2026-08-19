@@ -23,6 +23,27 @@ readme_text <- function() {
   paste(readLines(path, warn = FALSE), collapse = "\n")
 }
 
+# The reference list and the error-message guide live in the "Choosing a data
+# source" vignette rather than in the README, which is deliberately a front door.
+# A citation is still discharged wherever a reader will meet it, so the citation
+# guards below read the vignettes too. Vignette sources sit in vignettes/ in the
+# source tree and in doc/ once installed, so both are looked for.
+vignette_text <- function() {
+  dirs <- c(file.path(c("../..", "../../..", "."), "vignettes"),
+            system.file("doc", package = "datamatch"))
+  dirs <- dirs[nzchar(dirs) & dir.exists(dirs)]
+
+  files <- unlist(lapply(dirs, list.files, pattern = "[.]Rmd$", full.names = TRUE))
+  if (length(files) == 0) return(NULL)
+
+  paste(unlist(lapply(files, readLines, warn = FALSE)), collapse = "\n")
+}
+
+# README plus vignettes: everything a reader is pointed at.
+documentation_text <- function() {
+  paste(c(readme_text(), vignette_text()), collapse = "\n")
+}
+
 test_that("every exported function is mentioned in the README", {
   readme <- readme_text()
   skip_if(is.null(readme), "README.md not reachable from the test directory")
@@ -114,14 +135,14 @@ test_that("cited DOIs are the ones that resolve", {
   expect_match(amoc, "10.5285/48d0bf43-0598-ceb2-e063-7086abc062f1", fixed = TRUE)
   expect_false(grepl("223b34a3-2dc5-c945-e063-6c86abc0f5b3", amoc, fixed = TRUE))
 
-  readme <- readme_text()
-  skip_if(is.null(readme), "README.md not reachable")
-  expect_false(grepl("223b34a3-2dc5-c945-e063-6c86abc0f5b3", readme, fixed = TRUE))
+  docs <- documentation_text()
+  skip_if(!nzchar(docs), "README.md and vignettes not reachable")
+  expect_false(grepl("223b34a3-2dc5-c945-e063-6c86abc0f5b3", docs, fixed = TRUE))
 })
 
-test_that("every data source the package uses is cited in the README", {
-  readme <- readme_text()
-  skip_if(is.null(readme), "README.md not reachable")
+test_that("every data source the package uses is cited in the documentation", {
+  readme <- documentation_text()
+  skip_if(!nzchar(readme), "README.md and vignettes not reachable")
 
   # Everything datamatch returns comes from someone else's data, so each source
   # needs a DOI or a named provider in the reference list.
@@ -133,7 +154,7 @@ test_that("every data source the package uses is cited in the README", {
                 "10.25921/fd45-gt74",   # ETOPO 2022
                 "10.1038/s41467-023-38321-y")) {   # LCR
     expect_true(grepl(doi, readme, fixed = TRUE),
-                info = paste("DOI missing from the README:", doi))
+                info = paste("DOI missing from README and vignettes:", doi))
   }
 
   # The operational indices have no paper, so the provider is the credit.
