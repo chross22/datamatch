@@ -13,7 +13,9 @@ downscale_time(
 )
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{\link[=accessEnvDat]{accessEnvDat()}}}
+\item{env_dat}{an \code{sf} POINT object from any access function -
+\code{\link[=accessEnvDat]{accessEnvDat()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=accessCCMP]{accessCCMP()}} or
+\code{\link[=accessERDDAP]{accessERDDAP()}}}
 
 \item{to}{the target step: \code{"day"} or \code{"month"}}
 

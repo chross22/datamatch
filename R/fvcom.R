@@ -599,8 +599,9 @@ fvcom_read_variable <- function(handle, entry, step, layers, keep) {
 #'                         months = 1:12, bounding_box = bb)
 #' matched <- matchData(matched, currents)
 #' }
-#' @seealso [fvcom_variables()] for what can be read, [accessEnvDat()] for the
-#'   Copernicus equivalent, [matchData()] for joining either to observations
+#' @seealso [fvcom_variables()] for what can be read, [accessEnvDat()],
+#'   [accessHYCOM()], [accessCCMP()] and [accessERDDAP()] for the other sources,
+#'   [matchData()] for joining any of them to observations
 #' @export
 accessFVCOM <- function(vars, years = NULL, months = NULL, bounding_box,
                         dates = NULL, frequency = c("daily", "hourly"),

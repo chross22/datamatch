@@ -47,7 +47,8 @@ per requested variable
 \description{
 Downloads the CCMP wind analysis from Remote Sensing Systems and returns it
 as an \code{sf} point object with one row per grid cell and time step — the same
-shape \code{\link[=accessEnvDat]{accessEnvDat()}}, \code{\link[=accessFVCOM]{accessFVCOM()}} and \code{\link[=accessHYCOM]{accessHYCOM()}} return, so
+shape \code{\link[=accessEnvDat]{accessEnvDat()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}} and \code{\link[=accessERDDAP]{accessERDDAP()}}
+return, so
 \code{\link[=matchData]{matchData()}} joins it unchanged.
 }
 \section{Why reach for it, and why not}{

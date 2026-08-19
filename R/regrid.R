@@ -8,10 +8,13 @@
 #' the coarser one is the one to bring the other onto, or not, depending on which
 #' trade-off you want. See [upscale_grid()] for what that choice costs.
 #'
-#' @param env_dat an `sf` POINT object from [accessEnvDat()]
+#' @param env_dat an `sf` POINT object from any access function -
+#'   [accessEnvDat()], [accessFVCOM()], [accessHYCOM()], [accessCCMP()] or
+#'   [accessERDDAP()]
 #' @return named numeric vector `c(x = , y = )` in the units of the object's CRS,
-#'   degrees for [accessEnvDat()] output. `NA` in a direction with only one
-#'   distinct coordinate.
+#'   degrees for every access function here. `NA` in a direction with only one
+#'   distinct coordinate, and meaningless on an unstructured FVCOM mesh, which
+#'   has no regular spacing to report.
 #' @examples
 #' \dontrun{
 #' grid_resolution(env)          # x 0.083  y 0.083
@@ -68,7 +71,10 @@ grid_resolution <- function(env_dat) {
 #' aggregate whatever is present, and `keep_counts = TRUE` to get the coverage
 #' fraction alongside each variable and judge for yourself.
 #'
-#' @param env_dat an `sf` POINT object from [accessEnvDat()], on a regular grid
+#' @param env_dat an `sf` POINT object on a regular grid, from [accessEnvDat()],
+#'   [accessHYCOM()], [accessCCMP()] or [accessERDDAP()]. Not [accessFVCOM()]:
+#'   its mesh is unstructured, so there are no rows and columns to aggregate
+#'   over - match it to points, or regrid a regular product onto it.
 #' @param to the target grid: either a resolution in the CRS's units (one number
 #'   for square cells, or `c(x, y)`), or another `sf` object whose grid to adopt —
 #'   which is the form that puts two products onto one grid.

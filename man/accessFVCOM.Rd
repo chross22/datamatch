@@ -173,6 +173,7 @@ matched <- matchData(matched, currents)
 }
 }
 \seealso{
-\code{\link[=fvcom_variables]{fvcom_variables()}} for what can be read, \code{\link[=accessEnvDat]{accessEnvDat()}} for the
-Copernicus equivalent, \code{\link[=matchData]{matchData()}} for joining either to observations
+\code{\link[=fvcom_variables]{fvcom_variables()}} for what can be read, \code{\link[=accessEnvDat]{accessEnvDat()}},
+\code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=accessCCMP]{accessCCMP()}} and \code{\link[=accessERDDAP]{accessERDDAP()}} for the other sources,
+\code{\link[=matchData]{matchData()}} for joining any of them to observations
 }

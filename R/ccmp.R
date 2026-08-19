@@ -144,7 +144,8 @@ download_ccmp_day <- function(spec, day, destination) {
 #'
 #' Downloads the CCMP wind analysis from Remote Sensing Systems and returns it
 #' as an `sf` point object with one row per grid cell and time step — the same
-#' shape [accessEnvDat()], [accessFVCOM()] and [accessHYCOM()] return, so
+#' shape [accessEnvDat()], [accessFVCOM()], [accessHYCOM()] and [accessERDDAP()]
+#' return, so
 #' [matchData()] joins it unchanged.
 #'
 #' @section Why reach for it, and why not:

@@ -7,7 +7,9 @@
 plot_env(env_dat, var = NULL, time = 1, palette = "viridis", main = NULL, ...)
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{\link[=accessEnvDat]{accessEnvDat()}}}
+\item{env_dat}{an \code{sf} POINT object from any access function -
+\code{\link[=accessEnvDat]{accessEnvDat()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=accessCCMP]{accessCCMP()}} or
+\code{\link[=accessERDDAP]{accessERDDAP()}}}
 
 \item{var}{which variable to map; \code{NULL} uses the first covariate column}
 
@@ -26,7 +28,7 @@ field of continuous values than the usual rainbow does.}
 the \code{SpatRaster} that was plotted, invisibly
 }
 \description{
-A quick look at what came back from \code{\link[=accessEnvDat]{accessEnvDat()}} — the first thing worth
+A quick look at what came back from any access function — the first thing worth
 doing after a download, and the fastest way to catch a bounding box that came
 out somewhere unintended, a variable that is all \code{NA}, or a depth range that
 returned the wrong level.

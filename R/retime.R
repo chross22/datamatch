@@ -52,7 +52,9 @@
 #' is the intended behaviour; set `min_coverage = 0` to aggregate whatever is
 #' present, and `keep_counts = TRUE` to see how many steps were behind each value.
 #'
-#' @param env_dat an `sf` POINT object from [accessEnvDat()]
+#' @param env_dat an `sf` POINT object from any access function -
+#'   [accessEnvDat()], [accessFVCOM()], [accessHYCOM()], [accessCCMP()] or
+#'   [accessERDDAP()]
 #' @param to the target period: `"day"`, `"month"`, or `"year"`. `"day"` requires
 #'   hourly input, which only the wind variables have.
 #' @param vars columns to aggregate; `NULL` uses all covariate columns

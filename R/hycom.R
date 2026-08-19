@@ -389,7 +389,8 @@ hycom_read_variable <- function(handle, entry, step, lon_window, lat_window) {
 #' Access HYCOM output from the GOFS 3.1 reanalysis
 #'
 #' Reads HYCOM over OPeNDAP and returns it as an `sf` point object with one row
-#' per grid cell and time step — the same shape [accessEnvDat()] and
+#' per grid cell and time step — the same shape [accessEnvDat()], [accessCCMP()],
+#' [accessERDDAP()] and
 #' [accessFVCOM()] return, so [matchData()] joins it unchanged.
 #'
 #' @section Why reach for it:
@@ -489,8 +490,9 @@ hycom_read_variable <- function(handle, entry, step, lon_window, lat_window) {
 #'                      dates = "2010-06-15", bounding_box = bb)
 #' daily <- upscale_time(steps, to = "day")
 #' }
-#' @seealso [hycom_variables()] for what can be read, [accessEnvDat()] and
-#'   [accessFVCOM()] for the other sources, [matchData()] for joining any of them
+#' @seealso [hycom_variables()] for what can be read, [accessEnvDat()],
+#'   [accessFVCOM()], [accessCCMP()] and [accessERDDAP()] for the other sources,
+#'   [matchData()] for joining any of them
 #' @export
 accessHYCOM <- function(vars, years = NULL, months = NULL, bounding_box,
                         dates = NULL, frequency = c("daily", "3hourly"),

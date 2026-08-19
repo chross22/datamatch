@@ -56,9 +56,9 @@
 #' or renamed.
 #'
 #' @section Which source a column came from:
-#' The access functions share variable names on purpose, so `SST` from Copernicus,
-#' FVCOM and HYCOM all arrive in a column called `SST` and everything downstream
-#' works unchanged. The cost is that a table with several sources chained onto it
+#' The access functions share variable names on purpose, so `SST` from
+#' Copernicus, FVCOM, HYCOM and MUR all arrives in a column called `SST` and
+#' everything downstream works unchanged. The cost is that a table with several sources chained onto it
 #' has no record of which produced what.
 #'
 #' So each joined column gets a companion `<var>_source` naming the source and
@@ -79,11 +79,12 @@
 #'   though some of them do begin with `year` or `day`: they hold an ordinal day
 #'   rather than a year or a day of the month. An unrecognised name is named in
 #'   the error, so nothing has to be guessed at.
-#' @param source <sf object> the points to take values from, typically a grid
-#'   from [accessEnvDat()]. Must carry `YEAR`/`MONTH`/`DAY`, and `HOUR` as well
-#'   when matching hourly.
+#' @param source <sf object> the points to take values from: a grid from any
+#'   access function — [accessEnvDat()], [accessFVCOM()], [accessHYCOM()],
+#'   [accessCCMP()] or [accessERDDAP()]. Must carry `YEAR`/`MONTH`/`DAY`, and
+#'   `HOUR` as well when matching hourly.
 #' @param temporal_resolution <char> one of `"auto"` (default), `"hour"`,
-#'   `"day"`, `"month"`, or `"year"`. `"auto"` uses the step `accessEnvDat()`
+#'   `"day"`, `"month"`, or `"year"`. `"auto"` uses the step the access function
 #'   recorded on `source`, or infers it from `source`'s time steps.
 #' @param record_source <logical> add a `<var>_source` column for each column
 #'   joined, naming which source and archive produced it. On by default, and only
@@ -102,7 +103,8 @@
 #' # Chains, so several sources land on one table
 #' matched <- matchData(matched, chlorophyll)
 #' }
-#' @seealso [accessEnvDat()] for the usual `source`, [attach_bathymetry()] and
+#' @seealso [accessEnvDat()], [accessFVCOM()], [accessHYCOM()], [accessCCMP()]
+#'   and [accessERDDAP()] for the usual `source`; [attach_bathymetry()] and
 #'   [attach_climate_index()] for covariates that are not matched this way
 #' @export
 matchData <- function(dat, source,
@@ -260,7 +262,7 @@ matchData <- function(dat, source,
   matched_data$LON <- representative[, 1]
   matched_data$LAT <- representative[, 2]
 
-  # Record which source each joined column came from. The four access functions
+  # Record which source each joined column came from. The five access functions
   # deliberately share variable names, so an SST column cannot say on its own
   # whether it holds a global reanalysis, a regional coastal model or an
   # independent global model - and once several are chained onto one table, the

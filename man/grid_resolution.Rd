@@ -7,12 +7,15 @@
 grid_resolution(env_dat)
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{\link[=accessEnvDat]{accessEnvDat()}}}
+\item{env_dat}{an \code{sf} POINT object from any access function -
+\code{\link[=accessEnvDat]{accessEnvDat()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=accessCCMP]{accessCCMP()}} or
+\code{\link[=accessERDDAP]{accessERDDAP()}}}
 }
 \value{
 named numeric vector \code{c(x = , y = )} in the units of the object's CRS,
-degrees for \code{\link[=accessEnvDat]{accessEnvDat()}} output. \code{NA} in a direction with only one
-distinct coordinate.
+degrees for every access function here. \code{NA} in a direction with only one
+distinct coordinate, and meaningless on an unstructured FVCOM mesh, which
+has no regular spacing to report.
 }
 \description{
 Read off the coordinates actually present, as the median spacing between

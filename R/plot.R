@@ -1,6 +1,6 @@
 #' Map an environmental variable
 #'
-#' A quick look at what came back from [accessEnvDat()] — the first thing worth
+#' A quick look at what came back from any access function — the first thing worth
 #' doing after a download, and the fastest way to catch a bounding box that came
 #' out somewhere unintended, a variable that is all `NA`, or a depth range that
 #' returned the wrong level.
@@ -15,7 +15,9 @@
 #' and the step being shown is written into the title so a map is never ambiguous
 #' about which month it is.
 #'
-#' @param env_dat an `sf` POINT object from [accessEnvDat()]
+#' @param env_dat an `sf` POINT object from any access function -
+#'   [accessEnvDat()], [accessFVCOM()], [accessHYCOM()], [accessCCMP()] or
+#'   [accessERDDAP()]
 #' @param var which variable to map; `NULL` uses the first covariate column
 #' @param time which time step, as an index or a named vector of
 #'   `YEAR`/`MONTH`/`DAY` values
@@ -67,7 +69,9 @@ plot_env <- function(env_dat, var = NULL, time = 1, palette = "viridis",
 #' the thing to look at before trusting a monthly mean or deciding whether
 #' [fill_satellite_gaps()] is worth the seam it introduces.
 #'
-#' @param env_dat an `sf` POINT object from [accessEnvDat()]
+#' @param env_dat an `sf` POINT object from any access function -
+#'   [accessEnvDat()], [accessFVCOM()], [accessHYCOM()], [accessCCMP()] or
+#'   [accessERDDAP()]
 #' @param vars which variables to show; `NULL` uses all covariate columns
 #' @param main plot title
 #' @param ... passed to [graphics::plot()]
@@ -132,7 +136,9 @@ plot_coverage <- function(env_dat, vars = NULL, main = "Data coverage by time st
 #' alone hides the difference between a uniformly warm month and one that is warm
 #' inshore and cold offshore.
 #'
-#' @param env_dat an `sf` POINT object from [accessEnvDat()]
+#' @param env_dat an `sf` POINT object from any access function -
+#'   [accessEnvDat()], [accessFVCOM()], [accessHYCOM()], [accessCCMP()] or
+#'   [accessERDDAP()]
 #' @param vars which variables to plot; `NULL` uses all covariate columns. Each
 #'   gets its own panel, since covariates rarely share units.
 #' @param fun the summary applied across cells within each time step

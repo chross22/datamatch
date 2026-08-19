@@ -2,11 +2,11 @@
 #'
 #' Every access function stamps its result with where the values came from, and
 #' this reads it back. The tag is short and stable — `"copernicus:..."`,
-#' `"fvcom:GOM3"`, `"hycom:GLBv53X"`, `"ccmp:v03.1"` — naming the source and the
-#' particular archive or dataset within it.
+#' `"fvcom:GOM3"`, `"hycom:GLBv53X"`, `"ccmp:v03.1"`, `"erddap:MUR"` — naming the
+#' source and the particular archive or dataset within it.
 #'
 #' @section Why this exists:
-#' The four sources deliberately share variable names, so an `SST` column means
+#' The five sources deliberately share variable names, so an `SST` column means
 #' the same *quantity* whichever produced it and everything downstream works
 #' unchanged. That is the point of the design and also its hazard: the column
 #' name alone cannot say whether a value came from a global reanalysis, a
@@ -18,7 +18,7 @@
 #' returns `BOTS_depth`. This extends the same habit to the thing that varies
 #' most: which model the value came from at all.
 #'
-#' @param x an object from [accessEnvDat()], [accessFVCOM()], [accessHYCOM()] or
+#' @param x an object from [accessEnvDat()], [accessFVCOM()], [accessHYCOM()],
 #'   [accessCCMP()]
 #' @return <char> the source tag, or `NA` if the object carries none — which is
 #'   the case for anything built by hand or produced before this was recorded

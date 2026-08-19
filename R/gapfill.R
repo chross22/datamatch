@@ -2,7 +2,9 @@
 #'
 #' Everything that is not a time column or the geometry.
 #'
-#' @param env_dat an `sf` POINT object from [accessEnvDat()]
+#' @param env_dat an `sf` POINT object from any access function -
+#'   [accessEnvDat()], [accessFVCOM()], [accessHYCOM()], [accessCCMP()] or
+#'   [accessERDDAP()]
 #' @return character vector of covariate column names
 #' @examples
 #' \dontrun{

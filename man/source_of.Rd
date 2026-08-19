@@ -7,7 +7,7 @@
 source_of(x)
 }
 \arguments{
-\item{x}{an object from \code{\link[=accessEnvDat]{accessEnvDat()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}} or
+\item{x}{an object from \code{\link[=accessEnvDat]{accessEnvDat()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}},
 \code{\link[=accessCCMP]{accessCCMP()}}}
 }
 \value{
@@ -17,12 +17,12 @@ the case for anything built by hand or produced before this was recorded
 \description{
 Every access function stamps its result with where the values came from, and
 this reads it back. The tag is short and stable — \code{"copernicus:..."},
-\code{"fvcom:GOM3"}, \code{"hycom:GLBv53X"}, \code{"ccmp:v03.1"} — naming the source and the
-particular archive or dataset within it.
+\code{"fvcom:GOM3"}, \code{"hycom:GLBv53X"}, \code{"ccmp:v03.1"}, \code{"erddap:MUR"} — naming the
+source and the particular archive or dataset within it.
 }
 \section{Why this exists}{
 
-The four sources deliberately share variable names, so an \code{SST} column means
+The five sources deliberately share variable names, so an \code{SST} column means
 the same \emph{quantity} whichever produced it and everything downstream works
 unchanged. That is the point of the design and also its hazard: the column
 name alone cannot say whether a value came from a global reanalysis, a

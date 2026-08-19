@@ -7,7 +7,9 @@
 plot_series(env_dat, vars = NULL, fun = mean, spread = TRUE, ...)
 }
 \arguments{
-\item{env_dat}{an \code{sf} POINT object from \code{\link[=accessEnvDat]{accessEnvDat()}}}
+\item{env_dat}{an \code{sf} POINT object from any access function -
+\code{\link[=accessEnvDat]{accessEnvDat()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=accessCCMP]{accessCCMP()}} or
+\code{\link[=accessERDDAP]{accessERDDAP()}}}
 
 \item{vars}{which variables to plot; \code{NULL} uses all covariate columns. Each
 gets its own panel, since covariates rarely share units.}

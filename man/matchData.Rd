@@ -25,12 +25,13 @@ though some of them do begin with \code{year} or \code{day}: they hold an ordina
 rather than a year or a day of the month. An unrecognised name is named in
 the error, so nothing has to be guessed at.}
 
-\item{source}{\if{html}{\out{<sf object>}} the points to take values from, typically a grid
-from \code{\link[=accessEnvDat]{accessEnvDat()}}. Must carry \code{YEAR}/\code{MONTH}/\code{DAY}, and \code{HOUR} as well
-when matching hourly.}
+\item{source}{\if{html}{\out{<sf object>}} the points to take values from: a grid from any
+access function — \code{\link[=accessEnvDat]{accessEnvDat()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}},
+\code{\link[=accessCCMP]{accessCCMP()}} or \code{\link[=accessERDDAP]{accessERDDAP()}}. Must carry \code{YEAR}/\code{MONTH}/\code{DAY}, and
+\code{HOUR} as well when matching hourly.}
 
 \item{temporal_resolution}{\if{html}{\out{<char>}} one of \code{"auto"} (default), \code{"hour"},
-\code{"day"}, \code{"month"}, or \code{"year"}. \code{"auto"} uses the step \code{accessEnvDat()}
+\code{"day"}, \code{"month"}, or \code{"year"}. \code{"auto"} uses the step the access function
 recorded on \code{source}, or infers it from \code{source}'s time steps.}
 
 \item{record_source}{\if{html}{\out{<logical>}} add a \verb{<var>_source} column for each column
@@ -109,9 +110,9 @@ or renamed.
 
 \section{Which source a column came from}{
 
-The access functions share variable names on purpose, so \code{SST} from Copernicus,
-FVCOM and HYCOM all arrive in a column called \code{SST} and everything downstream
-works unchanged. The cost is that a table with several sources chained onto it
+The access functions share variable names on purpose, so \code{SST} from
+Copernicus, FVCOM, HYCOM and MUR all arrives in a column called \code{SST} and
+everything downstream works unchanged. The cost is that a table with several sources chained onto it
 has no record of which produced what.
 
 So each joined column gets a companion \verb{<var>_source} naming the source and
@@ -134,6 +135,7 @@ matched <- matchData(matched, chlorophyll)
 }
 }
 \seealso{
-\code{\link[=accessEnvDat]{accessEnvDat()}} for the usual \code{source}, \code{\link[=attach_bathymetry]{attach_bathymetry()}} and
+\code{\link[=accessEnvDat]{accessEnvDat()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=accessCCMP]{accessCCMP()}}
+and \code{\link[=accessERDDAP]{accessERDDAP()}} for the usual \code{source}; \code{\link[=attach_bathymetry]{attach_bathymetry()}} and
 \code{\link[=attach_climate_index]{attach_climate_index()}} for covariates that are not matched this way
 }
