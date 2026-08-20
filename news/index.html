@@ -42,6 +42,15 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0" id="datamatch-020">datamatch 0.2.0<a class="anchor" aria-label="anchor" href="#datamatch-020"></a></h2>
 <div class="section level3">
+<h3 id="breaking-changes-0-2-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-0"></a></h3>
+<ul><li>
+<p><strong><code><a href="../reference/covariate_columns.html">covariate_columns()</a></code> now reports <code>&lt;var&gt;_source</code> columns.</strong> They are provenance, but they travel with the variable they describe rather than being left behind by it, and both resamplers were already written on that assumption: <code><a href="../reference/upscale_grid.html">upscale_grid()</a></code> and <code><a href="../reference/upscale_time.html">upscale_time()</a></code> carry a non-numeric column as a categorical - the commonest value when aggregating, the nearest or a step when interpolating - and <code><a href="../reference/resolve_methods.html">resolve_methods()</a></code> says in as many words that “a source column riding along should not force the caller to enumerate every column”.</p>
+<p>Because <code><a href="../reference/covariate_columns.html">covariate_columns()</a></code> is the default <code>vars</code> for both, a source column never actually rode along. Regridding or retiming a gap-filled object dropped the record of which source each value came from, at the point it matters most.</p>
+<p><code>&lt;var&gt;_depth</code> is still excluded, since the mean of two depths is not the depth any value came from, as is the internal per-row source tag.</p>
+<p>Callers relying on <code><a href="../reference/covariate_columns.html">covariate_columns()</a></code> to return only measurements should filter on <code><a href="https://rdrr.io/r/base/numeric.html" class="external-link">is.numeric()</a></code>, as <code><a href="../reference/plot_series.html">plot_series()</a></code> does.</p>
+</li>
+</ul></div>
+<div class="section level3">
 <h3 id="new-features-0-2-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-2-0"></a></h3>
 <ul><li>
 <p><strong>A date that has not happened yet is refused before anything is fetched.</strong> All five access functions now check the requested days against today, and stop if any are past it. Previously a typo in a year, or a projection window that ran off the end of the record, cost a download attempt per day and then an error from the server about exceeding the dataset coordinates - which named neither the date nor the mistake.</p>
@@ -54,7 +63,7 @@
 </li>
 </ul></div>
 <div class="section level3">
-<h3 id="breaking-changes-0-2-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-0"></a></h3>
+<h3 id="breaking-changes-0-2-0-1">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-0-1"></a></h3>
 <ul><li>
 <p><strong><code><a href="../reference/accessCopernicus.html">accessCopernicus()</a></code> takes its arguments in the same order as the other four access functions.</strong> It led with <code>product_id</code> and <code>dataset_id</code>, where <code><a href="../reference/accessFVCOM.html">accessFVCOM()</a></code>, <code><a href="../reference/accessHYCOM.html">accessHYCOM()</a></code>, <code><a href="../reference/accessCCMP.html">accessCCMP()</a></code> and <code><a href="../reference/accessERDDAP.html">accessERDDAP()</a></code> all lead with <code>vars</code>. All five now open <code>vars, years, months, bounding_box, dates</code>, put <code>frequency</code> sixth where the source has more than one step, and end with <code>overwrite</code>; the source-specific arguments sit between. Swapping one access function for another is now a rename rather than a rewrite.</p>
 <p>Calls that name their arguments — every example in the documentation, and every call in datamatch, taupatch, derivoce and msomgom — are unaffected. A call written positionally against the old order would now put a product identifier into <code>vars</code>, which would fetch nothing rather than fail, so that case is caught at the call with a message saying what changed.</p>
@@ -154,7 +163,7 @@
 <li><p>The contents list was rebuilt to match, and every internal link checked — two pointed at sections that had moved to a vignette.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="breaking-changes-0-2-0-1">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-0-1"></a></h3>
+<h3 id="breaking-changes-0-2-0-2">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-2-0-2"></a></h3>
 <ul><li>
 <p><strong><code><a href="../reference/accessEnvDat.html">accessEnvDat()</a></code> is now <code><a href="../reference/accessCopernicus.html">accessCopernicus()</a></code>.</strong> The old name dates from when Copernicus was the only source. With five, “access environmental data” reads as though it fetches from all of them, sitting beside <code><a href="../reference/accessFVCOM.html">accessFVCOM()</a></code>, <code><a href="../reference/accessHYCOM.html">accessHYCOM()</a></code>, <code><a href="../reference/accessCCMP.html">accessCCMP()</a></code> and <code><a href="../reference/accessERDDAP.html">accessERDDAP()</a></code>, which each say what they read.</p>
 <p><code><a href="../reference/accessEnvDat.html">accessEnvDat()</a></code> still works and warns, on the same reasoning as the <code>speciesDat</code>/<code>envDat</code> arguments in <code><a href="../reference/matchData.html">matchData()</a></code>: taupatch and any script written against the old name keep working, and their authors find out that the name moved rather than discovering it when the alias is eventually removed. Nothing else changes — the arguments, the result, and the <code>copernicus:</code> source tag are all as they were.</p>

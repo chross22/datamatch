@@ -140,10 +140,15 @@ the `<var>_source` column
 [`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md)
 writes. Pass `record_source = FALSE` to omit them.
 
-These are provenance rather than data:
+These are provenance rather than measurements, but they travel with the
+variable they describe:
 [`covariate_columns()`](https://chross22.github.io/datamatch/reference/covariate_columns.md)
-excludes them, so they are not aggregated, regridded or plotted as
-though they were measurements.
+reports them, and resampling carries them as a categorical - the
+commonest value when aggregating, the nearest when interpolating - so a
+regridded or retimed object still says which source each value came
+from.
+[`plot_series()`](https://chross22.github.io/datamatch/reference/plot_series.md)
+skips them, since a source tag has no mean.
 
 ## See also
 

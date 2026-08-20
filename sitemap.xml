@@ -91,7 +91,7 @@
 <url><loc>https://chross22.github.io/datamatch/reference/index_max_age.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/infer_dataset.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/interpolate_series.html</loc></url>
-<url><loc>https://chross22.github.io/datamatch/reference/is_provenance_column.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/is_bookkeeping_column.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/known_variables.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/layer_codes.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/layer_depths.html</loc></url>
@@ -134,6 +134,7 @@
 <url><loc>https://chross22.github.io/datamatch/reference/stamp_source.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/standardize_time_columns.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/step_labels.html</loc></url>
+<url><loc>https://chross22.github.io/datamatch/reference/stop_if_future.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/sub_daily_steps.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/target_template.html</loc></url>
 <url><loc>https://chross22.github.io/datamatch/reference/target_time_steps.html</loc></url>

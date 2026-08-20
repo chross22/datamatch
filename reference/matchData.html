@@ -174,8 +174,12 @@ has no record of which produced what.</p>
 archive — <code>"hycom:GLBv53X"</code>, <code>"fvcom:GOM3"</code> — in the same spirit as the
 <code>&lt;var&gt;_source</code> column <code><a href="fill_satellite_gaps.html">fill_satellite_gaps()</a></code> writes. Pass
 <code>record_source = FALSE</code> to omit them.</p>
-<p>These are provenance rather than data: <code><a href="covariate_columns.html">covariate_columns()</a></code> excludes them, so
-they are not aggregated, regridded or plotted as though they were measurements.</p>
+<p>These are provenance rather than measurements, but they travel with the
+variable they describe: <code><a href="covariate_columns.html">covariate_columns()</a></code> reports them, and resampling
+carries them as a categorical - the commonest value when aggregating, the
+nearest when interpolating - so a regridded or retimed object still says
+which source each value came from. <code><a href="plot_series.html">plot_series()</a></code> skips them, since a source
+tag has no mean.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

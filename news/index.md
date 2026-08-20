@@ -2,6 +2,37 @@
 
 ## datamatch 0.2.0
 
+### Breaking changes
+
+- **[`covariate_columns()`](https://chross22.github.io/datamatch/reference/covariate_columns.md)
+  now reports `<var>_source` columns.** They are provenance, but they
+  travel with the variable they describe rather than being left behind
+  by it, and both resamplers were already written on that assumption:
+  [`upscale_grid()`](https://chross22.github.io/datamatch/reference/upscale_grid.md)
+  and
+  [`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md)
+  carry a non-numeric column as a categorical - the commonest value when
+  aggregating, the nearest or a step when interpolating - and
+  [`resolve_methods()`](https://chross22.github.io/datamatch/reference/resolve_methods.md)
+  says in as many words that “a source column riding along should not
+  force the caller to enumerate every column”.
+
+  Because
+  [`covariate_columns()`](https://chross22.github.io/datamatch/reference/covariate_columns.md)
+  is the default `vars` for both, a source column never actually rode
+  along. Regridding or retiming a gap-filled object dropped the record
+  of which source each value came from, at the point it matters most.
+
+  `<var>_depth` is still excluded, since the mean of two depths is not
+  the depth any value came from, as is the internal per-row source tag.
+
+  Callers relying on
+  [`covariate_columns()`](https://chross22.github.io/datamatch/reference/covariate_columns.md)
+  to return only measurements should filter on
+  [`is.numeric()`](https://rdrr.io/r/base/numeric.html), as
+  [`plot_series()`](https://chross22.github.io/datamatch/reference/plot_series.md)
+  does.
+
 ### New features
 
 - **A date that has not happened yet is refused before anything is
