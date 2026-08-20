@@ -78,18 +78,27 @@ stamp_source <- function(x, source, detail) {
   x
 }
 
-#' Columns that record where a value came from rather than what it is
+#' Columns that are bookkeeping rather than data
 #'
-#' `<var>_source` columns written by [matchData()] and [fill_satellite_gaps()],
-#' and the `<var>_depth` column a derived bottom variable returns. They describe
-#' the data rather than measuring anything, so aggregating or interpolating them
-#' is meaningless — a mean of two source tags is not a source, and the mean of
-#' two depths is not the depth any value came from.
+#' `<var>_depth` records which model level a derived bottom value was taken
+#' from, and `.datamatch_source` is the per-row source tag a fetch spanning
+#' several archives carries. Neither measures anything: the mean of two depths
+#' is not the depth any value came from, and the internal tag is consumed by
+#' [matchData()] rather than kept. So [covariate_columns()] leaves both out, and
+#' nothing resamples or plots them as though they were covariates.
+#'
+#' @section Why `<var>_source` is not here:
+#' It is provenance too, but it travels with the variable it describes rather
+#' than being left behind by it. [upscale_grid()] and [upscale_time()] carry a
+#' non-numeric column as a categorical - the commonest value when aggregating,
+#' the nearest when interpolating - which is exactly what a source tag needs,
+#' and both were written expecting one to ride along. Excluding it here meant it
+#' never did, so the record of which source a value came from was lost at the
+#' first resample, which is the point at which it matters most.
 #'
 #' @param names <char> column names to inspect
 #' @return <logical> one per name
 #' @keywords internal
-is_provenance_column <- function(names) {
-  grepl("_source$", names) | grepl("_depth$", names) |
-    names == ".datamatch_source"
+is_bookkeeping_column <- function(names) {
+  grepl("_depth$", names) | names == ".datamatch_source"
 }

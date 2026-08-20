@@ -15,7 +15,14 @@ covariate_columns(env_dat)
 character vector of covariate column names
 }
 \description{
-Everything that is not a time column or the geometry.
+Everything that is not a time column, the geometry, or bookkeeping.
+}
+\details{
+\verb{<var>_source} columns are included. They are provenance, but they travel
+with the variable they describe: \code{\link[=upscale_grid]{upscale_grid()}} and \code{\link[=upscale_time]{upscale_time()}} carry
+a non-numeric column as a categorical, so a resampled object keeps the record
+of which source each value came from. \verb{<var>_depth} is excluded, because the
+mean of two depths is not the depth any value came from.
 }
 \examples{
 \dontrun{

@@ -1,6 +1,12 @@
 #' Covariate column names in an environmental data object
 #'
-#' Everything that is not a time column or the geometry.
+#' Everything that is not a time column, the geometry, or bookkeeping.
+#'
+#' `<var>_source` columns are included. They are provenance, but they travel
+#' with the variable they describe: [upscale_grid()] and [upscale_time()] carry
+#' a non-numeric column as a categorical, so a resampled object keeps the record
+#' of which source each value came from. `<var>_depth` is excluded, because the
+#' mean of two depths is not the depth any value came from.
 #'
 #' @param env_dat an `sf` POINT object from any access function -
 #'   [accessCopernicus()], [accessFVCOM()], [accessHYCOM()], [accessCCMP()] or
@@ -14,9 +20,7 @@
 covariate_columns <- function(env_dat) {
   candidates <- setdiff(names(env_dat),
                         c(time_columns(), attr(env_dat, "sf_column")))
-  # Provenance columns describe the data rather than measuring anything, so they
-  # must not be aggregated, regridded or plotted as though they were covariates.
-  candidates[!is_provenance_column(candidates)]
+  candidates[!is_bookkeeping_column(candidates)]
 }
 
 #' Fill satellite gaps with the model equivalent

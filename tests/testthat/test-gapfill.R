@@ -134,3 +134,51 @@ test_that("missing columns are reported with what is available", {
   expect_error(fill_satellite_gaps(sources$satellite, sources$model,
                                     c(CHL = "MISSING")), "Model has")
 })
+
+# `<var>_source` is provenance, but it travels with the variable it describes
+# rather than being left behind by it. Both resamplers were written expecting a
+# source column to ride along - they carry a non-numeric column as a categorical
+# - but covariate_columns() used to strip it, so it never arrived and the record
+# of which source a value came from was lost at the first resample.
+
+test_that("covariate_columns reports <var>_source but not bookkeeping", {
+  d <- sf::st_as_sf(
+    data.frame(x = c(1, 2), y = c(1, 2), SST = c(4, 5),
+               SST_source = c("satellite", "model"), BOTS_depth = c(80, 90),
+               YEAR = 2010L, MONTH = 6L, DAY = 1L),
+    coords = c("x", "y"), crs = 4326)
+
+  cols <- covariate_columns(d)
+  expect_true("SST_source" %in% cols)
+  expect_true("SST" %in% cols)
+  # The mean of two depths is not the depth any value came from.
+  expect_false("BOTS_depth" %in% cols)
+  # Time and geometry are never covariates.
+  expect_false(any(c("YEAR", "MONTH", "DAY", "geometry") %in% cols))
+})
+
+test_that("the internal per-row source tag stays out of covariate_columns", {
+  d <- sf::st_as_sf(
+    data.frame(x = c(1, 2), y = c(1, 2), SST = c(4, 5),
+               YEAR = 2010L, MONTH = 6L, DAY = 1L),
+    coords = c("x", "y"), crs = 4326)
+  d <- stamp_source(d, "hycom", c("GLBv53X", "GLBy930"))
+
+  expect_true(".datamatch_source" %in% names(d))
+  expect_false(".datamatch_source" %in% covariate_columns(d))
+})
+
+test_that("a source column survives upscaling, as the commonest value", {
+  sources <- gappy_sources(gap_fraction = 0.3)
+  filled <- fill_satellite_gaps(sources$satellite, sources$model,
+                                c(CHL = "CHL_MODEL"))
+
+  # No `vars`: the default is covariate_columns(), which is the whole point -
+  # a caller should not have to enumerate columns to keep provenance.
+  coarser <- upscale_grid(filled, to = 0.5, min_coverage = 0)
+
+  expect_true("CHL_source" %in% names(coarser))
+  expect_true(all(coarser$CHL_source %in% c("satellite", "model")))
+  # Carried as a category, not averaged into something that is neither.
+  expect_false(any(is.na(coarser$CHL_source) & !is.na(coarser$CHL)))
+})

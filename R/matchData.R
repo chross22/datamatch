@@ -66,8 +66,12 @@
 #' `<var>_source` column [fill_satellite_gaps()] writes. Pass
 #' `record_source = FALSE` to omit them.
 #'
-#' These are provenance rather than data: [covariate_columns()] excludes them, so
-#' they are not aggregated, regridded or plotted as though they were measurements.
+#' These are provenance rather than measurements, but they travel with the
+#' variable they describe: [covariate_columns()] reports them, and resampling
+#' carries them as a categorical - the commonest value when aggregating, the
+#' nearest when interpolating - so a regridded or retimed object still says
+#' which source each value came from. [plot_series()] skips them, since a source
+#' tag has no mean.
 #'
 #' @param dat <sf object> the points to add columns to: observations, stations,
 #'   tag positions, anything with coordinates and time. Needs year and month

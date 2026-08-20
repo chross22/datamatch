@@ -120,8 +120,12 @@ archive — \code{"hycom:GLBv53X"}, \code{"fvcom:GOM3"} — in the same spirit a
 \verb{<var>_source} column \code{\link[=fill_satellite_gaps]{fill_satellite_gaps()}} writes. Pass
 \code{record_source = FALSE} to omit them.
 
-These are provenance rather than data: \code{\link[=covariate_columns]{covariate_columns()}} excludes them, so
-they are not aggregated, regridded or plotted as though they were measurements.
+These are provenance rather than measurements, but they travel with the
+variable they describe: \code{\link[=covariate_columns]{covariate_columns()}} reports them, and resampling
+carries them as a categorical - the commonest value when aggregating, the
+nearest when interpolating - so a regridded or retimed object still says
+which source each value came from. \code{\link[=plot_series]{plot_series()}} skips them, since a source
+tag has no mean.
 }
 
 \examples{
