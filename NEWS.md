@@ -67,6 +67,22 @@
   `W/m2/um/sr`) are emitted as declared custom units, and a test writes a table
   carrying all of them and validates it against the schema.
 
+* **Both new sources are cited in the EML methods section, and the data is
+  cited as well as the paper.** `source_reference()` switches on the source
+  family, and a family with no branch returns `NA` - at which point the methods
+  section names the source and cites nothing, which is the failure that section
+  exists to prevent, arriving silently. A test now walks the families instead of
+  trusting the list to stay complete.
+
+  For CEFI that is the model paper plus the acknowledgement NOAA PSL asks for,
+  with the release named, since releases revise the record. For OB.DAAC it is
+  the mission paper plus a pointer to the dataset DOI, which is a **separate
+  obligation**: OB.DAAC mints one per mission, suite and reprocessing, and the
+  version token is not predictable from the suite - Aqua MODIS `PAR/2022`
+  resolves where `SST/2019` does not. A hard-coded table of them would be wrong
+  at the next reprocessing and wrong silently, so the citation names the dataset
+  and says where its DOI lives, as the Copernicus one already did.
+
 ## Bug fixes
 
 * **`ccmp_dictionary()` and `erddap_dictionary()` no longer print as FVCOM.**

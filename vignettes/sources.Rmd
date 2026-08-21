@@ -337,8 +337,12 @@ its own — cite the products.
   *Geoscientific Model Development* **16**:6943–6985.
   <https://doi.org/10.5194/gmd-16-6943-2023>
 
-  Credit the NOAA Physical Sciences Laboratory CEFI data portal as the
-  distributor, and **say which release** — `source_of()` records it, as
+  The paper is the model; the data is separately owed an acknowledgement, in
+  the form PSL asks for: *Data provided by the NOAA Physical Sciences
+  Laboratory, Boulder, Colorado, USA, from https://psl.noaa.gov/cefi_portal/*.
+  There is no separate data DOI.
+
+  **Say which release** — `source_of()` records it, as
   `cefi:NWA12-hindcast-r20250715`. Releases extend and revise the record, so
   two results from different releases are not the same numbers. For a forecast,
   say which initialisation and ensemble member as well.
@@ -356,9 +360,20 @@ its own — cite the products.
   *IEEE Transactions on Geoscience and Remote Sensing* **56**:4464–4476.
   <https://doi.org/10.1109/TGRS.2018.2820423>
 
-- **NASA OB.DAAC** — cite the mission whose data you used, and credit the NASA
-  Ocean Biology Processing Group as the producer along with the reprocessing
-  version. `obdaac_sensors()` carries each of these at runtime, and
+- **NASA OB.DAAC** — **two citations are owed, not one.** The mission paper
+  below describes the instrument; the *data* has a DOI of its own, under the
+  `10.5067` prefix, minted per mission, per suite and per reprocessing — for
+  example
+  [10.5067/AQUA/MODIS/L3M/CHL/2022](https://doi.org/10.5067/AQUA/MODIS/L3M/CHL/2022)
+  for Aqua MODIS chlorophyll.
+
+  The trailing version is not predictable from the suite: for Aqua MODIS the
+  `PAR` DOI ending 2022 resolves where the `SST` one ending 2019 does not, and
+  a reprocessing changes it. So this
+  package points at the DOI rather than shipping a table of them that would go
+  stale silently — look yours up at
+  <https://www.earthdata.nasa.gov/centers/ob-daac> and cite it alongside the
+  mission. `obdaac_sensors()` carries the mission papers at runtime, and
   `source_of()` records which sensor answered, as `obdaac:MODISA-4km`.
 
   - *SeaWiFS* — McClain CR, Feldman GC, Hooker SB (2004). An overview of the

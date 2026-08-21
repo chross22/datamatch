@@ -247,3 +247,81 @@ test_that("a table of the newest covariates still validates", {
   expect_match(written, "Mesozooplankton biomass", fixed = TRUE)
   expect_match(written, "Diffuse attenuation at 490 nm", fixed = TRUE)
 })
+
+test_that("every source family a fetch can stamp yields a citation", {
+  # source_reference() switches on the family, and a family with no branch
+  # returns NA - at which point eml_methods() writes a methods section naming
+  # the source and citing nothing. That is the failure the methods section
+  # exists to prevent, and it arrives silently, so the families are walked here
+  # rather than the list being trusted to stay complete.
+  #
+  # One representative tag per family, in the shape each access function
+  # actually stamps.
+  tags <- c(
+    "copernicus:cmems_mod_glo_phy_my_0.083deg_P1M-m",
+    "fvcom:GOM3",
+    "hycom:GLBv53X",
+    "cefi:NWA12-hindcast-r20250715",
+    "ccmp:v03.1",
+    "erddap:MUR",
+    "obdaac:MODISA-4km")
+
+  for (tag in tags) {
+    reference <- source_reference(tag)
+    expect_false(is.na(reference), info = paste(tag, "has no citation"))
+    expect_true(nzchar(reference), info = tag)
+  }
+})
+
+test_that("a CEFI citation names the release and an OB.DAAC one the sensor", {
+  # The detail after the colon is what distinguishes two fetches that are
+  # otherwise identical, so it has to survive into the citation. A CEFI release
+  # revises the record; two OB.DAAC sensors disagree where they overlap.
+  hindcast <- source_reference("cefi:NWA12-hindcast-r20250715")
+  expect_match(hindcast, "r20250715", fixed = TRUE)
+  expect_match(hindcast, "Physical Sciences Laboratory", fixed = TRUE)
+  expect_match(hindcast, "10.5194/gmd-16-6943-2023", fixed = TRUE)
+
+  forecast <- source_reference("cefi:NWA12-decadal_forecast-r20250925-i198001-m01")
+  expect_match(forecast, "r20250925", fixed = TRUE)
+  expect_match(forecast, "i198001-m01", fixed = TRUE)
+
+  # Each mission carries its own paper, so two sensors do not cite the same one.
+  expect_match(source_reference("obdaac:MODISA-4km"), "MODIS", fixed = TRUE)
+  expect_match(source_reference("obdaac:SEAWIFS-9km"), "SeaWiFS", fixed = TRUE)
+  expect_false(identical(source_reference("obdaac:MODISA-4km"),
+                         source_reference("obdaac:SEAWIFS-9km")))
+
+  # The dataset DOI is a separate obligation from the mission paper, and is
+  # pointed at rather than hard-coded because its version token moves.
+  expect_match(source_reference("obdaac:MODISA-4km"), "10.5067", fixed = TRUE)
+
+  # An unknown sensor is NA rather than a confident citation of the wrong thing.
+  expect_true(is.na(source_reference("obdaac:NOTASENSOR-4km")))
+})
+
+test_that("the methods section carries a citation for each source it names", {
+  skip_if_not_installed("emld")
+
+  x <- sf::st_as_sf(
+    data.frame(LON = c(-69, -68.5), LAT = c(43, 43.4), YEAR = 2015L,
+               MONTH = 6L, DAY = 1L, BOTT = c(7.1, 7.4), CHL = c(1.2, 1.4),
+               BOTT_source = "cefi:NWA12-hindcast-r20250715",
+               CHL_source = "obdaac:MODISA-4km", stringsAsFactors = FALSE),
+    coords = c("LON", "LAT"), crs = 4326, remove = FALSE)
+
+  path <- withr::local_tempfile(fileext = ".xml")
+  write_eml(x, path, title = "Sourced covariates",
+            creator = list(individualName = list(surName = "Ross")),
+            contact = list(individualName = list(surName = "Ross")))
+
+  written <- paste(readLines(path, warn = FALSE), collapse = "\n")
+  expect_true(isTRUE(emld::eml_validate(path)))
+
+  # Both sources are named...
+  expect_match(written, "cefi:NWA12-hindcast-r20250715", fixed = TRUE)
+  expect_match(written, "obdaac:MODISA-4km", fixed = TRUE)
+  # ...and both are cited, which is the part that was missing.
+  expect_match(written, "Geoscientific Model Development", fixed = TRUE)
+  expect_match(written, "Ocean Biology", fixed = TRUE)
+})

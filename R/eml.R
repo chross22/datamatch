@@ -452,6 +452,22 @@ eml_methods <- function(flat, x) {
 
 #' The citation for a source tag such as `"hycom:GLBv53X"`
 #'
+#' @section Every source family needs a branch here:
+#' A family with none returns `NA`, and [eml_methods()] then writes a methods
+#' section that names the source and cites nothing — which is the failure the
+#' methods section exists to prevent, arriving silently. A test walks the
+#' families rather than trusting this list to stay complete.
+#'
+#' @section Where the citation is a pointer rather than a reference:
+#' Copernicus and OB.DAAC both mint a DOI per dataset per reprocessing, and
+#' those move: OB.DAAC's version token differs by suite and by mission, so a
+#' `PAR` DOI ending 2022 resolves where the matching `SST` one ending 2019 does
+#' not.
+#' A table of them hard-coded here would be wrong at the next reprocessing and
+#' wrong silently, so both name the dataset precisely and say where its DOI
+#' lives instead. The mission or model paper is given alongside, because it is
+#' stable and is a different obligation from the data citation.
+#'
 #' @param tag <char> a tag as [source_of()] returns
 #' @return <char> the reference, or `NA` when the source carries none
 #' @keywords internal
@@ -466,6 +482,36 @@ source_reference <- function(tag) {
     hycom = hycom_archives()[[archive]]$reference %||% NA_character_,
     ccmp = ccmp_versions()[[archive]]$reference %||% NA_character_,
     erddap = erddap_datasets()[[archive]]$reference %||% NA_character_,
+    # "NWA12-hindcast-r20250715", or that with an initialisation and a member
+    # appended. The release is the part that has to reach the citation: CEFI
+    # revises the record with each one.
+    cefi = {
+      release <- regmatches(archive, regexpr("r[0-9]{8}", archive))
+      paste0(
+        cefi_reference(),
+        " Data provided by the NOAA Physical Sciences Laboratory, Boulder,",
+        " Colorado, USA, from https://psl.noaa.gov/cefi_portal/. Run: ",
+        archive,
+        if (length(release) > 0) {
+          paste0(" (release ", release, "; releases revise the record, so say",
+                 " which one)")
+        } else "",
+        ".")
+    },
+    # "MODISA-4km": the sensor, then the grid it was read at.
+    obdaac = {
+      sensor <- sub("-[^-]+$", "", archive)
+      spec <- obdaac_sensors()[[sensor]]
+      if (is.null(spec)) NA_character_ else paste0(
+        spec$reference,
+        " Data: NASA Ocean Biology Processing Group. ", spec$label,
+        " Level-3 mapped products, distributed by the NASA Ocean Biology",
+        " DAAC (", archive, ").",
+        " OB.DAAC mints a DOI under the 10.5067 prefix per mission, suite and",
+        " reprocessing - see https://www.earthdata.nasa.gov/centers/ob-daac",
+        " for the one covering the products used, which is a separate",
+        " obligation from the mission paper above.")
+    },
     copernicus = paste(
       "E.U. Copernicus Marine Service Information (CMEMS). Marine Data Store",
       "(MDS). Dataset:", archive,
