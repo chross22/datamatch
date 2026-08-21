@@ -17,3 +17,6 @@ README.html
 docs/
 /doc/
 /Meta/
+
+# generated pkgdown site
+pkgdown-site/

@@ -4,6 +4,13 @@
 # all point at a hostname nobody uses and search engines see two of each page.
 url: https://camilleross.org/datamatch/
 
+# NOT docs/. Several of these packages keep hand-written design notes and
+# methods write-ups in docs/, tracked in git, and a pkgdown build would erase
+# them. pkgdown refuses outright when it finds a docs/ it did not create; this
+# names a directory that is unambiguously generated, and keeps all seven
+# packages building the same way.
+destination: pkgdown-site
+
 template:
   bootstrap: 5
   light-switch: true
