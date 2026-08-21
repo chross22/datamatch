@@ -6,7 +6,7 @@ message: >-
   reference field each source catalog carries at runtime.
 title: "datamatch: Fetch Ocean Data from Several Sources and Match It in Space and Time"
 type: software
-version: 0.2.0
+version: 0.3.0
 license: MIT
 repository-code: "https://github.com/chross22/datamatch"
 url: "https://chross22.github.io/datamatch/"
@@ -15,8 +15,9 @@ abstract: >-
   time, at the downloaded data's own resolution. The join is a general
   spatiotemporal nearest-feature match, so either side may be species
   observations, survey stations, tag positions, or another gridded product.
-  Five sources are covered behind one interface and one set of variable names -
-  the Copernicus Marine Service, HYCOM, FVCOM, CCMP and NOAA ERDDAP - so a
+  Seven sources are covered behind one interface and one set of variable names -
+  the Copernicus Marine Service, HYCOM, FVCOM, the NOAA Changing Ecosystems and
+  Fisheries Initiative, CCMP, NOAA ERDDAP and the NASA Ocean Biology DAAC - so a
   covariate arrives in a column of the same name whichever supplied it, and
   which source produced each value is recorded on the result. Also provides
   spatial and temporal resampling, gap filling for satellite ocean colour,
@@ -36,5 +37,8 @@ keywords:
   - Copernicus Marine Service
   - HYCOM
   - FVCOM
+  - CEFI
+  - MOM6
+  - ocean colour
   - satellite remote sensing
   - species distribution modelling

@@ -271,11 +271,12 @@ matchData <- function(dat, source,
   matched_data$LON <- representative[, 1]
   matched_data$LAT <- representative[, 2]
 
-  # Record which source each joined column came from. The five access functions
+  # Record which source each joined column came from. The access functions
   # deliberately share variable names, so an SST column cannot say on its own
-  # whether it holds a global reanalysis, a regional coastal model or an
-  # independent global model - and once several are chained onto one table, the
-  # only other record of it is the caller's memory of which calls they made.
+  # whether it holds a global reanalysis, a regional coastal model, an
+  # independent global model or a satellite retrieval - and once several are
+  # chained onto one table, the only other record of it is the caller's memory
+  # of which calls they made.
   # Per row where the fetch spanned archives, one value for the whole object
   # otherwise. The per-row form matters because a continuous HYCOM fetch crosses
   # from a reanalysis into the model as it was running at the time, and which

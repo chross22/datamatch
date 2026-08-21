@@ -451,24 +451,65 @@ variable_dictionary <- function(product = c("all", "physical", "biogeochemical",
 print.datamatch_dictionary <- function(x, ...) {
   flat <- as.data.frame(x)
 
-  # The FVCOM dictionary shares this class and this table but has no Copernicus
-  # product behind it, so the provenance block and the footer below would both
-  # be untrue of it. Told apart by the column that only a Copernicus dictionary
-  # has, rather than by a second class.
-  if (!"product" %in% names(flat)) {
-    cat("FVCOM variables available by name\n")
+  # Six dictionaries share this class and this table, and only the Copernicus
+  # one has a product behind it, so the provenance block and the footer below
+  # would be untrue of the rest. Which one this is comes from a tag each builder
+  # sets, rather than from guessing: it was guessed once, by the absence of the
+  # Copernicus `product` column, and every non-Copernicus dictionary then
+  # printed as FVCOM - so ccmp_dictionary() told its reader about sigma layers
+  # and pointed at ?accessFVCOM.
+  family <- attr(x, "datamatch_family") %||%
+    if ("product" %in% names(flat)) "copernicus" else "generic"
+
+  if (family != "copernicus") {
+    header <- switch(family,
+                     fvcom = "FVCOM variables available by name",
+                     ccmp = "CCMP variables available by name",
+                     erddap = "ERDDAP variables available by name",
+                     cefi = "CEFI variables available by name",
+                     obdaac = "NASA OB.DAAC variables available by name",
+                     "Variables available by name")
+    cat(header, "\n", sep = "")
     cat(strrep("-", 66), "\n", sep = "")
-    # Mesh and layer are folded into one column. Six columns of their own wrap
-    # at 80 characters, which splits the table across lines and makes it less
-    # readable than the wide fields this method already drops.
+
+    # The last column folds two narrow fields into one. Six columns of their own
+    # wrap at 80 characters, which splits the table across lines and makes it
+    # less readable than the wide fields this method already drops.
     visible <- flat[c("name", "variable", "label", "units")]
-    visible$on <- ifelse(is.na(flat$layer), flat$source,
-                         paste(flat$source, flat$layer))
+    visible[[switch(family, fvcom = "on", erddap = "dataset",
+                    cefi = "step", obdaac = "suite", "source")]] <-
+      ifelse(is.na(flat$layer), flat$source,
+             paste(flat$source, flat$layer))
     print(visible, row.names = FALSE, right = FALSE)
-    cat("\n`on` is where a value sits: which part of the mesh, and which sigma\n")
-    cat("layer. Node and element variables cannot be fetched together - see\n")
-    cat("?accessFVCOM. A sigma layer is a fraction of the local depth, not a depth.\n")
-    cat("Full descriptions: as.data.frame(fvcom_dictionary())$description\n")
+
+    footer <- switch(
+      family,
+      fvcom = paste0(
+        "\n`on` is where a value sits: which part of the mesh, and which sigma\n",
+        "layer. Node and element variables cannot be fetched together - see\n",
+        "?accessFVCOM. A sigma layer is a fraction of the local depth, not a depth.\n"),
+      erddap = paste0(
+        "\n`dataset` is which built-in dataset supplies the value. A name served\n",
+        "by more than one appears once per dataset, because they are different\n",
+        "products and not the same number - see ?erddap_datasets.\n"),
+      cefi = paste0(
+        "\n`step` is which frequencies publish the variable. The NWA12 hindcast\n",
+        "saves everything monthly and only biogeochemistry daily - see\n",
+        "?cefi_variables. CEFI is one region, not a global product.\n"),
+      obdaac = paste0(
+        "\n`suite` is the OB.DAAC product suite the value comes from, and which\n",
+        "sensors carry it - see ?obdaac_sensors. Every fetch needs an Earthdata\n",
+        "Login; ?accessOBDAAC says how to set one up.\n"),
+      "")
+    if (nzchar(footer)) cat(footer)
+
+    builder <- switch(family, fvcom = "fvcom_dictionary", ccmp = "ccmp_dictionary",
+                      erddap = "erddap_dictionary", cefi = "cefi_dictionary",
+                      obdaac = "obdaac_dictionary", NA_character_)
+    if (!is.na(builder)) {
+      cat("Full descriptions: as.data.frame(", builder, "())$description\n",
+          sep = "")
+    }
     return(invisible(x))
   }
 

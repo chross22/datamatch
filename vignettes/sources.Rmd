@@ -12,26 +12,43 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 library(datamatch)
 ```
 
-datamatch fetches from five sources and joins any of them to your observations
+datamatch fetches from seven sources and joins any of them to your observations
 the same way. This is about which one to reach for, and what changes when you
 do.
 
 Nothing here is downloaded when the vignette is built — the fetches are shown
 but not run, because each needs a network and some need several gigabytes.
 
-## The five, side by side
+## The seven, side by side
 
-| | `accessCopernicus()` | `accessFVCOM()` | `accessHYCOM()` | `accessCCMP()` | `accessERDDAP()` |
-|---|---|---|---|---|---|
-| Source | Copernicus Marine | NECOFS / any FVCOM | HYCOM GOFS 3.1 | RSS CCMP v3.1 | NOAA ERDDAP |
-| Kind | global reanalysis, forecast, satellite | regional coastal model | global model | wind analysis | satellite analysis |
-| Grid | 0.083°–4 km, regular | unstructured mesh | 0.08° regular | 0.25° regular | 0.01°–0.04° regular |
-| Steps | monthly, daily, hourly | monthly (GOM3), hourly (GOM7) | 3-hourly | 6-hourly | daily |
-| Record | 1993– | 1978–2013, then 2025– | 1994–2024 across archives | 1993–present | 2002– (SST), 2012– (chl) |
-| Bottom salinity | derived | free | free | — | — |
-| Wind stress | yes | GOM3 only | — | — | — |
-| Subsetting | server-side | client-side | server-side | **whole globe** | server-side |
-| Account needed | yes | no | no | no | no |
+The four models first:
+
+| | `accessCopernicus()` | `accessFVCOM()` | `accessHYCOM()` | `accessCEFI()` |
+|---|---|---|---|---|
+| Source | Copernicus Marine | NECOFS / any FVCOM | HYCOM GOFS 3.1 | NOAA CEFI, MOM6-COBALT |
+| Kind | global reanalysis, forecast, satellite | regional coastal model | global model | regional coupled model |
+| Grid | 0.083°–4 km, regular | unstructured mesh | 0.08° regular | 0.083° regular (regridded) |
+| Extent | global | Gulf of Maine | global | NW Atlantic only |
+| Steps | monthly, daily, hourly | monthly (GOM3), hourly (GOM7) | 3-hourly | monthly, daily |
+| Record | 1993– | 1978–2013, then 2025– | 1994–2024 across archives | 1993–2023 |
+| Biogeochemistry | 0.25°, separate product | — | — | **same grid as physics** |
+| Bottom salinity | derived | free | free | free |
+| Wind stress | yes | GOM3 only | — | — |
+| Subsetting | server-side | client-side | server-side | server-side |
+| Account needed | yes | no | no | no |
+
+Then the three observational products:
+
+| | `accessCCMP()` | `accessERDDAP()` | `accessOBDAAC()` |
+|---|---|---|---|
+| Source | RSS CCMP v3.1 | NOAA ERDDAP | NASA OB.DAAC |
+| Kind | wind analysis | satellite analysis | satellite Level-3 composites |
+| Grid | 0.25° regular | 0.01°–0.04° regular | 4 km or 9 km regular |
+| Steps | 6-hourly | daily | daily, monthly |
+| Record | 1993–present | 2002– (SST), 2012– (chl) | **1997–** |
+| Gaps under cloud | n/a | none (analysed) | **yes, single-sensor** |
+| Subsetting | **whole globe** | server-side | **whole globe** |
+| Account needed | no | no | **yes, Earthdata** |
 
 Two of those records are chains rather than one run, and the gaps matter more
 than the endpoints. **FVCOM has nothing between 2014 and 2024** — the GOM3
@@ -48,9 +65,18 @@ ocean.
 variable_dictionary()   # Copernicus
 fvcom_dictionary()      # FVCOM
 hycom_dictionary()      # HYCOM
+cefi_dictionary()       # CEFI
 ccmp_dictionary()       # CCMP
 erddap_dictionary()     # MUR and VIIRS
+obdaac_dictionary()     # SeaWiFS, MODIS, VIIRS
 ```
+
+CEFI and OB.DAAC are the two most recently added, and each is here for one
+thing the other six do not do. CEFI is the only source carrying **physics and
+biogeochemistry on one grid at one resolution**, which is what a question about
+nutrients or oxygen alongside temperature actually needs. OB.DAAC is the only
+one reaching back to **1997**, which is what a question about trend rather than
+state needs.
 
 ## They share variable names on purpose
 
@@ -113,7 +139,35 @@ at PO.DAAC needs an Earthdata login. It is a satellite analysis of the
 *foundation* temperature rather than a model level, which is a different
 quantity from a model `SST`, not a better measurement of the same one.
 
-## Bottom salinity, four ways
+**Reach for CEFI for biogeochemistry on the shelf.** It is the only source here
+where nitrate, oxygen, pH, pCO2, phytoplankton carbon and mesozooplankton
+biomass sit on the same twelfth-degree grid as the temperature and salinity —
+the Copernicus biogeochemical reanalysis is a quarter degree and a separate
+product, so pairing them means regridding across a factor of three. CEFI also
+publishes sea-floor salinity outright rather than by derivation. Its cost is
+extent: the Northwest Atlantic and nothing else, so a box outside roughly
+98°W–36°W and 5°N–58°N is refused. Its daily output is biogeochemistry only.
+
+**Reach for OB.DAAC for the length of the ocean colour record.** SeaWiFS begins
+in September 1997, where the ERDDAP chlorophyll entries begin in 2012 — the
+difference between a decade of chlorophyll and nearly three. It carries what
+ocean colour measures besides chlorophyll (`KD490`, `PAR`, `POC`, `PIC`) from
+the same retrieval, and both MODIS instruments alongside all three VIIRS so
+there is a sensor either side of any gap you need to bridge. Its costs are an
+Earthdata Login, whole-globe downloads, and cloud: these are single-sensor
+composites, so a daily field outside the tropics is mostly `NA`. Composite to
+monthly, or use `fill_satellite_gaps()`.
+
+Two warnings that belong with it. The **sensors are not interchangeable** —
+where they overlap they disagree, and a series stitched across a mission
+boundary has an instrumental step in it; where a long consistent record matters
+more than any one sensor, the Copernicus-GlobColour entries are multi-sensor and
+built for that. And **PACE is not among the sensors**, deliberately: its
+standard Level-3 mapped catalog publishes no chlorophyll suite, and its
+filenames carry a processing version that changes with each reprocessing and
+cannot be constructed. `?obdaac_sensors` gives the detail.
+
+## Bottom salinity, five ways
 
 `BOTS` is the clearest case of the same name costing different amounts:
 
@@ -132,6 +186,9 @@ accessFVCOM(vars = c("BOTT", "BOTS"), years = 2010, months = 1:12, bounding_box 
 
 # HYCOM: `salinity_bottom` is its own field. Free.
 accessHYCOM(vars = c("BOTT", "BOTS"), years = 2010, months = 1:12, bounding_box = bb)
+
+# CEFI: `sob` is the model's own sea-floor diagnostic. Free, and NW Atlantic only.
+accessCEFI(vars = c("BOTT", "BOTS"), years = 2010, months = 1:12, bounding_box = bb)
 ```
 
 Only the first is expensive, and only the first returns `BOTS_depth` — because
@@ -141,7 +198,7 @@ than left to assume.
 
 ## Sub-daily data, and means that are not means
 
-Four of the five publish below daily somewhere, and none of them publishes a
+Four of the seven publish below daily somewhere, and none of them publishes a
 daily mean:
 
 | Source | Native step | `frequency` |
@@ -150,6 +207,10 @@ daily mean:
 | FVCOM `GOM7` | hourly | `"hourly"`, or `"daily"` for a snapshot |
 | HYCOM | 3-hourly | `"3hourly"`, or `"daily"` for a snapshot |
 | CCMP | 6-hourly | `"6hourly"`, or `"daily"` for a snapshot |
+
+The other three stop at daily. CEFI is monthly or daily and nothing finer;
+ERDDAP is daily; OB.DAAC is daily or a monthly composite, and its eight-day
+composite is refused because `matchData()` has no step that means eight days.
 
 Where a source has no mean, none is invented. `frequency = "daily"` on HYCOM and
 CCMP takes one **snapshot** at a chosen hour — an instant, not an average. A
@@ -267,6 +328,25 @@ its own — cite the products.
   Coordinate Ocean Model) data assimilative system. *Journal of Marine Systems*
   **65**:60–83. <https://doi.org/10.1016/j.jmarsys.2005.09.016>
 
+- **NOAA CEFI / MOM6-COBALT-NWA12** — Ross AC, Stock CA, Adcroft A, Curchitser
+  E, Hallberg R, Harrison MJ, Hedstrom K, Zadeh N, Alexander M, Chen W,
+  Drenkard EJ, du Pontavice H, Dussin R, Gomez F, John JG, Kang D, Lavoie D,
+  Resplandy L, Roobaert A, Saba V, Shin S-I, Siedlecki S, Simkins J (2023). A
+  high-resolution physical–biogeochemical model for marine resource
+  applications in the northwest Atlantic (MOM6-COBALT-NWA12 v1.0).
+  *Geoscientific Model Development* **16**:6943–6985.
+  <https://doi.org/10.5194/gmd-16-6943-2023>
+
+  The paper is the model; the data is separately owed an acknowledgement, in
+  the form PSL asks for: *Data provided by the NOAA Physical Sciences
+  Laboratory, Boulder, Colorado, USA, from https://psl.noaa.gov/cefi_portal/*.
+  There is no separate data DOI.
+
+  **Say which release** — `source_of()` records it, as
+  `cefi:NWA12-hindcast-r20250715`. Releases extend and revise the record, so
+  two results from different releases are not the same numbers. For a forecast,
+  say which initialisation and ensemble member as well.
+
 - **CCMP** — Mears C, Lee T, Ricciardulli L, Wang X, Wentz F (2022). Improving
   the Accuracy of the Cross-Calibrated Multi-Platform (CCMP) Ocean Vector Winds.
   *Remote Sensing* **14**(17):4230. <https://doi.org/10.3390/rs14174230>
@@ -279,6 +359,36 @@ its own — cite the products.
   missing data for VIIRS global ocean color products using the DINEOF method.
   *IEEE Transactions on Geoscience and Remote Sensing* **56**:4464–4476.
   <https://doi.org/10.1109/TGRS.2018.2820423>
+
+- **NASA OB.DAAC** — **two citations are owed, not one.** The mission paper
+  below describes the instrument; the *data* has a DOI of its own, under the
+  `10.5067` prefix, minted per mission, per suite and per reprocessing — for
+  example
+  [10.5067/AQUA/MODIS/L3M/CHL/2022](https://doi.org/10.5067/AQUA/MODIS/L3M/CHL/2022)
+  for Aqua MODIS chlorophyll.
+
+  The trailing version is not predictable from the suite: for Aqua MODIS the
+  `PAR` DOI ending 2022 resolves where the `SST` one ending 2019 does not, and
+  a reprocessing changes it. So this
+  package points at the DOI rather than shipping a table of them that would go
+  stale silently — look yours up at
+  <https://www.earthdata.nasa.gov/centers/ob-daac> and cite it alongside the
+  mission. `obdaac_sensors()` carries the mission papers at runtime, and
+  `source_of()` records which sensor answered, as `obdaac:MODISA-4km`.
+
+  - *SeaWiFS* — McClain CR, Feldman GC, Hooker SB (2004). An overview of the
+    SeaWiFS project and strategies for producing a climate research quality
+    global ocean bio-optical time series. *Deep-Sea Research II* **51**:5–42.
+    <https://doi.org/10.1016/j.dsr2.2003.11.001>
+  - *MODIS* — Esaias WE, Abbott MR, Barton I, Brown OB, Campbell JW, Carder KL,
+    Clark DK, Evans RH, Hoge FE, Gordon HR, Balch WM, Letelier R, Minnett PJ
+    (1998). An overview of MODIS capabilities for ocean science observations.
+    *IEEE Transactions on Geoscience and Remote Sensing* **36**:1250–1265.
+    <https://doi.org/10.1109/36.701076>
+  - *VIIRS* — Wang M, Liu X, Tan L, Jiang L, Son S, Shi W, Rausch K, Voss K
+    (2013). Impacts of VIIRS SDR performance on ocean color products. *Journal
+    of Geophysical Research: Atmospheres* **118**:10347–10360.
+    <https://doi.org/10.1002/jgrd.50793>
 
 Say which archive as well as which model — a value from the HYCOM reanalysis and
 one from an operational experiment are not the same run, and `source_of()`
@@ -496,6 +606,55 @@ once for `BOTS` and once for the rest, then chain `matchData()`. See
 Scalars sit on mesh nodes and velocities on element centroids, so the two kinds
 cannot be read together. Call `accessFVCOM()` once for each and chain
 `matchData()`.
+
+**`The CEFI hindcast saves no daily SST`**
+
+Expected. CEFI's daily output is biogeochemistry only — `CHL`, `NO3`, `PH`,
+`PCO2`, `PHYC`, `MESOZOO` and `BOTO2`. Everything else is monthly, and the
+message lists what is available daily.
+
+**`The bounding box selects no CEFI cells`**
+
+CEFI is a regional model, not a global one. The Northwest Atlantic domain runs
+roughly 98°W–36°W and 5°N–58°N, and the message gives the actual extent.
+Longitudes are negative west, and the regridded files are already on that
+convention, so no conversion is needed in either direction.
+
+**`CEFI's 'seasonal_forecast' cannot be read through this package`**
+
+Not a fault in your call. Those files carry a 64-bit integer coordinate that
+DAP2 has no type for, so the server returns HTTP 500 to every OPeNDAP request;
+the DAP4 endpoint describes them and then reads them wrongly, crashing R. The
+files download whole from the THREDDS `fileServer` endpoint and open correctly
+once local, at roughly 260 MB per variable per initialisation.
+
+**`init` / `member` `is required for CEFI's decadal forecast`**
+
+Deliberate. A decadal file is ten years from one January and there are sixty of
+them, so which initialisation you mean is a question about your analysis. Each
+holds ten ensemble members, and averaging them is a modelling decision this
+package will not make silently — read the members you want and combine them
+yourself, so the combination is visible in your code.
+
+**`Reading OB.DAAC needs an Earthdata Login`**
+
+The one account this package cannot work around. Register at
+<https://urs.earthdata.nasa.gov/users/new>, generate an appkey at
+<https://oceandata.sci.gsfc.nasa.gov/appkey/>, and put it in `~/.Renviron` as
+`EARTHDATA_APPKEY=`. A `~/.netrc` entry for `urs.earthdata.nasa.gov` works too.
+
+**`the server returned a login page rather than the file`**
+
+The credential is missing, wrong, or revoked. NASA answers an unauthenticated
+request with HTTP 200 and the login page rather than a 401, so this is caught by
+checking the bytes; nothing is written to disk. A date the sensor did not return
+lands here too, since the two are indistinguishable from the response.
+
+**`MODISA does not publish: NFLH`** *(or similar)*
+
+The sensor does not carry that suite. SeaWiFS measures no temperature at all;
+only MODIS carries `NFLH`; VIIRSJ2 has no SST yet. The message lists what that
+sensor does carry, and `obdaac_sensors()` has the full table.
 
 **`The download did not return: uo, vo`**
 

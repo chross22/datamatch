@@ -7,8 +7,9 @@
 source_of(x)
 }
 \arguments{
-\item{x}{an object from \code{\link[=accessCopernicus]{accessCopernicus()}}, \code{\link[=accessFVCOM]{accessFVCOM()}}, \code{\link[=accessHYCOM]{accessHYCOM()}},
-\code{\link[=accessCCMP]{accessCCMP()}} or \code{\link[=accessERDDAP]{accessERDDAP()}}}
+\item{x}{an object from \code{\link[=accessCopernicus]{accessCopernicus()}}, \code{\link[=accessFVCOM]{accessFVCOM()}},
+\code{\link[=accessHYCOM]{accessHYCOM()}}, \code{\link[=accessCEFI]{accessCEFI()}}, \code{\link[=accessCCMP]{accessCCMP()}}, \code{\link[=accessERDDAP]{accessERDDAP()}} or
+\code{\link[=accessOBDAAC]{accessOBDAAC()}}}
 }
 \value{
 \if{html}{\out{<char>}} the source tag, or \code{NA} if the object carries none — which is
@@ -17,17 +18,24 @@ the case for anything built by hand or produced before this was recorded
 \description{
 Every access function stamps its result with where the values came from, and
 this reads it back. The tag is short and stable — \code{"copernicus:..."},
-\code{"fvcom:GOM3"}, \code{"hycom:GLBv53X"}, \code{"ccmp:v03.1"}, \code{"erddap:MUR"} — naming the
-source and the particular archive or dataset within it.
+\code{"fvcom:GOM3"}, \code{"hycom:GLBv53X"}, \code{"cefi:NWA12-hindcast-r20250715"},
+\code{"ccmp:v03.1"}, \code{"erddap:MUR"}, \code{"obdaac:MODISA-4km"} — naming the source and
+the particular archive, release or dataset within it.
 }
 \section{Why this exists}{
 
-The five sources deliberately share variable names, so an \code{SST} column means
-the same \emph{quantity} whichever produced it and everything downstream works
+The sources deliberately share variable names, so an \code{SST} column means the
+same \emph{quantity} whichever produced it and everything downstream works
 unchanged. That is the point of the design and also its hazard: the column
 name alone cannot say whether a value came from a global reanalysis, a
-regional coastal model, or an independent global model, and those are not the
-same number.
+regional coastal model, an independent global model or a satellite
+retrieval, and those are not the same number.
+
+The detail after the colon is not decoration. A CEFI tag names the release
+the values came from, because releases revise the record; an OB.DAAC tag
+names the sensor, because two sensors disagree where they overlap; a HYCOM
+tag names the archive, because the record crosses from a reanalysis into
+operational experiments.
 
 The package already records provenance where a value's origin is ambiguous —
 \code{\link[=fill_satellite_gaps]{fill_satellite_gaps()}} writes a \verb{<var>_source} column, and a derived \code{BOTS}

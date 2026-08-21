@@ -11,6 +11,18 @@ europeanunioncopernicusmarineservice2019,10.48670/moi-00015,,European Union-Cope
 pebesma2023,10.1201/9780429459016,,Pebesma,2023,Spatial Data Science,,,,crossref,
 hijmans2020,10.32614/CRAN.package.terra,,Hijmans,2020,terra: Spatial Data Analysis,CRAN: Contributed Packages,,,crossref,
 pierce2010,10.32614/CRAN.package.ncdf4,,Pierce,2010,ncdf4: Interface to Unidata netCDF (Version 4 or Earlier) Format Data Files,CRAN: Contributed Packages,,,crossref,
+chen2006,10.5670/oceanog.2006.92,,Chen,2006,"An Unstructured Grid, Finite-Volume Coastal Ocean Model (FVCOM) System",Oceanography,19,78-89,crossref,
+chassignet2007,10.1016/j.jmarsys.2005.09.016,,Chassignet,2007,The HYCOM (HYbrid Coordinate Ocean Model) data assimilative system,Journal of Marine Systems,65,60-83,crossref,
+ross2023,10.5194/gmd-16-6943-2023,,Ross,2023,A high-resolution physical–biogeochemical model for marine resource applications in the northwest Atlantic (MOM6-COBALT-NWA12 v1.0),Geoscientific Model Development,16,6943-6985,crossref,
+mears2022,10.3390/rs14174230,,Mears,2022,Improving the Accuracy of the Cross-Calibrated Multi-Platform (CCMP) Ocean Vector Winds,Remote Sensing,14,4230,crossref,
+chin2017,10.1016/j.rse.2017.07.029,,Chin,2017,A multi-scale high-resolution analysis of global sea surface temperature,Remote Sensing of Environment,200,154-169,crossref,
+liu2018,10.1109/tgrs.2018.2820423,,Liu,2018,Gap Filling of Missing Data for VIIRS Global Ocean Color Products Using the DINEOF Method,IEEE Transactions on Geoscience and Remote Sensing,56,4464-4476,crossref,
+mcclain2004,10.1016/j.dsr2.2003.11.001,,McClain,2004,An overview of the SeaWiFS project and strategies for producing a climate research quality global ocean bio-optical time series,Deep Sea Research Part II: Topical Studies in Oceanography,51,5-42,crossref,
+esaias1998,10.1109/36.701076,,Esaias,1998,An overview of MODIS capabilities for ocean science observations,IEEE Transactions on Geoscience and Remote Sensing,36,1250-1265,crossref,
+wang2013,10.1002/jgrd.50793,,Wang,2013,Impacts of VIIRS SDR performance on ocean color products,Journal of Geophysical Research: Atmospheres,118,,crossref,Crossref carries no page range for this record; the article is 10347-10360
+europeanunioncopernicusmarineservice2020,10.48670/moi-00181,,European Union-Copernicus Marine Service,2020,Global Ocean Monthly Mean Sea Surface Wind and Stress from Scatterometer and Model,Mercator Ocean International,,,crossref,
+europeanunioncopernicusmarineservice2019b,10.48670/moi-00185,,European Union-Copernicus Marine Service,2019,Global Ocean Hourly Reprocessed Sea Surface Wind and Stress from Scatterometer and Model,Mercator Ocean International,,,crossref,
+nasaoceanbiologyprocessinggroup2022,10.5067/aqua/modis/l3m/chl/2022,,NASA Ocean Biology Processing Group,2022,"Aqua MODIS Level 3 Mapped Chlorophyll Data, Version R2022.0",NASA Ocean Biology Distributed Active Archive Center,,,crossref,Example of the per-mission dataset DOI OB.DAAC asks for
 wwwcpcncepnoaagov,,https://www.cpc.ncep.noaa.gov/products/precip/CWlink/pna/norm.nao.monthly.b5001.current.ascii.table,,,,,,,url,Generated from a scanned URL - fill in the fields by hand
 wwwcpcncepnoaagovb,,https://www.cpc.ncep.noaa.gov/products/precip/CWlink/daily_ao_index/monthly.ao.index.b50.current.ascii.table,,,,,,,url,Generated from a scanned URL - fill in the fields by hand
 pslnoaagov,,https://psl.noaa.gov/data/correlation/amon.us.long.data,,,,,,,url,Generated from a scanned URL - fill in the fields by hand

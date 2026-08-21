@@ -22,6 +22,16 @@ provides for exactly this and is what data repositories expect.
 Which names are valid was established by validating documents against the
 schema rather than by reading a list — \code{milligramsPerCubicMeter} is accepted
 and \code{milligramPerCubicMeter} is not, and there is no way to tell from the
-outside which spelling a vocabulary chose.
+outside which spelling a vocabulary chose. The vocabulary is not even
+self-consistent about it: \code{milligramsPerCubicMeter} is plural on both words
+and \code{molePerCubicMeter} singular on both, and both are standard.
 }
+\section{The unit type is not checked}{
+
+EML validates a \emph{unit} name against its vocabulary but accepts any string as
+a custom unit's \code{unitType} — a deliberately nonsensical one passes the
+schema. So the types below are not kept honest by anything except being
+written honestly, which is worth knowing before copying one.
+}
+
 \keyword{internal}
