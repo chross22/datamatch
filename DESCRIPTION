@@ -57,6 +57,6 @@ Suggests:
     withr
 Config/testthat/edition: 3
 VignetteBuilder: knitr
-URL: https://github.com/chross22/datamatch, https://chross22.github.io/datamatch/
+URL: https://github.com/chross22/datamatch, https://camilleross.org/datamatch/
 BugReports: https://github.com/chross22/datamatch/issues
 Config/roxygen2/version: 8.1.0

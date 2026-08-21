@@ -1,7 +1,12 @@
-url: https://chross22.github.io/datamatch/
+# Served from camilleross.org/datamatch/, not chross22.github.io: GitHub applies
+# the user site's custom domain to every project page on the account. This must
+# name where visitors actually land, or the canonical link, sitemap and og:url
+# all point at a hostname nobody uses and search engines see two of each page.
+url: https://camilleross.org/datamatch/
 
 template:
   bootstrap: 5
+  light-switch: true
 
 reference:
 - title: Fetching data
