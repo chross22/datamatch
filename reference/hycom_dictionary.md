@@ -14,7 +14,7 @@ a data frame of class `datamatch_dictionary`
 
 ## See also
 
-[`hycom_variables()`](https://chross22.github.io/datamatch/reference/hycom_variables.md)
+[`hycom_variables()`](https://camilleross.org/datamatch/reference/hycom_variables.md)
 
 ## Examples
 

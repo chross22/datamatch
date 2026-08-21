@@ -16,12 +16,12 @@ plot_coverage(env_dat, vars = NULL, main = "Data coverage by time step", ...)
 - env_dat:
 
   an `sf` POINT object from any access function -
-  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
-  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
-  [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
-  [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+  [`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md),
+  [`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md),
+  [`accessHYCOM()`](https://camilleross.org/datamatch/reference/accessHYCOM.md),
+  [`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md)
   or
-  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+  [`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md)
 
 - vars:
 
@@ -46,13 +46,13 @@ step per variable
 This plots the fraction of cells carrying a value in each time step,
 which is the thing to look at before trusting a monthly mean or deciding
 whether
-[`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md)
+[`fill_satellite_gaps()`](https://camilleross.org/datamatch/reference/fill_satellite_gaps.md)
 is worth the seam it introduces.
 
 ## See also
 
-[`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md),
-[`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md),
+[`fill_satellite_gaps()`](https://camilleross.org/datamatch/reference/fill_satellite_gaps.md),
+[`upscale_time()`](https://camilleross.org/datamatch/reference/upscale_time.md),
 whose `min_coverage` argument acts on the same quantity
 
 ## Examples

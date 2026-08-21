@@ -13,12 +13,12 @@ obdaac_filename(sensor, entry, when, frequency, resolution)
 - sensor:
 
   one entry of
-  [`obdaac_sensors()`](https://chross22.github.io/datamatch/reference/obdaac_sensors.md)
+  [`obdaac_sensors()`](https://camilleross.org/datamatch/reference/obdaac_sensors.md)
 
 - entry:
 
   one entry of
-  [`obdaac_variables()`](https://chross22.github.io/datamatch/reference/obdaac_variables.md)
+  [`obdaac_variables()`](https://camilleross.org/datamatch/reference/obdaac_variables.md)
 
 - when:
 
@@ -51,10 +51,10 @@ archive for SeaWiFS, both MODIS instruments and all three VIIRS, for
 daily and monthly, for the colour suites and the temperature ones. The
 one mission whose names are *not* constructible is PACE, and it is left
 out for that reason among others; see
-[`obdaac_sensors()`](https://chross22.github.io/datamatch/reference/obdaac_sensors.md).
+[`obdaac_sensors()`](https://camilleross.org/datamatch/reference/obdaac_sensors.md).
 
 What is lost is the ability to know, before trying, that a sensor
 returned nothing on a given day. That surfaces as a failed download for
 that step instead, which
-[`accessOBDAAC()`](https://chross22.github.io/datamatch/reference/accessOBDAAC.md)
+[`accessOBDAAC()`](https://camilleross.org/datamatch/reference/accessOBDAAC.md)
 reports by name and carries on past.

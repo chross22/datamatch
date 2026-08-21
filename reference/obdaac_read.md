@@ -17,7 +17,7 @@ obdaac_read(path, entry, bounding_box)
 - entry:
 
   one entry of
-  [`obdaac_variables()`](https://chross22.github.io/datamatch/reference/obdaac_variables.md)
+  [`obdaac_variables()`](https://camilleross.org/datamatch/reference/obdaac_variables.md)
 
 - bounding_box:
 

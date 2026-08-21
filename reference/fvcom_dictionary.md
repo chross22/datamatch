@@ -20,7 +20,7 @@ a data frame of class `datamatch_dictionary`
 
 ## See also
 
-[`fvcom_variables()`](https://chross22.github.io/datamatch/reference/fvcom_variables.md)
+[`fvcom_variables()`](https://camilleross.org/datamatch/reference/fvcom_variables.md)
 
 ## Examples
 

@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Fetch Ocean Data from Several Sources and Match It in Space and Time • datamatch</title>
-<script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<script src="lightswitch.js"></script><script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -18,7 +18,7 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top " aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="index.html">datamatch</a>
 
@@ -48,6 +48,14 @@
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json">
 </form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/chross22/datamatch/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-lightswitch" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" aria-label="Light switch"><span class="fa fa-sun"></span></button>
+  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-lightswitch">
+<li><button class="dropdown-item" data-bs-theme-value="light"><span class="fa fa-sun"></span> Light</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="dark"><span class="fa fa-moon"></span> Dark</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="auto"><span class="fa fa-adjust"></span> Auto</button></li>
+  </ul>
+</li>
       </ul>
 </div>
 
@@ -137,7 +145,7 @@
 <blockquote>
 <p><strong>One name, several sources, and they are not the same number.</strong> <code>SST</code> from Copernicus, FVCOM, HYCOM and CEFI are four different models, and <code>CHL</code> from Copernicus, ERDDAP, OB.DAAC and CEFI four different things — three retrievals and a simulation. Sharing the column name is what makes them interchangeable <em>mechanically</em> — so everything downstream works unchanged — and is exactly why it is worth recording which one you used. <code><a href="reference/matchData.html">matchData()</a></code> writes a <code>&lt;var&gt;_source</code> column saying which, and <code><a href="reference/source_of.html">source_of()</a></code> reads it back.</p>
 </blockquote>
-<p>This README is the front door. The detail lives in <a href="#vignettes">four articles</a>, and <a href="https://chross22.github.io/datamatch/articles/sources.html">“Choosing a data source”</a> compares the seven side by side if that is what you came for.</p>
+<p>This README is the front door. The detail lives in <a href="#vignettes">four articles</a>, and <a href="https://chross22.github.io/datamatch/articles/sources.html" class="external-link">“Choosing a data source”</a> compares the seven side by side if that is what you came for.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -209,7 +217,7 @@
 <code class="sourceCode R"><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessCopernicus.html">accessCopernicus</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"SST"</span>, dates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">observations</span><span class="op">$</span><span class="va">date</span><span class="op">)</span>,</span>
 <span>                        bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span></code></pre></div>
 <p>It is also how a long record is thinned rather than fetched whole — a weekly sequence through a decade is 574 downloads rather than 4,017. Daily is a real cost, not a flag: three months is 91 downloads and 91 grids in memory.</p>
-<p>→ <a href="https://chross22.github.io/datamatch/articles/sources.html#sub-daily-data-and-means-that-are-not-means">Choosing a data source</a> covers sub-daily data, and which sources have a real mean to fetch rather than a snapshot.</p>
+<p>→ <a href="https://chross22.github.io/datamatch/articles/sources.html#sub-daily-data-and-means-that-are-not-means" class="external-link">Choosing a data source</a> covers sub-daily data, and which sources have a real mean to fetch rather than a snapshot.</p>
 </div>
 <div class="section level2">
 <h2 id="the-shared-vocabulary">The shared vocabulary<a class="anchor" aria-label="anchor" href="#the-shared-vocabulary"></a>
@@ -394,7 +402,7 @@
 <strong><code>BOTS</code> is derived here.</strong> GLORYS12V1 publishes no sea-floor salinity, so the full depth column is fetched and the deepest wet level kept — which means it must be fetched on its own, and returns a <code>BOTS_depth</code> column.</li>
 </ul>
 <p><code>mode = "forecast"</code> requests the same variables from the analysis-and-forecast products, about ten days ahead. The forecast splits variables across more datasets and renames a few codes; requesting <code>BOTT</code> gets the right one either way. Satellite variables have no forecast, and asking says so.</p>
-<p>→ <a href="https://chross22.github.io/datamatch/articles/sources.html">Choosing a data source</a> covers the satellite-or-model trade, bottom salinity four ways, and the wind record in full.</p>
+<p>→ <a href="https://chross22.github.io/datamatch/articles/sources.html" class="external-link">Choosing a data source</a> covers the satellite-or-model trade, bottom salinity four ways, and the wind record in full.</p>
 </div>
 <div class="section level2">
 <h2 id="fvcom">FVCOM<a class="anchor" aria-label="anchor" href="#fvcom"></a>
@@ -582,7 +590,7 @@
 <span><span class="fu"><a href="reference/plot_matched.html">plot_matched</a></span><span class="op">(</span><span class="va">matched</span>, <span class="st">"SST"</span><span class="op">)</span>            <span class="co"># what the join actually produced</span></span></code></pre></div>
 <p>Two rules worth carrying even if you read no further. <strong>Aggregating loses detail, which is the safe direction; interpolating adds cells, not information</strong> — so the defaults are the blunt methods that look like what they are. And <strong><code>linear</code> and <code>spline</code> do not preserve the period mean</strong>, so a budget computed from an interpolated series inherits that error; <code>step</code> does preserve it.</p>
 <p>Combining two products onto one grid is deliberately the caller’s decision, because neither answer is free: keep the finer grid and the coarse variable comes out blocky, keep the coarser and you discard resolution the fine variables really had.</p>
-<p>→ <a href="https://chross22.github.io/datamatch/articles/working-with-data.html"><strong>Working with what comes back</strong></a> covers the methods, when each is right, <code>min_coverage</code>, and what each plot is for.</p>
+<p>→ <a href="https://chross22.github.io/datamatch/articles/working-with-data.html" class="external-link"><strong>Working with what comes back</strong></a> covers the methods, when each is right, <code>min_coverage</code>, and what each plot is for.</p>
 </div>
 <div class="section level2">
 <h2 id="static-and-basin-scale-covariates">Static and basin-scale covariates<a class="anchor" aria-label="anchor" href="#static-and-basin-scale-covariates"></a>
@@ -594,7 +602,7 @@
 <span></span>
 <span><span class="va">observations</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/attach_climate_index.html">attach_climate_index</a></span><span class="op">(</span><span class="va">observations</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NAO"</span>, <span class="st">"AMO"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p><strong>Seafloor terrain</strong> — <code>DEPTH</code>, <code>SLOPE</code>, <code>ASPECT</code>, <code>TPI</code> from NOAA ETOPO — does not vary in time, so it is fetched once and attached to every step. <strong>Climate indices</strong> — <code>NAO</code>, <code>AO</code>, <code>AMO</code>, <code>PDO</code>, <code>LCR</code>, <code>AMOC</code> — have no spatial dimension at all: one value describes the whole basin in a month, so they tell you about <em>when</em>, never about <em>where</em>.</p>
-<p>→ <a href="https://chross22.github.io/datamatch/articles/covariates.html"><strong>Static and basin-scale covariates</strong></a> covers what TPI actually measures, which index to choose and why they are not interchangeable, and the <code>LCR</code> and <code>AMOC</code> caveats.</p>
+<p>→ <a href="https://chross22.github.io/datamatch/articles/covariates.html" class="external-link"><strong>Static and basin-scale covariates</strong></a> covers what TPI actually measures, which index to choose and why they are not interchangeable, and the <code>LCR</code> and <code>AMOC</code> caveats.</p>
 </div>
 <div class="section level2">
 <h2 id="putting-it-together">Putting it together<a class="anchor" aria-label="anchor" href="#putting-it-together"></a>
@@ -616,7 +624,7 @@
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colSums</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="fu">sf</span><span class="fu">::</span><span class="fu"><a href="https://r-spatial.github.io/sf/reference/st_geometry.html" class="external-link">st_drop_geometry</a></span><span class="op">(</span><span class="va">matched</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>   <span class="co"># the joins fail in different ways</span></span></code></pre></div>
 <p><code><a href="reference/matchData.html">matchData()</a></code> warns and fills <code>NA</code> when an observation falls in a period the environmental data does not cover; <code><a href="reference/attach_climate_index.html">attach_climate_index()</a></code> gives <code>NA</code> outside the index’s record, which for <code>LCR</code> means anything after 2014. Check for both before modelling.</p>
-<p>→ <a href="https://chross22.github.io/datamatch/articles/datamatch.html"><strong>Getting started</strong></a> walks this through end to end.</p>
+<p>→ <a href="https://chross22.github.io/datamatch/articles/datamatch.html" class="external-link"><strong>Getting started</strong></a> walks this through end to end.</p>
 </div>
 <div class="section level2">
 <h2 id="depositing-what-you-made">Depositing what you made<a class="anchor" aria-label="anchor" href="#depositing-what-you-made"></a>
@@ -627,7 +635,7 @@
 <div class="section level2">
 <h2 id="function-reference">Function reference<a class="anchor" aria-label="anchor" href="#function-reference"></a>
 </h2>
-<p>The <a href="https://chross22.github.io/datamatch/reference/index.html">pkgdown reference index</a> has a page for each export. In brief:</p>
+<p>The <a href="https://chross22.github.io/datamatch/reference/index.html" class="external-link">pkgdown reference index</a> has a page for each export. In brief:</p>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -690,19 +698,19 @@
 </colgroup>
 <tbody>
 <tr>
-<td><a href="https://chross22.github.io/datamatch/articles/datamatch.html">Getting started</a></td>
+<td><a href="https://chross22.github.io/datamatch/articles/datamatch.html" class="external-link">Getting started</a></td>
 <td>observations to a modelling table, end to end</td>
 </tr>
 <tr>
-<td><a href="https://chross22.github.io/datamatch/articles/sources.html">Choosing a data source</a></td>
+<td><a href="https://chross22.github.io/datamatch/articles/sources.html" class="external-link">Choosing a data source</a></td>
 <td>which of the seven to reach for, what changes when you do, error messages, and what to cite</td>
 </tr>
 <tr>
-<td><a href="https://chross22.github.io/datamatch/articles/working-with-data.html">Working with what comes back</a></td>
+<td><a href="https://chross22.github.io/datamatch/articles/working-with-data.html" class="external-link">Working with what comes back</a></td>
 <td>resampling, gap filling, and looking at the data</td>
 </tr>
 <tr>
-<td><a href="https://chross22.github.io/datamatch/articles/covariates.html">Static and basin-scale covariates</a></td>
+<td><a href="https://chross22.github.io/datamatch/articles/covariates.html" class="external-link">Static and basin-scale covariates</a></td>
 <td>seafloor terrain and climate indices</td>
 </tr>
 </tbody>
@@ -719,7 +727,7 @@
 <div class="section level2">
 <h2 id="citing">Citing<a class="anchor" aria-label="anchor" href="#citing"></a>
 </h2>
-<p>Everything datamatch returns comes from someone else’s data, and the obligation to cite travels with the data rather than with this package. <strong>Cite whichever products you actually used</strong> — <a href="https://chross22.github.io/datamatch/articles/sources.html#what-to-cite">Choosing a data source</a> lists them all with DOIs, <code><a href="reference/variable_dictionary.html">variable_dictionary()</a></code> links to each Copernicus product page, and <code><a href="reference/index_dictionary.html">index_dictionary()</a></code>, <code><a href="reference/fvcom_archives.html">fvcom_archives()</a></code>, <code><a href="reference/hycom_archives.html">hycom_archives()</a></code>, <code><a href="reference/cefi_archives.html">cefi_archives()</a></code>, <code><a href="reference/ccmp_versions.html">ccmp_versions()</a></code> and <code><a href="reference/obdaac_sensors.html">obdaac_sensors()</a></code> carry their references at runtime.</p>
+<p>Everything datamatch returns comes from someone else’s data, and the obligation to cite travels with the data rather than with this package. <strong>Cite whichever products you actually used</strong> — <a href="https://chross22.github.io/datamatch/articles/sources.html#what-to-cite" class="external-link">Choosing a data source</a> lists them all with DOIs, <code><a href="reference/variable_dictionary.html">variable_dictionary()</a></code> links to each Copernicus product page, and <code><a href="reference/index_dictionary.html">index_dictionary()</a></code>, <code><a href="reference/fvcom_archives.html">fvcom_archives()</a></code>, <code><a href="reference/hycom_archives.html">hycom_archives()</a></code>, <code><a href="reference/cefi_archives.html">cefi_archives()</a></code>, <code><a href="reference/ccmp_versions.html">ccmp_versions()</a></code> and <code><a href="reference/obdaac_sensors.html">obdaac_sensors()</a></code> carry their references at runtime.</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"datamatch"</span><span class="op">)</span></span></code></pre></div>
 </div>

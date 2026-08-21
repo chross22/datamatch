@@ -27,7 +27,7 @@ is why `SST` and `BOTT` are two entries reading one variable at two
 layers, and why bottom salinity costs nothing here — `BOTS` is simply
 `salinity` at the bottom layer, where in GLORYS it has to be derived.
 See
-[`copernicus_variables()`](https://chross22.github.io/datamatch/reference/copernicus_variables.md).
+[`copernicus_variables()`](https://camilleross.org/datamatch/reference/copernicus_variables.md).
 
 The flip side is that a sigma layer is not a depth. Layer 45 sits at
 98.9% of the local depth, which is a metre off the bottom on the shelf
@@ -40,18 +40,18 @@ triangle **elements** (the centroids). These are two different sets of
 points — 48,451 and 90,415 on GOM3 — so a variable of each kind cannot
 land in one table without interpolating one onto the other.
 
-[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md)
+[`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md)
 refuses to fetch the two together rather than interpolating on your
 behalf, in the same spirit as
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 refusing to mix two Copernicus grids. Fetch each and chain
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md),
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md),
 which matches to the nearest point whichever mesh it belongs to.
 
 ## See also
 
-[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
-[`fvcom_archives()`](https://chross22.github.io/datamatch/reference/fvcom_archives.md)
+[`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md),
+[`fvcom_archives()`](https://camilleross.org/datamatch/reference/fvcom_archives.md)
 
 ## Examples
 

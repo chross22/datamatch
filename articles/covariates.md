@@ -7,7 +7,7 @@ time at all, and **basin-scale climate indices**, which do not vary in
 space.
 
 Neither is fetched with
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md).
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md).
 They have their own attach functions, because neither is a
 spatiotemporal nearest-feature join.
 
@@ -30,7 +30,7 @@ bathy <- fetch_bathymetry(
 observations <- attach_bathymetry(observations, bathy, c("DEPTH", "SLOPE", "TPI"))
 ```
 
-[`bathymetry_variables()`](https://chross22.github.io/datamatch/reference/bathymetry_variables.md)
+[`bathymetry_variables()`](https://camilleross.org/datamatch/reference/bathymetry_variables.md)
 lists them: `DEPTH`, `SLOPE`, `ASPECT`, and `TPI`.
 
 `TPI`, the topographic position index, is a cell’s depth relative to the
@@ -43,10 +43,10 @@ It is scale-dependent by construction. It describes position within the
 immediate neighbourhood, so its meaning follows the resolution of the
 grid it was computed on.
 
-[`attach_bathymetry()`](https://chross22.github.io/datamatch/reference/attach_bathymetry.md)
+[`attach_bathymetry()`](https://camilleross.org/datamatch/reference/attach_bathymetry.md)
 takes either a plain data frame with coordinate columns or an `sf`
 object, so it works on observations and on
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 output alike.
 
 ### Climate indices
@@ -85,7 +85,7 @@ Most are **standardized anomalies** — in standard deviations, not
 anything physical. Only `AMO` (degrees C) and `AMOC` (Sverdrups) carry
 real units, so a coefficient fitted to one of those is not comparable
 with one fitted to `NAO`.
-[`index_dictionary()`](https://chross22.github.io/datamatch/reference/index_dictionary.md)
+[`index_dictionary()`](https://camilleross.org/datamatch/reference/index_dictionary.md)
 carries the units at runtime.
 
 **`NAO`** is the usual first choice in the Northwest Atlantic. It sets
@@ -205,7 +205,7 @@ product, so **cite it when you use it**:
 > the retroflection of the Labrador Current. *Nature Communications*
 > **14**:2623. <https://doi.org/10.1038/s41467-023-38321-y>
 
-[`index_dictionary()`](https://chross22.github.io/datamatch/reference/index_dictionary.md)
+[`index_dictionary()`](https://camilleross.org/datamatch/reference/index_dictionary.md)
 prints that citation, and `as.data.frame(index_dictionary())$reference`
 carries it at runtime.
 
@@ -237,7 +237,7 @@ apply its chain yourself: detrend, 12-month rolling mean, rescale to
 \[−1, 1\], subtract the 1993–2015 mean.
 
 One interaction to know.
-[`attach_climate_index()`](https://chross22.github.io/datamatch/reference/attach_climate_index.md)
+[`attach_climate_index()`](https://camilleross.org/datamatch/reference/attach_climate_index.md)
 joins on year and month, and `upscale_time(to = "year")` stamps its
 output `MONTH = 1`. So attaching an index to annual data would give
 every year January’s value. Aggregate the index to a year first instead.

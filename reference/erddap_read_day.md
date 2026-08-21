@@ -13,7 +13,7 @@ erddap_read_day(spec, vars, day, bounding_box)
 - spec:
 
   one entry of
-  [`erddap_datasets()`](https://chross22.github.io/datamatch/reference/erddap_datasets.md)
+  [`erddap_datasets()`](https://camilleross.org/datamatch/reference/erddap_datasets.md)
 
 - vars:
 

@@ -15,12 +15,12 @@ plot_series(env_dat, vars = NULL, fun = mean, spread = TRUE, ...)
 - env_dat:
 
   an `sf` POINT object from any access function -
-  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
-  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
-  [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
-  [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+  [`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md),
+  [`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md),
+  [`accessHYCOM()`](https://camilleross.org/datamatch/reference/accessHYCOM.md),
+  [`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md)
   or
-  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+  [`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md)
 
 - vars:
 
@@ -52,9 +52,9 @@ that is warm inshore and cold offshore.
 
 ## See also
 
-[`plot_env()`](https://chross22.github.io/datamatch/reference/plot_env.md)
+[`plot_env()`](https://camilleross.org/datamatch/reference/plot_env.md)
 for one step in space,
-[`plot_coverage()`](https://chross22.github.io/datamatch/reference/plot_coverage.md)
+[`plot_coverage()`](https://camilleross.org/datamatch/reference/plot_coverage.md)
 
 ## Examples
 

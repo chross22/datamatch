@@ -17,7 +17,7 @@ fill_satellite_gaps(satellite, model, vars, rescale = FALSE)
 - satellite:
 
   an `sf` POINT object of satellite data from
-  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+  [`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 
 - model:
 

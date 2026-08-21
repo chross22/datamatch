@@ -21,7 +21,7 @@ obdaac_download(file, destination, credentials)
 - credentials:
 
   from
-  [`obdaac_credentials()`](https://chross22.github.io/datamatch/reference/obdaac_credentials.md)
+  [`obdaac_credentials()`](https://camilleross.org/datamatch/reference/obdaac_credentials.md)
 
 ## Value
 

@@ -23,12 +23,12 @@ upscale_time(
 - env_dat:
 
   an `sf` POINT object from any access function -
-  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
-  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
-  [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
-  [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+  [`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md),
+  [`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md),
+  [`accessHYCOM()`](https://camilleross.org/datamatch/reference/accessHYCOM.md),
+  [`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md)
   or
-  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+  [`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md)
 
 - to:
 
@@ -59,9 +59,9 @@ upscale_time(
 an `sf` POINT object with one row per cell per target period. Daily
 output keeps its `YEAR`/`MONTH`/`DAY` and drops `HOUR`; monthly output
 is stamped `DAY = 1`; annual output `MONTH = 1, DAY = 1`, matching what
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 returns for non-daily products so that
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
 reads the resolution back correctly.
 
 ## Hourly to daily
@@ -70,14 +70,14 @@ This is the route to a daily wind field. Copernicus publishes its L4
 wind hourly and monthly and nothing between, so `frequency = "daily"` is
 refused for the wind variables; aggregating the hourly field is how a
 daily mean is produced, and doing it here rather than inside
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 keeps the choice of summary — mean wind, or the day's maximum gust —
 with the caller.
 
 The `HOUR` column is consumed rather than carried through: it is the
 axis being aggregated away. The result is stamped `YEAR`/`MONTH`/`DAY`
 like any daily product, so
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
 reads it back as daily.
 
 Note that a daily mean of wind *components* is not the same as a daily
@@ -89,7 +89,7 @@ the second is not.
 ## Choosing a method
 
 As with
-[`upscale_grid()`](https://chross22.github.io/datamatch/reference/upscale_grid.md),
+[`upscale_grid()`](https://camilleross.org/datamatch/reference/upscale_grid.md),
 the summary that belongs in a period depends on the question:
 
 - `mean`, `median` — the typical condition over the period.
@@ -126,9 +126,9 @@ steps were behind each value.
 
 ## See also
 
-[`downscale_time()`](https://chross22.github.io/datamatch/reference/downscale_time.md)
+[`downscale_time()`](https://camilleross.org/datamatch/reference/downscale_time.md)
 for the other direction,
-[`upscale_grid()`](https://chross22.github.io/datamatch/reference/upscale_grid.md)
+[`upscale_grid()`](https://camilleross.org/datamatch/reference/upscale_grid.md)
 for the spatial equivalent
 
 ## Examples

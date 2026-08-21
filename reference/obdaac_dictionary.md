@@ -14,8 +14,8 @@ a data frame of class `datamatch_dictionary`
 
 ## See also
 
-[`obdaac_variables()`](https://chross22.github.io/datamatch/reference/obdaac_variables.md),
-[`obdaac_sensors()`](https://chross22.github.io/datamatch/reference/obdaac_sensors.md)
+[`obdaac_variables()`](https://camilleross.org/datamatch/reference/obdaac_variables.md),
+[`obdaac_sensors()`](https://camilleross.org/datamatch/reference/obdaac_sensors.md)
 
 ## Examples
 

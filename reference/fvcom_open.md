@@ -15,7 +15,7 @@ fvcom_open(archive)
 - archive:
 
   one entry of
-  [`fvcom_archives()`](https://chross22.github.io/datamatch/reference/fvcom_archives.md)
+  [`fvcom_archives()`](https://camilleross.org/datamatch/reference/fvcom_archives.md)
 
 ## Value
 

@@ -27,7 +27,7 @@ a data frame, one row per index, of class `datamatch_index_status`
 
 ## See also
 
-[`refresh_climate_index()`](https://chross22.github.io/datamatch/reference/refresh_climate_index.md)
+[`refresh_climate_index()`](https://camilleross.org/datamatch/reference/refresh_climate_index.md)
 
 ## Examples
 

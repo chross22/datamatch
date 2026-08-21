@@ -26,8 +26,8 @@ indices cannot produce a map.
 
 ## See also
 
-[`fetch_climate_index()`](https://chross22.github.io/datamatch/reference/fetch_climate_index.md),
-[`attach_climate_index()`](https://chross22.github.io/datamatch/reference/attach_climate_index.md)
+[`fetch_climate_index()`](https://camilleross.org/datamatch/reference/fetch_climate_index.md),
+[`attach_climate_index()`](https://camilleross.org/datamatch/reference/attach_climate_index.md)
 
 ## Examples
 

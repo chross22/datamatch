@@ -1,7 +1,7 @@
 # The columns that stamp a row in time rather than describe conditions
 
 Everything else in an
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 result is a covariate, so this is what separates the two. Named in one
 place because getting it wrong is quiet: anything omitted here is
 aggregated, regridded, and plotted as though it were data, and `HOUR`

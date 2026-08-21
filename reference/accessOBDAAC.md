@@ -3,15 +3,15 @@
 Downloads Level-3 mapped satellite fields from NASA's Ocean Biology DAAC
 and returns them as an `sf` point object with one row per grid cell and
 time step — the same shape
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
-[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
-[`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
-[`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md),
-[`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md),
+[`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md),
+[`accessHYCOM()`](https://camilleross.org/datamatch/reference/accessHYCOM.md),
+[`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md),
+[`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md)
 and
-[`accessCEFI()`](https://chross22.github.io/datamatch/reference/accessCEFI.md)
+[`accessCEFI()`](https://camilleross.org/datamatch/reference/accessCEFI.md)
 return, so
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
 joins it unchanged.
 
 ## Usage
@@ -35,7 +35,7 @@ accessOBDAAC(
 - vars:
 
   variables to read, from
-  [`obdaac_variables()`](https://chross22.github.io/datamatch/reference/obdaac_variables.md)
+  [`obdaac_variables()`](https://camilleross.org/datamatch/reference/obdaac_variables.md)
 
 - years:
 
@@ -62,7 +62,7 @@ accessOBDAAC(
 - sensor:
 
   which mission to read, from
-  [`obdaac_sensors()`](https://chross22.github.io/datamatch/reference/obdaac_sensors.md)
+  [`obdaac_sensors()`](https://camilleross.org/datamatch/reference/obdaac_sensors.md)
 
 - resolution:
 
@@ -91,7 +91,7 @@ appkey at <https://oceandata.sci.gsfc.nasa.gov/appkey/>, and put it in
     EARTHDATA_APPKEY=your-key-here
 
 A `~/.netrc` entry for `urs.earthdata.nasa.gov` works too. See
-[`obdaac_credentials()`](https://chross22.github.io/datamatch/reference/obdaac_credentials.md)
+[`obdaac_credentials()`](https://camilleross.org/datamatch/reference/obdaac_credentials.md)
 for both routes and where they are looked for. A download that comes
 back as the login page is refused by name rather than being written to
 disk as a broken file.
@@ -113,12 +113,12 @@ cached, so a long record is paid for once.
 
 OB.DAAC publishes eight-day composites and they are the obvious answer
 to cloud gaps, but this package cannot join them honestly.
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
 joins on an hour, a day, a month or a year, and an eight-day bin is none
 of those: stamped as a day it would demand an observation fall on the
 bin's first date, and nearly every row would go unmatched. Use
 `"monthly"`, which is a step the join understands, or
-[`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md)
+[`fill_satellite_gaps()`](https://camilleross.org/datamatch/reference/fill_satellite_gaps.md)
 on the daily field, which records what it filled.
 
 ## Which sensor, and why it matters
@@ -126,18 +126,18 @@ on the daily field, which records what it filled.
 `sensor` defaults to `"MODISA"`, which has the longest current record
 with both colour and SST. It is a choice you should make deliberately
 rather than inherit — see the section of
-[`obdaac_sensors()`](https://chross22.github.io/datamatch/reference/obdaac_sensors.md)
+[`obdaac_sensors()`](https://camilleross.org/datamatch/reference/obdaac_sensors.md)
 on why the sensors are not interchangeable — and
-[`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
+[`source_of()`](https://camilleross.org/datamatch/reference/source_of.md)
 records which one answered.
 
 ## See also
 
-[`obdaac_sensors()`](https://chross22.github.io/datamatch/reference/obdaac_sensors.md),
-[`obdaac_variables()`](https://chross22.github.io/datamatch/reference/obdaac_variables.md),
-[`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+[`obdaac_sensors()`](https://camilleross.org/datamatch/reference/obdaac_sensors.md),
+[`obdaac_variables()`](https://camilleross.org/datamatch/reference/obdaac_variables.md),
+[`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md)
 for satellite fields that need no account,
-[`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md)
+[`fill_satellite_gaps()`](https://camilleross.org/datamatch/reference/fill_satellite_gaps.md)
 for cloud gaps
 
 ## Examples

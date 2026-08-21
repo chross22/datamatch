@@ -34,12 +34,12 @@ matchData(
 - source:
 
   the points to take values from: a grid from any access function —
-  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
-  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
-  [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
-  [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+  [`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md),
+  [`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md),
+  [`accessHYCOM()`](https://camilleross.org/datamatch/reference/accessHYCOM.md),
+  [`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md)
   or
-  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md).
+  [`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md).
   Must carry `YEAR`/`MONTH`/`DAY`, and `HOUR` as well when matching
   hourly.
 
@@ -54,7 +54,7 @@ matchData(
   add a `<var>_source` column for each column joined, naming which
   source and archive produced it. On by default, and only has an effect
   when `source` carries the stamp an access function leaves — see
-  [`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md).
+  [`source_of()`](https://camilleross.org/datamatch/reference/source_of.md).
   Set `FALSE` for the narrower table.
 
 - speciesDat, envDat:
@@ -137,31 +137,31 @@ several sources chained onto it has no record of which produced what.
 So each joined column gets a companion `<var>_source` naming the source
 and archive — `"hycom:GLBv53X"`, `"fvcom:GOM3"` — in the same spirit as
 the `<var>_source` column
-[`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md)
+[`fill_satellite_gaps()`](https://camilleross.org/datamatch/reference/fill_satellite_gaps.md)
 writes. Pass `record_source = FALSE` to omit them.
 
 These are provenance rather than measurements, but they travel with the
 variable they describe:
-[`covariate_columns()`](https://chross22.github.io/datamatch/reference/covariate_columns.md)
+[`covariate_columns()`](https://camilleross.org/datamatch/reference/covariate_columns.md)
 reports them, and resampling carries them as a categorical - the
 commonest value when aggregating, the nearest when interpolating - so a
 regridded or retimed object still says which source each value came
 from.
-[`plot_series()`](https://chross22.github.io/datamatch/reference/plot_series.md)
+[`plot_series()`](https://camilleross.org/datamatch/reference/plot_series.md)
 skips them, since a source tag has no mean.
 
 ## See also
 
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
-[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
-[`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
-[`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md),
+[`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md),
+[`accessHYCOM()`](https://camilleross.org/datamatch/reference/accessHYCOM.md),
+[`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md)
 and
-[`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+[`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md)
 for the usual `source`;
-[`attach_bathymetry()`](https://chross22.github.io/datamatch/reference/attach_bathymetry.md)
+[`attach_bathymetry()`](https://camilleross.org/datamatch/reference/attach_bathymetry.md)
 and
-[`attach_climate_index()`](https://chross22.github.io/datamatch/reference/attach_climate_index.md)
+[`attach_climate_index()`](https://camilleross.org/datamatch/reference/attach_climate_index.md)
 for covariates that are not matched this way
 
 ## Examples

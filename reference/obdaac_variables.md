@@ -28,11 +28,11 @@ are different measurements rather than different names for one:
   across days or sensors has to be like for like.
 
 Neither is the foundation temperature that `MUR` in
-[`erddap_datasets()`](https://chross22.github.io/datamatch/reference/erddap_datasets.md)
+[`erddap_datasets()`](https://camilleross.org/datamatch/reference/erddap_datasets.md)
 analyses, and none of the three is the topmost model level that a
 reanalysis calls `SST`. All four arrive in a column called `SST` unless
 you ask for the night one, and
-[`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
+[`source_of()`](https://camilleross.org/datamatch/reference/source_of.md)
 is what tells them apart.
 
 ## Chlorophyll is not gap-free
@@ -42,16 +42,16 @@ cloud outside the tropics and a `CHL` column from one is mostly `NA`.
 That is the honest state of the measurement rather than a fault, and
 there are three ways through it: composite in time by asking for
 `frequency = "8day"` or `"monthly"`, interpolate with
-[`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md),
+[`fill_satellite_gaps()`](https://camilleross.org/datamatch/reference/fill_satellite_gaps.md),
 which records what it filled, or use a gap-free product — the daily
 Copernicus `CHL` and the `VIIRSCHL` entry in
-[`erddap_datasets()`](https://chross22.github.io/datamatch/reference/erddap_datasets.md)
+[`erddap_datasets()`](https://camilleross.org/datamatch/reference/erddap_datasets.md)
 are both already interpolated.
 
 ## See also
 
-[`accessOBDAAC()`](https://chross22.github.io/datamatch/reference/accessOBDAAC.md),
-[`obdaac_dictionary()`](https://chross22.github.io/datamatch/reference/obdaac_dictionary.md)
+[`accessOBDAAC()`](https://camilleross.org/datamatch/reference/accessOBDAAC.md),
+[`obdaac_dictionary()`](https://camilleross.org/datamatch/reference/obdaac_dictionary.md)
 for a printable table
 
 ## Examples

@@ -18,14 +18,14 @@ source_of(x)
 - x:
 
   an object from
-  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
-  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
-  [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
-  [`accessCEFI()`](https://chross22.github.io/datamatch/reference/accessCEFI.md),
-  [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md),
-  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+  [`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md),
+  [`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md),
+  [`accessHYCOM()`](https://camilleross.org/datamatch/reference/accessHYCOM.md),
+  [`accessCEFI()`](https://camilleross.org/datamatch/reference/accessCEFI.md),
+  [`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md),
+  [`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md)
   or
-  [`accessOBDAAC()`](https://chross22.github.io/datamatch/reference/accessOBDAAC.md)
+  [`accessOBDAAC()`](https://camilleross.org/datamatch/reference/accessOBDAAC.md)
 
 ## Value
 
@@ -49,14 +49,14 @@ a reanalysis into operational experiments.
 
 The package already records provenance where a value's origin is
 ambiguous —
-[`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md)
+[`fill_satellite_gaps()`](https://camilleross.org/datamatch/reference/fill_satellite_gaps.md)
 writes a `<var>_source` column, and a derived `BOTS` returns
 `BOTS_depth`. This extends the same habit to the thing that varies most:
 which model the value came from at all.
 
 ## See also
 
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md),
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md),
 which carries this into `<var>_source` columns
 
 ## Examples

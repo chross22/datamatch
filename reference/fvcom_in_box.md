@@ -18,7 +18,7 @@ fvcom_in_box(coords, bounding_box)
 - coords:
 
   output of
-  [`fvcom_coordinates()`](https://chross22.github.io/datamatch/reference/fvcom_coordinates.md)
+  [`fvcom_coordinates()`](https://camilleross.org/datamatch/reference/fvcom_coordinates.md)
 
 - bounding_box:
 

@@ -1,7 +1,7 @@
 # Where downloaded Copernicus files are kept
 
 Copernicus subsets are slow to fetch and rarely change, so
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 writes each one to disk and reads it back on later calls. This resolves
 where that cache lives.
 

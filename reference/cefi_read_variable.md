@@ -24,7 +24,7 @@ cefi_read_variable(
 - entry:
 
   one entry of
-  [`cefi_variables()`](https://chross22.github.io/datamatch/reference/cefi_variables.md)
+  [`cefi_variables()`](https://camilleross.org/datamatch/reference/cefi_variables.md)
 
 - index:
 
@@ -50,4 +50,4 @@ per month, which for a decade is 120 of them. Reading everything between
 the first and the last transfers the whole decade to keep ten months of
 it. Contiguous runs are neither: a stretch of consecutive months is one
 request, and a gap ends the run instead of being read across. See
-[`contiguous_runs()`](https://chross22.github.io/datamatch/reference/contiguous_runs.md).
+[`contiguous_runs()`](https://camilleross.org/datamatch/reference/contiguous_runs.md).

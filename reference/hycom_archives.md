@@ -64,14 +64,14 @@ The longitude convention differs too — `GLBv0.08` runs -180 to 180 and
 `GLBy0.08` runs 0 to 360 — but that is handled internally. Give
 `bounding_box` negative west for either.
 
-[`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md)
+[`accessHYCOM()`](https://camilleross.org/datamatch/reference/accessHYCOM.md)
 reads one archive per call and names the others when a request falls
 outside the one asked for, rather than stitching them silently.
 
 ## See also
 
-[`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
-[`hycom_covering()`](https://chross22.github.io/datamatch/reference/hycom_covering.md)
+[`accessHYCOM()`](https://camilleross.org/datamatch/reference/accessHYCOM.md),
+[`hycom_covering()`](https://camilleross.org/datamatch/reference/hycom_covering.md)
 
 ## Examples
 

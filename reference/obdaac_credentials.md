@@ -19,7 +19,7 @@ no anonymous route, and the failure when you have not got one is
 unhelpful in a particular way: the server answers **HTTP 200** with the
 login page, so a naive download writes nine kilobytes of HTML into a
 file called `.nc` and the error surfaces later as a corrupt netCDF.
-[`obdaac_download()`](https://chross22.github.io/datamatch/reference/obdaac_download.md)
+[`obdaac_download()`](https://camilleross.org/datamatch/reference/obdaac_download.md)
 checks the bytes for this and says what actually happened.
 
 ## Setting one up

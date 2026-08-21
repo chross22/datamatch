@@ -48,13 +48,13 @@ spanning both has a seam in it.
 temperature below the daily warming layer — where a model `SST` is the
 topmost model level. On a calm sunny afternoon those differ by a degree
 or more. Both arrive in a column called `SST`, and
-[`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
+[`source_of()`](https://camilleross.org/datamatch/reference/source_of.md)
 is what distinguishes them.
 
 ## See also
 
-[`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md),
-[`erddap_dataset()`](https://chross22.github.io/datamatch/reference/erddap_dataset.md)
+[`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md),
+[`erddap_dataset()`](https://camilleross.org/datamatch/reference/erddap_dataset.md)
 for any other ERDDAP dataset
 
 ## Examples

@@ -1,7 +1,7 @@
 # Resolve temporal method names, per variable
 
 Mirrors
-[`resolve_methods()`](https://chross22.github.io/datamatch/reference/resolve_methods.md)
+[`resolve_methods()`](https://camilleross.org/datamatch/reference/resolve_methods.md)
 for the time axis. Factor levels for categorical columns are attached to
 the result, since the aggregation needs them and recomputing them per
 variable would risk two different level orders.

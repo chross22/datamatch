@@ -2,7 +2,7 @@
 
 Used to say what a request is about to transfer before it starts, in the
 way
-[`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+[`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md)
 does, because nothing in the call hints at the cost and the difference
 between the two resolutions is a factor of three.
 

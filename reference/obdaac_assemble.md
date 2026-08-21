@@ -1,7 +1,7 @@
 # Turn cached OB.DAAC subsets into the object a fetch returns
 
 Separate from
-[`accessOBDAAC()`](https://chross22.github.io/datamatch/reference/accessOBDAAC.md)
+[`accessOBDAAC()`](https://camilleross.org/datamatch/reference/accessOBDAAC.md)
 because a call that finds everything already cached returns here without
 touching the network, credentials or the file search - and that path has
 to build exactly the same object as the one that downloaded it.

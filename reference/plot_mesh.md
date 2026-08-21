@@ -1,6 +1,6 @@
 # Map covariates on an unstructured mesh, or anywhere else
 
-[`plot_env()`](https://chross22.github.io/datamatch/reference/plot_env.md)
+[`plot_env()`](https://camilleross.org/datamatch/reference/plot_env.md)
 rasterises, which is right for a regular grid and wrong for an FVCOM
 mesh: a triangulation has no rows and columns to rasterise onto, so the
 result is either blocky or interpolated over cells the model does not
@@ -26,7 +26,7 @@ plot_mesh(
 - x:
 
   an `sf` object with polygon or point geometry — typically from
-  [`fvcom_mesh()`](https://chross22.github.io/datamatch/reference/fvcom_mesh.md),
+  [`fvcom_mesh()`](https://camilleross.org/datamatch/reference/fvcom_mesh.md),
   but any `sf` object works
 
 - var:
@@ -36,7 +36,7 @@ plot_mesh(
 - values:
 
   optional `sf` object holding the values, from
-  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md)
+  [`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md)
   or any access function. Joined to `x` spatially.
 
 - time:
@@ -71,16 +71,16 @@ the `sf` object that was drawn, invisibly, with the joined column if
 ## What it is for
 
 Two jobs. With a mesh from
-[`fvcom_mesh()`](https://chross22.github.io/datamatch/reference/fvcom_mesh.md)
+[`fvcom_mesh()`](https://camilleross.org/datamatch/reference/fvcom_mesh.md)
 and nothing else, it draws the grid itself — which is how you see where
 a model resolves a shelf finely and where it does not. With `var` naming
 a column, it shades each cell by that value.
 
 ## Shading a mesh with fetched values
 
-[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md)
+[`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md)
 returns points and
-[`fvcom_mesh()`](https://chross22.github.io/datamatch/reference/fvcom_mesh.md)
+[`fvcom_mesh()`](https://camilleross.org/datamatch/reference/fvcom_mesh.md)
 returns triangles, so the two are joined spatially rather than by
 position — a fetch is subset to the bounding box, so its row order says
 nothing about the mesh's own numbering. Pass `values` and that join is
@@ -98,9 +98,9 @@ containment: a corner is on the boundary, and nothing contains it.
 
 ## See also
 
-[`fvcom_mesh()`](https://chross22.github.io/datamatch/reference/fvcom_mesh.md)
+[`fvcom_mesh()`](https://camilleross.org/datamatch/reference/fvcom_mesh.md)
 for the grid,
-[`plot_env()`](https://chross22.github.io/datamatch/reference/plot_env.md)
+[`plot_env()`](https://camilleross.org/datamatch/reference/plot_env.md)
 for regular grids
 
 ## Examples

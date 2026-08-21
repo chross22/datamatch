@@ -1,7 +1,7 @@
 # Describe any ERDDAP griddap dataset, so it can be read like a built-in one
 
 ERDDAP servers host thousands of gridded datasets, and
-[`erddap_datasets()`](https://chross22.github.io/datamatch/reference/erddap_datasets.md)
+[`erddap_datasets()`](https://camilleross.org/datamatch/reference/erddap_datasets.md)
 ships three. This is how to reach any of the rest: give it a server and
 a dataset id, and it reads the dataset's own metadata to work out the
 axes, the variables and the period covered.
@@ -45,9 +45,9 @@ erddap_dataset(
 ## Value
 
 a list in the shape
-[`erddap_datasets()`](https://chross22.github.io/datamatch/reference/erddap_datasets.md)
+[`erddap_datasets()`](https://camilleross.org/datamatch/reference/erddap_datasets.md)
 entries take, ready to pass to
-[`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+[`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md)
 as `dataset`
 
 ## What it checks
@@ -60,8 +60,8 @@ rather than assumed, because that changes the shape of every request.
 
 ## See also
 
-[`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md),
-[`erddap_datasets()`](https://chross22.github.io/datamatch/reference/erddap_datasets.md)
+[`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md),
+[`erddap_datasets()`](https://camilleross.org/datamatch/reference/erddap_datasets.md)
 
 ## Examples
 

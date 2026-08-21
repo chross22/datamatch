@@ -16,7 +16,7 @@ read_day(item, vars)
 - item:
 
   one work item, as built by
-  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+  [`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 
 - vars:
 

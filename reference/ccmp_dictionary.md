@@ -14,7 +14,7 @@ a data frame of class `datamatch_dictionary`
 
 ## See also
 
-[`ccmp_variables()`](https://chross22.github.io/datamatch/reference/ccmp_variables.md)
+[`ccmp_variables()`](https://camilleross.org/datamatch/reference/ccmp_variables.md)
 
 ## Examples
 

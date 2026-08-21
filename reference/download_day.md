@@ -1,10 +1,10 @@
 # Download one day's subset, returning any failure rather than raising it
 
 Defined at the top level rather than as a closure inside
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 so that its enclosing environment is this package's namespace. A closure
 would carry
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)'s
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)'s
 whole evaluation frame — including the cluster object itself — to every
 worker when it is serialised.
 

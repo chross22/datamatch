@@ -18,7 +18,7 @@ attach_bathymetry(dat, bathy, vars = NULL, coords = c("lon", "lat"))
 - bathy:
 
   a `SpatRaster` from
-  [`fetch_bathymetry()`](https://chross22.github.io/datamatch/reference/fetch_bathymetry.md)
+  [`fetch_bathymetry()`](https://camilleross.org/datamatch/reference/fetch_bathymetry.md)
 
 - vars:
 
@@ -36,7 +36,7 @@ attach_bathymetry(dat, bathy, vars = NULL, coords = c("lon", "lat"))
 
 Accepts either a plain data frame with coordinate columns or an `sf`
 POINT object, so it works on observations and on
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 output alike.
 
 ## Examples

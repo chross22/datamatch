@@ -19,7 +19,7 @@ hycom_archive_per_day(days, archives)
 
 - archives:
 
-  [`hycom_archives()`](https://chross22.github.io/datamatch/reference/hycom_archives.md)
+  [`hycom_archives()`](https://camilleross.org/datamatch/reference/hycom_archives.md)
 
 ## Value
 

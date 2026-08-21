@@ -15,11 +15,11 @@ Four functions, one pair per axis, plus one for gaps. Each takes a
 
 | Function | What it does |
 |----|----|
-| [`upscale_grid()`](https://chross22.github.io/datamatch/reference/upscale_grid.md) | Aggregates onto a coarser grid — `mean`, `median`, `min`, `max`, `sum`, `mode` |
-| [`downscale_grid()`](https://chross22.github.io/datamatch/reference/downscale_grid.md) | Interpolates onto a finer grid — `nearest`, `bilinear`, `cubic`, `idw` |
-| [`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md) | Aggregates onto a coarser time step — hourly to daily, daily to monthly, monthly to annual |
-| [`downscale_time()`](https://chross22.github.io/datamatch/reference/downscale_time.md) | Interpolates onto a finer time step — `step`, `linear`, `spline` |
-| [`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md) | Substitutes another covariate wherever the first is missing |
+| [`upscale_grid()`](https://camilleross.org/datamatch/reference/upscale_grid.md) | Aggregates onto a coarser grid — `mean`, `median`, `min`, `max`, `sum`, `mode` |
+| [`downscale_grid()`](https://camilleross.org/datamatch/reference/downscale_grid.md) | Interpolates onto a finer grid — `nearest`, `bilinear`, `cubic`, `idw` |
+| [`upscale_time()`](https://camilleross.org/datamatch/reference/upscale_time.md) | Aggregates onto a coarser time step — hourly to daily, daily to monthly, monthly to annual |
+| [`downscale_time()`](https://camilleross.org/datamatch/reference/downscale_time.md) | Interpolates onto a finer time step — `step`, `linear`, `spline` |
+| [`fill_satellite_gaps()`](https://camilleross.org/datamatch/reference/fill_satellite_gaps.md) | Substitutes another covariate wherever the first is missing |
 
 ``` r
 
@@ -107,11 +107,11 @@ There is a further trap specific to the time axis:
 `idw` is the exception worth reaching for. Alone among the spatial
 methods, it fills across holes rather than propagating them. That makes
 it useful on gappy satellite data, where
-[`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md)
+[`fill_satellite_gaps()`](https://camilleross.org/datamatch/reference/fill_satellite_gaps.md)
 is not an option.
 
 Resampled output keeps the `YEAR`/`MONTH`/`DAY` stamping convention, so
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
 reads its resolution back correctly and can be used on the result
 directly.
 
@@ -152,7 +152,7 @@ plot_env(env)                                # first variable, first time step
 plot_env(env, "CHL", time = c(MONTH = 6))    # June chlorophyll
 ```
 
-[`plot_env()`](https://chross22.github.io/datamatch/reference/plot_env.md)
+[`plot_env()`](https://camilleross.org/datamatch/reference/plot_env.md)
 maps one variable for one time step. It is the first thing worth doing
 after a download. It is also the fastest way to catch a bounding box
 that landed somewhere unintended, a variable that is entirely `NA`, or a
@@ -167,7 +167,7 @@ about which month it shows.
 plot_coverage(env)
 ```
 
-[`plot_coverage()`](https://chross22.github.io/datamatch/reference/plot_coverage.md)
+[`plot_coverage()`](https://camilleross.org/datamatch/reference/plot_coverage.md)
 is the one to run before trusting a satellite series. It plots the
 fraction of cells carrying a value in each time step. On ocean colour
 the shape is stark: near-complete in summer, a quarter of the grid in
@@ -175,7 +175,7 @@ winter.
 
 That picture decides three things. Whether a monthly mean is worth
 having. Whether
-[`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md)
+[`fill_satellite_gaps()`](https://camilleross.org/datamatch/reference/fill_satellite_gaps.md)
 is worth the seam it introduces. And where to set `min_coverage` when
 aggregating.
 
@@ -185,7 +185,7 @@ plot_series(env)                     # one panel per variable
 plot_series(env, "SST", fun = max)   # the warmest cell each month
 ```
 
-[`plot_series()`](https://chross22.github.io/datamatch/reference/plot_series.md)
+[`plot_series()`](https://camilleross.org/datamatch/reference/plot_series.md)
 reduces each time step to one number over the study area. That is how a
 seasonal cycle, a trend, or a step change at a product boundary becomes
 visible.
@@ -201,7 +201,7 @@ matched <- matchData(observations, env)
 plot_matched(matched[matched$MONTH == 7, ], "SST")
 ```
 
-[`plot_matched()`](https://chross22.github.io/datamatch/reference/plot_matched.md)
+[`plot_matched()`](https://camilleross.org/datamatch/reference/plot_matched.md)
 shows what the join actually produced. Observations that matched nothing
 are drawn as open circles rather than dropped. A cluster of them is
 usually the real finding: observations outside the environmental data’s
@@ -252,7 +252,7 @@ Two things it deliberately does not do. It does not re-download what you
 already have: files in the cache are read straight from disk, and a
 fully cached call starts no workers at all. And it does not parallelise
 across calls — each
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 call is one dataset, so fetching SST and CHL is two calls, run one after
 the other with each parallel inside itself.
 

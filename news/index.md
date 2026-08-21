@@ -5,14 +5,14 @@
 ### New features
 
 - **Two new sources:
-  [`accessCEFI()`](https://chross22.github.io/datamatch/reference/accessCEFI.md)
+  [`accessCEFI()`](https://camilleross.org/datamatch/reference/accessCEFI.md)
   and
-  [`accessOBDAAC()`](https://chross22.github.io/datamatch/reference/accessOBDAAC.md).**
+  [`accessOBDAAC()`](https://camilleross.org/datamatch/reference/accessOBDAAC.md).**
   Seven sources now sit behind one interface, and each of the two is
   here for something the other five do not do.
 
   **NOAA CEFI**
-  ([`accessCEFI()`](https://chross22.github.io/datamatch/reference/accessCEFI.md))
+  ([`accessCEFI()`](https://camilleross.org/datamatch/reference/accessCEFI.md))
   reads the Changing Ecosystems and Fisheries Initiative regional
   model - MOM6-COBALT run for the Northwest Atlantic at a twelfth of a
   degree, 1993-2023, over OPeNDAP from the NOAA Physical Sciences
@@ -27,24 +27,24 @@
   It also publishes sea-floor salinity outright, so `BOTS` from CEFI
   needs none of the deepest-wet-level derivation GLORYS forces, and
   returns no `BOTS_depth`.
-  [`cefi_archive()`](https://chross22.github.io/datamatch/reference/cefi_archive.md)
+  [`cefi_archive()`](https://camilleross.org/datamatch/reference/cefi_archive.md)
   reaches the domains that do not ship - Northeast Pacific, Arctic,
   Pacific Islands, Great Lakes - the way
-  [`fvcom_archive()`](https://chross22.github.io/datamatch/reference/fvcom_archive.md)
+  [`fvcom_archive()`](https://camilleross.org/datamatch/reference/fvcom_archive.md)
   does for FVCOM.
 
   **NASA OB.DAAC**
-  ([`accessOBDAAC()`](https://chross22.github.io/datamatch/reference/accessOBDAAC.md))
+  ([`accessOBDAAC()`](https://camilleross.org/datamatch/reference/accessOBDAAC.md))
   reads Level-3 mapped ocean colour from NASA’s Ocean Biology DAAC. What
   it adds over
-  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+  [`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md)
   is length: SeaWiFS from September 1997, then both MODIS instruments
   and all three VIIRS, where the ERDDAP chlorophyll entries begin
   in 2012. Beyond `CHL` it carries `KD490`, `PAR`, `POC`, `PIC`, `SST`,
   `SST_NIGHT` and `NFLH`.
 
   It is the one source in this package needing an account.
-  [`obdaac_credentials()`](https://chross22.github.io/datamatch/reference/obdaac_credentials.md)
+  [`obdaac_credentials()`](https://camilleross.org/datamatch/reference/obdaac_credentials.md)
   documents both routes - an OB.DAAC appkey, or a `~/.netrc` entry for
   `urs.earthdata.nasa.gov` - and where each is looked for.
 
@@ -53,7 +53,7 @@
   401, so a download that trusts the status code writes nine kilobytes
   of HTML into a file named `.nc` and the mistake surfaces much later as
   a corrupt netCDF.
-  [`accessOBDAAC()`](https://chross22.github.io/datamatch/reference/accessOBDAAC.md)
+  [`accessOBDAAC()`](https://camilleross.org/datamatch/reference/accessOBDAAC.md)
   checks the first bytes for the netCDF signature instead, names the
   credential as the cause, and leaves nothing on disk.
 
@@ -63,7 +63,7 @@
   defensible default: a decadal file is ten years from one January and
   there are sixty of them, and each holds ten ensemble members whose
   average is a modelling decision this package will not make silently.
-  [`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
+  [`source_of()`](https://camilleross.org/datamatch/reference/source_of.md)
   records both, as `cefi:NWA12-decadal_forecast-r20250925-i198001-m01`.
 
 - **A CEFI source tag names the release, not the alias.**
@@ -74,9 +74,9 @@
   `cefi:NWA12-hindcast-r20250715`.
 
 - **Both new sources are described in the EML
-  [`write_eml()`](https://chross22.github.io/datamatch/reference/write_eml.md)
+  [`write_eml()`](https://camilleross.org/datamatch/reference/write_eml.md)
   writes.**
-  [`known_variables()`](https://chross22.github.io/datamatch/reference/known_variables.md)
+  [`known_variables()`](https://camilleross.org/datamatch/reference/known_variables.md)
   gathers labels and units from every source catalog, and a catalog
   missing from it is silent: the source still fetches, still joins, and
   then produces a document in which its columns have no definition and
@@ -93,7 +93,7 @@
 
 - **Both new sources are cited in the EML methods section, and the data
   is cited as well as the paper.**
-  [`source_reference()`](https://chross22.github.io/datamatch/reference/source_reference.md)
+  [`source_reference()`](https://camilleross.org/datamatch/reference/source_reference.md)
   switches on the source family, and a family with no branch returns
   `NA` - at which point the methods section names the source and cites
   nothing, which is the failure that section exists to prevent, arriving
@@ -112,16 +112,16 @@
 
 ### Bug fixes
 
-- **[`ccmp_dictionary()`](https://chross22.github.io/datamatch/reference/ccmp_dictionary.md)
+- **[`ccmp_dictionary()`](https://camilleross.org/datamatch/reference/ccmp_dictionary.md)
   and
-  [`erddap_dictionary()`](https://chross22.github.io/datamatch/reference/erddap_dictionary.md)
+  [`erddap_dictionary()`](https://camilleross.org/datamatch/reference/erddap_dictionary.md)
   no longer print as FVCOM.**
-  [`print.datamatch_dictionary()`](https://chross22.github.io/datamatch/reference/variable_dictionary.md)
+  [`print.datamatch_dictionary()`](https://camilleross.org/datamatch/reference/variable_dictionary.md)
   told the dictionaries apart by the absence of the Copernicus `product`
   column, which is true of four of them, so every non-Copernicus
   dictionary printed FVCOM’s header and FVCOM’s footer - telling a CCMP
   user about sigma layers and pointing them at
-  [`?accessFVCOM`](https://chross22.github.io/datamatch/reference/accessFVCOM.md).
+  [`?accessFVCOM`](https://camilleross.org/datamatch/reference/accessFVCOM.md).
   Each dictionary now carries a tag saying which source it describes,
   and prints its own header, its own explanation of the last column, and
   its own `Full descriptions:` line.
@@ -141,17 +141,17 @@
 - **CEFI’s long-term projection and multi-decadal outlook have
   directories and no files.** The portal announces an experiment before
   its output is posted.
-  [`cefi_archive()`](https://chross22.github.io/datamatch/reference/cefi_archive.md)
+  [`cefi_archive()`](https://camilleross.org/datamatch/reference/cefi_archive.md)
   will read them when they appear.
 
 - **OB.DAAC eight-day composites are refused.** They are the obvious
   answer to cloud gaps, but
-  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+  [`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
   joins on an hour, a day, a month or a year, and an eight-day bin is
   none of those: stamped as a day it would demand an observation fall on
   the bin’s first date, and nearly every row would go unmatched. Use
   `frequency = "monthly"`, or
-  [`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md)
+  [`fill_satellite_gaps()`](https://camilleross.org/datamatch/reference/fill_satellite_gaps.md)
   on the daily field.
 
 - **PACE is not among the OB.DAAC sensors.** Its standard Level-3 mapped
@@ -170,21 +170,21 @@
 
 ### Breaking changes
 
-- **[`covariate_columns()`](https://chross22.github.io/datamatch/reference/covariate_columns.md)
+- **[`covariate_columns()`](https://camilleross.org/datamatch/reference/covariate_columns.md)
   now reports `<var>_source` columns.** They are provenance, but they
   travel with the variable they describe rather than being left behind
   by it, and both resamplers were already written on that assumption:
-  [`upscale_grid()`](https://chross22.github.io/datamatch/reference/upscale_grid.md)
+  [`upscale_grid()`](https://camilleross.org/datamatch/reference/upscale_grid.md)
   and
-  [`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md)
+  [`upscale_time()`](https://camilleross.org/datamatch/reference/upscale_time.md)
   carry a non-numeric column as a categorical - the commonest value when
   aggregating, the nearest or a step when interpolating - and
-  [`resolve_methods()`](https://chross22.github.io/datamatch/reference/resolve_methods.md)
+  [`resolve_methods()`](https://camilleross.org/datamatch/reference/resolve_methods.md)
   says in as many words that “a source column riding along should not
   force the caller to enumerate every column”.
 
   Because
-  [`covariate_columns()`](https://chross22.github.io/datamatch/reference/covariate_columns.md)
+  [`covariate_columns()`](https://camilleross.org/datamatch/reference/covariate_columns.md)
   is the default `vars` for both, a source column never actually rode
   along. Regridding or retiming a gap-filled object dropped the record
   of which source each value came from, at the point it matters most.
@@ -193,10 +193,10 @@
   the depth any value came from, as is the internal per-row source tag.
 
   Callers relying on
-  [`covariate_columns()`](https://chross22.github.io/datamatch/reference/covariate_columns.md)
+  [`covariate_columns()`](https://camilleross.org/datamatch/reference/covariate_columns.md)
   to return only measurements should filter on
   [`is.numeric()`](https://rdrr.io/r/base/numeric.html), as
-  [`plot_series()`](https://chross22.github.io/datamatch/reference/plot_series.md)
+  [`plot_series()`](https://camilleross.org/datamatch/reference/plot_series.md)
   does.
 
 ### New features
@@ -233,22 +233,22 @@
   **Provenance is recorded per row** for such a fetch, rather than once
   for the object, so a value from the operational model never claims to
   be the reanalysis.
-  [`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
+  [`source_of()`](https://camilleross.org/datamatch/reference/source_of.md)
   reports every run present, and
-  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+  [`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
   carries the per-row tag into `<var>_source`. A continuous read that
   never leaves one archive is stamped once, as before.
 
 ### Breaking changes
 
-- **[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+- **[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
   takes its arguments in the same order as the other four access
   functions.** It led with `product_id` and `dataset_id`, where
-  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
-  [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
-  [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+  [`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md),
+  [`accessHYCOM()`](https://camilleross.org/datamatch/reference/accessHYCOM.md),
+  [`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md)
   and
-  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+  [`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md)
   all lead with `vars`. All five now open
   `vars, years, months, bounding_box, dates`, put `frequency` sixth
   where the source has more than one step, and end with `overwrite`; the
@@ -274,7 +274,7 @@
   to 1,618 lines, much of it duplicating the four vignettes. The
   per-source deep dives, the full reference list and the error-message
   guide now live in
-  [`vignette("sources")`](https://chross22.github.io/datamatch/articles/sources.md),
+  [`vignette("sources")`](https://camilleross.org/datamatch/articles/sources.md),
   and the README keeps orientation, installation, a quick start, and a
   short section per source — 535 lines.
 
@@ -286,19 +286,19 @@
 ### New features
 
 - **The FVCOM mesh itself, through
-  [`fvcom_mesh()`](https://chross22.github.io/datamatch/reference/fvcom_mesh.md).**
-  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md)
+  [`fvcom_mesh()`](https://camilleross.org/datamatch/reference/fvcom_mesh.md).**
+  [`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md)
   returns values at points — nodes for scalars, element centroids for
   velocities — which is what matching needs but is not the grid. Drawing
   it shows dots where the model has triangles.
 
-  [`fvcom_mesh()`](https://chross22.github.io/datamatch/reference/fvcom_mesh.md)
+  [`fvcom_mesh()`](https://camilleross.org/datamatch/reference/fvcom_mesh.md)
   reads the connectivity array a point fetch never touches and returns
   the triangles as `POLYGON`s, with `DEPTH` per cell. It carries no time
   dimension: it is the grid. `what = "nodes"` and `"elements"` return
   the two point sets on their own.
 
-  **[`plot_mesh()`](https://chross22.github.io/datamatch/reference/plot_mesh.md)**
+  **[`plot_mesh()`](https://camilleross.org/datamatch/reference/plot_mesh.md)**
   draws it — bare, or shaded by a covariate. Pass a fetch as `values`
   and the spatial join is done for you, which matters more than it
   sounds: a fetch is subset to the bounding box, so its row order says
@@ -316,7 +316,7 @@
   says which month’s mesh.
 
 - **EML metadata, through
-  [`write_eml()`](https://chross22.github.io/datamatch/reference/write_eml.md).**
+  [`write_eml()`](https://camilleross.org/datamatch/reference/write_eml.md).**
   Writes an Ecological Metadata Language document for a matched table —
   the standard EDI, LTER and DataONE expect alongside a deposited
   dataset.
@@ -329,7 +329,7 @@
   columns are not left as bare names.
 
   The methods section is the part worth having. Because
-  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+  [`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
   records `<var>_source` on every join, a table with several sources
   chained onto it produces a methods statement naming each and a
   citation for each — assembled from the source catalogs rather than by
@@ -344,14 +344,14 @@
   documents against the schema, not by reading a list:
   `milligramsPerCubicMeter` is accepted and `milligramPerCubicMeter` is
   not.
-  [`write_eml()`](https://chross22.github.io/datamatch/reference/write_eml.md)
+  [`write_eml()`](https://camilleross.org/datamatch/reference/write_eml.md)
   validates before returning, so an invalid document is an error rather
   than a rejection later.
 
   Needs `emld`, a new `Suggests`.
 
 - **MUR and VIIRS, through
-  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md).**
+  [`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md).**
   Satellite SST and chlorophyll from NOAA’s ERDDAP servers: `MUR`
   (0.01°, daily, 2002-06 onward) for SST, and `VIIRSCHL` /
   `VIIRSCHL2018` for chlorophyll. MUR is by a wide margin the finest
@@ -376,13 +376,13 @@
   As with FVCOM, the backend is general rather than a fixed list:
   `erddap_dataset(server, dataset_id)` describes any of the thousands of
   other griddap datasets for
-  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md).
+  [`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md).
 
 - **HYCOM now reaches 2024, and FVCOM 2025.** Both had stopped short —
   HYCOM at 2015 and FVCOM at 2013 — because each shipped a single
   archive. Neither was a limit of the data.
 
-  [`hycom_archives()`](https://chross22.github.io/datamatch/reference/hycom_archives.md)
+  [`hycom_archives()`](https://camilleross.org/datamatch/reference/hycom_archives.md)
   now carries the 1994–2015 reanalysis plus the seven operational
   experiments that follow it, to September 2024, and
   `hycom_covering(date)` says which span a given day. They overlap, so
@@ -399,7 +399,7 @@
   the convention is read off the coordinates rather than recorded, so a
   box given negative west works against either.
 
-  [`fvcom_archives()`](https://chross22.github.io/datamatch/reference/fvcom_archives.md)
+  [`fvcom_archives()`](https://camilleross.org/datamatch/reference/fvcom_archives.md)
   gains `GOM7`, the archived operational forecast: hourly on a
   207,081-node mesh from 2025. It is deliberately **not** presented as a
   continuation of the `GOM3` hindcast — the mesh, the step and whether
@@ -407,15 +407,15 @@
   wind stress. Between 2014 and 2024 NECOFS publishes neither, which is
   a gap in the source.
 
-  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md)
+  [`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md)
   gains `frequency` and `hour` for sub-daily archives, defaulting to one
   snapshot a day because a month of hourly `GOM7` is 720 reads of a
   207,081-node field. A snapshot is an instant, not a daily mean;
-  [`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md)
+  [`upscale_time()`](https://camilleross.org/datamatch/reference/upscale_time.md)
   makes a real one.
 
 - **CCMP winds, through
-  [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md).**
+  [`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md).**
   The Cross-Calibrated Multi-Platform ocean surface wind analysis from
   Remote Sensing Systems: `WSPD`, `UWND`, `VWND` and `NOBS`, six-hourly
   from January 1993 to within days of the present. No account is needed
@@ -441,7 +441,7 @@
   west too — so a CCMP result overlays the others without adjustment.
 
 - **HYCOM, through
-  [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md).**
+  [`accessHYCOM()`](https://camilleross.org/datamatch/reference/accessHYCOM.md).**
   Reads the HYCOM + NCODA GOFS 3.1 reanalysis (`GLBv0.08` `expt_53.X`,
   1994–2015) from the Naval Research Laboratory’s THREDDS server, in the
   same `sf` shape as everything else.
@@ -456,16 +456,16 @@
   all, so none is invented: `frequency = "daily"` takes one **snapshot**
   per day at `hour`, and `frequency = "3hourly"` returns every step with
   an `HOUR` column. A real mean is
-  [`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md)’s
+  [`upscale_time()`](https://camilleross.org/datamatch/reference/upscale_time.md)’s
   job. The archive also has gaps — some steps are simply absent — so a
   daily request at a missing hour skips that day and says so.
 
 - **Any FVCOM endpoint, through
-  [`fvcom_archive()`](https://chross22.github.io/datamatch/reference/fvcom_archive.md).**
+  [`fvcom_archive()`](https://camilleross.org/datamatch/reference/fvcom_archive.md).**
   FVCOM is a model rather than a data product, so there is no global
   archive of it: groups run it for their own coastlines and publish on
   their own servers, and
-  [`fvcom_archives()`](https://chross22.github.io/datamatch/reference/fvcom_archives.md)
+  [`fvcom_archives()`](https://camilleross.org/datamatch/reference/fvcom_archives.md)
   ships only what one server publishes for the Northeast US.
 
   `fvcom_archive(url)` describes any other FVCOM endpoint — opening it
@@ -476,17 +476,17 @@
   with the reason instead of part-way through a fetch.
 
 - **FVCOM, through
-  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md).**
+  [`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md).**
   Reads NECOFS — the Northeast Coastal Ocean Forecast System — from the
   UMass Dartmouth THREDDS server over OPeNDAP, and returns the same `sf`
   shape
-  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+  [`accessEnvDat()`](https://camilleross.org/datamatch/reference/accessEnvDat.md)
   does, so
-  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+  [`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
   and everything downstream work unchanged.
-  [`fvcom_variables()`](https://chross22.github.io/datamatch/reference/fvcom_variables.md)
+  [`fvcom_variables()`](https://camilleross.org/datamatch/reference/fvcom_variables.md)
   and
-  [`fvcom_archives()`](https://chross22.github.io/datamatch/reference/fvcom_archives.md)
+  [`fvcom_archives()`](https://camilleross.org/datamatch/reference/fvcom_archives.md)
   say what can be read; currently the 30-year GOM3 hindcast, 1978–2013,
   monthly means.
 
@@ -524,7 +524,7 @@
   `TAUX`/`TAUY` (stress components) and `TAU` (stress magnitude). Wind
   is its own product on its own 0.25° grid, running from June 1994, so
   it is a separate
-  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+  [`accessEnvDat()`](https://camilleross.org/datamatch/reference/accessEnvDat.md)
   call from `SST` as usual.
 
   Stress rather than speed is what sets mixing and Ekman pumping, and
@@ -540,7 +540,7 @@
   summary, mean or maximum, with the caller.
 
   Hourly results carry an `HOUR` column, and
-  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+  [`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
   joins on it, so observations matched against hourly data need an hour
   of their own, on UTC. A day is one download at either step, so hourly
   costs no extra requests — it costs 24 times the rows.
@@ -565,7 +565,7 @@
   own; mixing it with a surface variable is an error rather than a quiet
   second download. It is also much more expensive than a surface
   variable, downloading roughly fifty levels to keep one, and
-  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+  [`accessEnvDat()`](https://camilleross.org/datamatch/reference/accessEnvDat.md)
   says so when it starts.
 
   In forecast mode none of this applies. The analysis-and-forecast
@@ -608,23 +608,23 @@
 
 ### Breaking changes
 
-- **[`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+- **[`accessEnvDat()`](https://camilleross.org/datamatch/reference/accessEnvDat.md)
   is now
-  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md).**
+  [`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md).**
   The old name dates from when Copernicus was the only source. With
   five, “access environmental data” reads as though it fetches from all
   of them, sitting beside
-  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
-  [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
-  [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+  [`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md),
+  [`accessHYCOM()`](https://camilleross.org/datamatch/reference/accessHYCOM.md),
+  [`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md)
   and
-  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md),
+  [`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md),
   which each say what they read.
 
-  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+  [`accessEnvDat()`](https://camilleross.org/datamatch/reference/accessEnvDat.md)
   still works and warns, on the same reasoning as the
   `speciesDat`/`envDat` arguments in
-  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md):
+  [`matchData()`](https://camilleross.org/datamatch/reference/matchData.md):
   taupatch and any script written against the old name keep working, and
   their authors find out that the name moved rather than discovering it
   when the alias is eventually removed. Nothing else changes — the
@@ -633,22 +633,22 @@
 
 ### Bug fixes
 
-- **[`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md)
+- **[`upscale_time()`](https://camilleross.org/datamatch/reference/upscale_time.md)
   and
-  [`downscale_time()`](https://chross22.github.io/datamatch/reference/downscale_time.md)
+  [`downscale_time()`](https://camilleross.org/datamatch/reference/downscale_time.md)
   did not record the step they produced.** The result’s resolution was
   left to be inferred from its own time stamps, which fails when there
   are too few periods to tell: one day of hourly data aggregated to
   daily is a single day in a single month, indistinguishable by
   inspection from monthly data.
-  [`detect_temporal_resolution()`](https://chross22.github.io/datamatch/reference/detect_temporal_resolution.md)
+  [`detect_temporal_resolution()`](https://camilleross.org/datamatch/reference/detect_temporal_resolution.md)
   fell back to monthly, and
-  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+  [`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
   would then join by month and quietly ignore the day. Both now record
   the target step, which they know exactly.
 
 - **A `yearday` column could be matched on as though it were the year.**
-  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+  [`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
   finds a table’s time columns by prefix, and `yearday` begins with
   `year`. With no plain `year` column beside it to win the tiebreak, it
   was renamed to `YEAR` without complaint, and every row went into a
@@ -669,7 +669,7 @@
   rule to a contains match would have swept up `jday` and `yearday`
   alongside `obs_month`, trading a clear error for a wrong answer.
 
-  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)’s
+  [`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)’s
   own documentation had claimed `obs_month` would be recognised, which
   was never true. It now describes the prefix rule the code implements.
 
@@ -681,7 +681,7 @@
   downloads.** This can affect results already in hand, so it is worth
   checking rather than just reading.
 
-  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+  [`accessEnvDat()`](https://camilleross.org/datamatch/reference/accessEnvDat.md)
   named result columns positionally from `vars`. Copernicus returns
   layers in the NetCDF’s own order, which is alphabetical by variable
   code, so the two agreed only by coincidence. Requesting
@@ -704,7 +704,7 @@
   correct; only the naming was wrong.
 
   *The fix:*
-  [`order_layers()`](https://chross22.github.io/datamatch/reference/order_layers.md)
+  [`order_layers()`](https://camilleross.org/datamatch/reference/order_layers.md)
   strips the depth suffix that 3D variables carry
   (`thetao_depth=0.494025`) and selects layers by matching the variable
   code, so naming cannot drift from content.
@@ -724,7 +724,7 @@
 
 - **Daily datasets whose identifier ends in `P1D` fetched one day per
   month.**
-  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+  [`accessEnvDat()`](https://camilleross.org/datamatch/reference/accessEnvDat.md)
   decided whether a dataset was daily by reading a single character
   three from the end of `dataset_id`. That is `D` in `..._P1D-m`, which
   the model products use, but `P` in `..._P1D`, which the satellite
@@ -741,17 +741,17 @@
   is now restored before returning.
 
 - **Sparse daily data could be matched as though it were monthly.**
-  [`detect_temporal_resolution()`](https://chross22.github.io/datamatch/reference/detect_temporal_resolution.md)
+  [`detect_temporal_resolution()`](https://camilleross.org/datamatch/reference/detect_temporal_resolution.md)
   infers daily data from more than one day within a month, so a set of
   survey dates — one per month — was indistinguishable from monthly data
   by inspection, and
-  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+  [`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
   would join by month and ignore the day.
 
-  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+  [`accessEnvDat()`](https://camilleross.org/datamatch/reference/accessEnvDat.md)
   knows which dataset it fetched, so it now records the step on the
   result and
-  [`detect_temporal_resolution()`](https://chross22.github.io/datamatch/reference/detect_temporal_resolution.md)
+  [`detect_temporal_resolution()`](https://camilleross.org/datamatch/reference/detect_temporal_resolution.md)
   trusts that over the heuristics. Passing `temporal_resolution`
   explicitly still overrides both.
 
@@ -764,7 +764,7 @@
 
 ### Breaking changes
 
-- **[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)’s
+- **[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)’s
   arguments are now `dat` and `source`**, replacing `speciesDat` and
   `envDat`.
 
@@ -791,7 +791,7 @@
 
 - **The `BigelowLab/copernicus` dependency is gone.** It was used in two
   places, both in
-  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md),
+  [`accessEnvDat()`](https://camilleross.org/datamatch/reference/accessEnvDat.md),
   and both are now internal. This removes the `Remotes:` field and the
   hand-created `~/.copernicusdata` file that a new machine previously
   needed.
@@ -823,12 +823,12 @@
   daily is refused before anything is downloaded. Daily `CHL` comes from
   the gap-free interpolated ocean colour dataset, whose cloud gaps
   Copernicus has already filled — so
-  [`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md)
+  [`fill_satellite_gaps()`](https://camilleross.org/datamatch/reference/fill_satellite_gaps.md)
   has nothing to do on it, and
-  [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
+  [`accessEnvDat()`](https://camilleross.org/datamatch/reference/accessEnvDat.md)
   says so when it makes the substitution.
 
-  [`variable_dataset()`](https://chross22.github.io/datamatch/reference/variable_dataset.md)
+  [`variable_dataset()`](https://camilleross.org/datamatch/reference/variable_dataset.md)
   takes `frequency` too, and returns `NA` where no daily dataset exists.
 
   `dates` names the exact dates to fetch, which is the argument to use
@@ -867,22 +867,22 @@
   more than the read saves.
 
 - **Resampling.**
-  [`upscale_grid()`](https://chross22.github.io/datamatch/reference/upscale_grid.md),
-  [`downscale_grid()`](https://chross22.github.io/datamatch/reference/downscale_grid.md),
-  [`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md),
+  [`upscale_grid()`](https://camilleross.org/datamatch/reference/upscale_grid.md),
+  [`downscale_grid()`](https://camilleross.org/datamatch/reference/downscale_grid.md),
+  [`upscale_time()`](https://camilleross.org/datamatch/reference/upscale_time.md),
   and
-  [`downscale_time()`](https://chross22.github.io/datamatch/reference/downscale_time.md)
+  [`downscale_time()`](https://camilleross.org/datamatch/reference/downscale_time.md)
   move data between grids and time steps, each with a choice of method.
   Targets may be a resolution or another object’s grid. Aggregation
   guards partial coverage with `min_coverage`; interpolation defaults to
   the methods that do not invent structure.
 
 - **Plotting.**
-  [`plot_env()`](https://chross22.github.io/datamatch/reference/plot_env.md),
-  [`plot_coverage()`](https://chross22.github.io/datamatch/reference/plot_coverage.md),
-  [`plot_series()`](https://chross22.github.io/datamatch/reference/plot_series.md),
+  [`plot_env()`](https://camilleross.org/datamatch/reference/plot_env.md),
+  [`plot_coverage()`](https://camilleross.org/datamatch/reference/plot_coverage.md),
+  [`plot_series()`](https://camilleross.org/datamatch/reference/plot_series.md),
   and
-  [`plot_matched()`](https://chross22.github.io/datamatch/reference/plot_matched.md),
+  [`plot_matched()`](https://camilleross.org/datamatch/reference/plot_matched.md),
   in base graphics, each returning the data it drew.
 
 - **`TPI`** joins the bathymetry covariates. A cell’s depth relative to
@@ -891,10 +891,10 @@
 
 - **`LCR`**, the Labrador Current retroflection index, joins the climate
   index catalog. Published with Jutras et al. (2023) and cited in
-  [`index_dictionary()`](https://chross22.github.io/datamatch/reference/index_dictionary.md).
+  [`index_dictionary()`](https://camilleross.org/datamatch/reference/index_dictionary.md).
 
 - **Every climate index now declares its `units`**, surfaced in
-  [`index_dictionary()`](https://chross22.github.io/datamatch/reference/index_dictionary.md).
+  [`index_dictionary()`](https://camilleross.org/datamatch/reference/index_dictionary.md).
   Most are standardized anomalies, in standard deviations rather than
   anything physical; only `AMO` (degrees C) and `AMOC` (Sverdrups) carry
   real units. A coefficient fitted to one of those is not comparable
@@ -934,10 +934,10 @@
   should not become an outage here, and the warning is what stops the
   old copy being mistaken for a current one.
 
-  [`climate_index_status()`](https://chross22.github.io/datamatch/reference/climate_index_status.md)
+  [`climate_index_status()`](https://camilleross.org/datamatch/reference/climate_index_status.md)
   reports what is cached and what is due without downloading anything,
   so it is safe offline.
-  [`refresh_climate_index()`](https://chross22.github.io/datamatch/reference/refresh_climate_index.md)
+  [`refresh_climate_index()`](https://camilleross.org/datamatch/reference/refresh_climate_index.md)
   forces a re-fetch and skips the indices that cannot change.
 
   The text indices were previously re-downloaded on every call and are

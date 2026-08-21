@@ -15,7 +15,7 @@ cefi_file_for(files, variable, init = NULL)
 - files:
 
   filenames, as
-  [`cefi_catalog_files()`](https://chross22.github.io/datamatch/reference/cefi_catalog_files.md)
+  [`cefi_catalog_files()`](https://camilleross.org/datamatch/reference/cefi_catalog_files.md)
   returns
 
 - variable:

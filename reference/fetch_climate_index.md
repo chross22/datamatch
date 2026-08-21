@@ -20,7 +20,7 @@ fetch_climate_index(
 - index:
 
   an index name from
-  [`climate_indices()`](https://chross22.github.io/datamatch/reference/climate_indices.md)
+  [`climate_indices()`](https://camilleross.org/datamatch/reference/climate_indices.md)
 
 - years:
 
@@ -98,9 +98,9 @@ rather than on the cache. And if a download fails while a cached copy
 exists, the cached copy is returned with a warning rather than an error,
 so a provider's outage does not become yours.
 
-[`climate_index_status()`](https://chross22.github.io/datamatch/reference/climate_index_status.md)
+[`climate_index_status()`](https://camilleross.org/datamatch/reference/climate_index_status.md)
 reports what is cached and what is due;
-[`refresh_climate_index()`](https://chross22.github.io/datamatch/reference/refresh_climate_index.md)
+[`refresh_climate_index()`](https://camilleross.org/datamatch/reference/refresh_climate_index.md)
 forces the issue.
 
 ## Examples

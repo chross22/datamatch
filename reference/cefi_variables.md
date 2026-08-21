@@ -47,7 +47,7 @@ biogeochemistry only — `CHL`, `NO3`, `PH`, `PCO2`, `PHYC`, `MESOZOO` and
 `BOTO2` — and carries no temperature, salinity, sea surface height,
 mixed layer depth, ice or velocity at all. `daily` in each entry records
 that, and
-[`accessCEFI()`](https://chross22.github.io/datamatch/reference/accessCEFI.md)
+[`accessCEFI()`](https://camilleross.org/datamatch/reference/accessCEFI.md)
 refuses a daily request for a monthly-only variable rather than
 returning an empty join.
 
@@ -63,8 +63,8 @@ for that reason.
 
 ## See also
 
-[`accessCEFI()`](https://chross22.github.io/datamatch/reference/accessCEFI.md),
-[`cefi_dictionary()`](https://chross22.github.io/datamatch/reference/cefi_dictionary.md)
+[`accessCEFI()`](https://camilleross.org/datamatch/reference/accessCEFI.md),
+[`cefi_dictionary()`](https://camilleross.org/datamatch/reference/cefi_dictionary.md)
 for a printable table
 
 ## Examples

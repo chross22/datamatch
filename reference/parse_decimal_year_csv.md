@@ -34,7 +34,7 @@ the derived dates off by up to several days over the record.
 
 **Daily values are averaged to monthly.** Every other index in this
 package is monthly, and
-[`attach_climate_index()`](https://chross22.github.io/datamatch/reference/attach_climate_index.md)
+[`attach_climate_index()`](https://camilleross.org/datamatch/reference/attach_climate_index.md)
 joins on year and month, so a daily series has nothing to join to. The
 underlying index is already smoothed with a 12-month rolling mean, so
 monthly averaging discards very little.

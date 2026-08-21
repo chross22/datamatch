@@ -43,7 +43,7 @@ fetch_bathymetry(
 a
 [`terra::SpatRaster`](https://rspatial.github.io/terra/reference/SpatRaster-class.html)
 with one layer per variable in
-[`bathymetry_variables()`](https://chross22.github.io/datamatch/reference/bathymetry_variables.md),
+[`bathymetry_variables()`](https://camilleross.org/datamatch/reference/bathymetry_variables.md),
 in EPSG:4326
 
 ## Citation
@@ -61,7 +61,7 @@ published:
   [doi:10.32614/CRAN.package.marmap](https://doi.org/10.32614/CRAN.package.marmap)
 
 The bounding box takes the same shape as
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)'s,
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)'s,
 so a single definition of the study area serves both.
 
 ## Caching

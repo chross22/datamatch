@@ -22,9 +22,9 @@ their own servers, and what is built in here is only what one server
 publishes for the Northeast US shelf.
 
 Any other FVCOM output can be read by describing it with
-[`fvcom_archive()`](https://chross22.github.io/datamatch/reference/fvcom_archive.md)
+[`fvcom_archive()`](https://camilleross.org/datamatch/reference/fvcom_archive.md)
 and passing that to
-[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
+[`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md),
 which is the intended route for every region this package does not ship.
 FVCOM output shares one structure wherever it is run — values on mesh
 nodes and element centroids, sigma layers, `lon`/`lat` and
@@ -43,7 +43,7 @@ about the cause.
 
 ## See also
 
-[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md)
+[`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md)
 
 ## Examples
 

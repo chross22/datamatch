@@ -16,7 +16,7 @@ expected_steps(keys, from, to, per_day = 24)
 - keys:
 
   output of
-  [`period_keys()`](https://chross22.github.io/datamatch/reference/period_keys.md)
+  [`period_keys()`](https://camilleross.org/datamatch/reference/period_keys.md)
 
 - from:
 
@@ -29,7 +29,7 @@ expected_steps(keys, from, to, per_day = 24)
 - per_day:
 
   how many sub-daily steps a whole day holds, from
-  [`sub_daily_steps()`](https://chross22.github.io/datamatch/reference/sub_daily_steps.md).
+  [`sub_daily_steps()`](https://camilleross.org/datamatch/reference/sub_daily_steps.md).
   24 for an hourly series, 8 for a three-hourly one.
 
 ## Value

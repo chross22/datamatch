@@ -13,12 +13,12 @@ covariate_columns(env_dat)
 - env_dat:
 
   an `sf` POINT object from any access function -
-  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
-  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
-  [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
-  [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+  [`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md),
+  [`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md),
+  [`accessHYCOM()`](https://camilleross.org/datamatch/reference/accessHYCOM.md),
+  [`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md)
   or
-  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+  [`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md)
 
 ## Value
 
@@ -28,9 +28,9 @@ character vector of covariate column names
 
 `<var>_source` columns are included. They are provenance, but they
 travel with the variable they describe:
-[`upscale_grid()`](https://chross22.github.io/datamatch/reference/upscale_grid.md)
+[`upscale_grid()`](https://camilleross.org/datamatch/reference/upscale_grid.md)
 and
-[`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md)
+[`upscale_time()`](https://camilleross.org/datamatch/reference/upscale_time.md)
 carry a non-numeric column as a categorical, so a resampled object keeps
 the record of which source each value came from. `<var>_depth` is
 excluded, because the mean of two depths is not the depth any value came

@@ -16,7 +16,7 @@ read_day_deepest(item, code, name)
 - item:
 
   one work item, as built by
-  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+  [`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 
 - code:
 

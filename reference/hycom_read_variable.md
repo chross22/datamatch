@@ -17,7 +17,7 @@ hycom_read_variable(handle, entry, step, lon_window, lat_window)
 - entry:
 
   one entry of
-  [`hycom_variables()`](https://chross22.github.io/datamatch/reference/hycom_variables.md)
+  [`hycom_variables()`](https://camilleross.org/datamatch/reference/hycom_variables.md)
 
 - step:
 
@@ -26,7 +26,7 @@ hycom_read_variable(handle, entry, step, lon_window, lat_window)
 - lon_window, lat_window:
 
   output of
-  [`hycom_window()`](https://chross22.github.io/datamatch/reference/hycom_window.md)
+  [`hycom_window()`](https://camilleross.org/datamatch/reference/hycom_window.md)
 
 ## Value
 

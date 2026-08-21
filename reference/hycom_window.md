@@ -4,7 +4,7 @@ HYCOM is a regular grid whose coordinates increase monotonically, so a
 box is a contiguous run of indices on each axis and can be asked for as
 a slice. That is the opposite of FVCOM, whose mesh numbering is not
 spatially coherent and has to be read whole — see
-[`fvcom_in_box()`](https://chross22.github.io/datamatch/reference/fvcom_in_box.md).
+[`fvcom_in_box()`](https://camilleross.org/datamatch/reference/fvcom_in_box.md).
 
 ## Usage
 

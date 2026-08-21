@@ -1,6 +1,6 @@
 # Time steps of one sub-daily FVCOM file, as UTC instants
 
-[`fvcom_times()`](https://chross22.github.io/datamatch/reference/fvcom_times.md)
+[`fvcom_times()`](https://camilleross.org/datamatch/reference/fvcom_times.md)
 returns dates, which is all a monthly aggregation needs. An hourly file
 needs the hour as well, so this keeps `Itime2` — the milliseconds within
 the day that the date-only reader discards.

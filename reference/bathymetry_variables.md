@@ -23,8 +23,8 @@ Sourced from NOAA ETOPO via
 
 ## See also
 
-[`fetch_bathymetry()`](https://chross22.github.io/datamatch/reference/fetch_bathymetry.md),
-[`variable_dictionary()`](https://chross22.github.io/datamatch/reference/variable_dictionary.md)
+[`fetch_bathymetry()`](https://camilleross.org/datamatch/reference/fetch_bathymetry.md),
+[`variable_dictionary()`](https://camilleross.org/datamatch/reference/variable_dictionary.md)
 
 ## Examples
 

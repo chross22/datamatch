@@ -1,9 +1,9 @@
 # Read an FVCOM mesh on its own, with no data on it
 
-[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md)
+[`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md)
 returns values at points — nodes for scalars, element centroids for
 velocities. That is what
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
 needs, but it is not the mesh: it is a scatter of the mesh's points, and
 drawing it shows dots where the grid is triangles. This returns the
 triangles themselves, so the grid can actually be plotted.
@@ -24,9 +24,9 @@ fvcom_mesh(
 - archive:
 
   which archive's mesh: a name from
-  [`fvcom_archives()`](https://chross22.github.io/datamatch/reference/fvcom_archives.md),
+  [`fvcom_archives()`](https://camilleross.org/datamatch/reference/fvcom_archives.md),
   or a spec from
-  [`fvcom_archive()`](https://chross22.github.io/datamatch/reference/fvcom_archive.md)
+  [`fvcom_archive()`](https://camilleross.org/datamatch/reference/fvcom_archive.md)
 
 - bounding_box:
 
@@ -89,9 +89,9 @@ start of the record.
 
 ## See also
 
-[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md)
+[`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md)
 for values on the mesh,
-[`fvcom_archives()`](https://chross22.github.io/datamatch/reference/fvcom_archives.md)
+[`fvcom_archives()`](https://camilleross.org/datamatch/reference/fvcom_archives.md)
 
 ## Examples
 

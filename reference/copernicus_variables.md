@@ -30,7 +30,7 @@ Entries come from the global reanalyses: physical variables from
 
 `dataset_id` is the monthly mean; `daily_dataset_id` is the daily one,
 which
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 uses when given `frequency = "daily"`, and `hourly_dataset_id` the
 hourly one. Either is `NA` where no such equivalent exists, and those
 gaps are not incidental:
@@ -49,7 +49,7 @@ gaps are not incidental:
   publishes this wind monthly or hourly and nothing between, so
   `frequency = "daily"` is refused for them. Aggregate the hourly field
   with
-  [`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md)
+  [`upscale_time()`](https://camilleross.org/datamatch/reference/upscale_time.md)
   if a daily mean is what you need.
 
 - **`WSPD`, `TAU`** — the hourly wind product carries the vector
@@ -69,13 +69,13 @@ the salinity field is fetched over the full depth range and the deepest
 wet level in each cell is kept. Its `derived` element records that. In
 forecast mode no derivation is needed — the analysis-and-forecast
 product publishes `sob` directly — so
-[`forecast_variables()`](https://chross22.github.io/datamatch/reference/forecast_variables.md)
+[`forecast_variables()`](https://camilleross.org/datamatch/reference/forecast_variables.md)
 overrides it with the real variable.
 
 The two are the same quantity by construction but not the same number:
 one is the deepest wet level of a 50-level grid, the other Copernicus's
 own sea-floor diagnostic.
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 says which it used.
 
 `CHL` is the case worth reading twice. Daily ocean colour is not the
@@ -83,9 +83,9 @@ monthly product at a finer step: it is `l4-gapfree`, the space-time
 interpolated field, because a single day of a single sensor is mostly
 cloud. The daily values are therefore already gap-filled by Copernicus,
 and running
-[`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md)
+[`fill_satellite_gaps()`](https://camilleross.org/datamatch/reference/fill_satellite_gaps.md)
 over them fills nothing.
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 says so when it makes the substitution.
 
 Copernicus revises dataset identifiers periodically. If a fetch fails
@@ -94,7 +94,7 @@ Copernicus Marine Data Store and pass `dataset_id` explicitly.
 
 ## See also
 
-[`variable_dictionary()`](https://chross22.github.io/datamatch/reference/variable_dictionary.md)
+[`variable_dictionary()`](https://camilleross.org/datamatch/reference/variable_dictionary.md)
 for a printable table
 
 ## Examples

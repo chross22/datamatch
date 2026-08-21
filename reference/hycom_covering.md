@@ -16,7 +16,7 @@ hycom_covering(dates)
 - dates:
 
   one or more `Date` values, or anything
-  [`parse_dates()`](https://chross22.github.io/datamatch/reference/parse_dates.md)
+  [`parse_dates()`](https://camilleross.org/datamatch/reference/parse_dates.md)
   accepts
 
 ## Value
@@ -26,8 +26,8 @@ empty if none does
 
 ## See also
 
-[`hycom_archives()`](https://chross22.github.io/datamatch/reference/hycom_archives.md),
-[`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md)
+[`hycom_archives()`](https://camilleross.org/datamatch/reference/hycom_archives.md),
+[`accessHYCOM()`](https://camilleross.org/datamatch/reference/accessHYCOM.md)
 
 ## Examples
 

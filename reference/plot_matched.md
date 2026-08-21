@@ -1,7 +1,7 @@
 # Plot observations coloured by a matched covariate
 
 What
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
 produced, seen rather than summarised. Points that came back `NA` are
 drawn as open circles rather than dropped, since a cluster of them is
 usually the real finding — observations outside the environmental data's
@@ -18,7 +18,7 @@ plot_matched(matched, var = NULL, palette = "viridis", main = NULL, ...)
 - matched:
 
   an `sf` object from
-  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+  [`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
 
 - var:
 
@@ -55,8 +55,8 @@ plotting, and the spatial pattern reappears:
 
 ## See also
 
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md),
-[`plot_env()`](https://chross22.github.io/datamatch/reference/plot_env.md)
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md),
+[`plot_env()`](https://camilleross.org/datamatch/reference/plot_env.md)
 
 ## Examples
 

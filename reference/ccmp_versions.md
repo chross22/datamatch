@@ -17,7 +17,7 @@ a named list, one entry per version, each with `root`, `pattern`,
 
 ## See also
 
-[`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+[`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md)
 
 ## Examples
 

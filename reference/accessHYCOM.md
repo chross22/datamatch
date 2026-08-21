@@ -2,13 +2,13 @@
 
 Reads HYCOM over OPeNDAP and returns it as an `sf` point object with one
 row per grid cell and time step — the same shape
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
-[`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md),
-[`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md),
+[`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md),
+[`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md)
 and
-[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md)
+[`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md)
 return, so
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
 joins it unchanged.
 
 ## Usage
@@ -32,7 +32,7 @@ accessHYCOM(
 - vars:
 
   variables to read, from
-  [`hycom_variables()`](https://chross22.github.io/datamatch/reference/hycom_variables.md)
+  [`hycom_variables()`](https://camilleross.org/datamatch/reference/hycom_variables.md)
 
 - years:
 
@@ -66,15 +66,15 @@ accessHYCOM(
 - archive:
 
   which archive to read, from
-  [`hycom_archives()`](https://chross22.github.io/datamatch/reference/hycom_archives.md),
+  [`hycom_archives()`](https://camilleross.org/datamatch/reference/hycom_archives.md),
   or `"continuous"` to read across them. The default is the 1994–2015
   reanalysis; later years live in the operational archives, which
-  [`hycom_covering()`](https://chross22.github.io/datamatch/reference/hycom_covering.md)
+  [`hycom_covering()`](https://camilleross.org/datamatch/reference/hycom_covering.md)
   will name for a given date. `"continuous"` picks an archive per day —
   the reanalysis wherever it reaches, the earliest-starting operational
   archive after that — and warns once, naming the day the run changes.
   Every row records the archive it came from; see
-  [`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md).
+  [`source_of()`](https://camilleross.org/datamatch/reference/source_of.md).
 
 - overwrite:
 
@@ -111,7 +111,7 @@ monthly or daily mean to fetch, so this does not offer one:
 - `frequency = "3hourly"` returns every step, with an `HOUR` column.
 
 A real mean is then
-[`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md)'s
+[`upscale_time()`](https://camilleross.org/datamatch/reference/upscale_time.md)'s
 job, which keeps the aggregation visible and the choice of summary
 yours:
 
@@ -129,9 +129,9 @@ The default archive is the **reanalysis**, `GLBv53X`, which is one
 internally consistent run over 1994–2015. HYCOM continues to the
 present, but as a chain of shorter **operational** experiments — the
 model as it was running at the time.
-[`hycom_archives()`](https://chross22.github.io/datamatch/reference/hycom_archives.md)
+[`hycom_archives()`](https://camilleross.org/datamatch/reference/hycom_archives.md)
 lists them and
-[`hycom_covering()`](https://chross22.github.io/datamatch/reference/hycom_covering.md)
+[`hycom_covering()`](https://camilleross.org/datamatch/reference/hycom_covering.md)
 says which span a given date:
 
     hycom_covering("2019-06-15")
@@ -155,7 +155,7 @@ line up across the seam. It is the run that changes, not the geometry.
 
 Provenance is recorded per row rather than per fetch, so a value from
 the operational model never claims to be the reanalysis.
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
 carries that into `<var>_source`.
 
     env <- accessHYCOM(vars = "BOTS", years = 2014:2019, months = 6,
@@ -171,7 +171,7 @@ and crossing from the reanalysis into an operational run is a
 discontinuity in how the values were made. The grids themselves agree
 through the middle latitudes, so on a shelf the cells line up across the
 seam even though the runs do not — see
-[`hycom_archives()`](https://chross22.github.io/datamatch/reference/hycom_archives.md).
+[`hycom_archives()`](https://camilleross.org/datamatch/reference/hycom_archives.md).
 
 ## One dataset per year, sometimes
 
@@ -181,15 +181,15 @@ single aggregation and open once.
 
 ## See also
 
-[`hycom_variables()`](https://chross22.github.io/datamatch/reference/hycom_variables.md)
+[`hycom_variables()`](https://camilleross.org/datamatch/reference/hycom_variables.md)
 for what can be read,
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
-[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
-[`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md),
+[`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md),
+[`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md)
 and
-[`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+[`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md)
 for the other sources,
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
 for joining any of them
 
 ## Examples

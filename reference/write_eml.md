@@ -2,7 +2,7 @@
 
 Produces an [Ecological Metadata
 Language](https://eml.ecoinformatics.org/) document describing a table
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
 produced: what each column is, where and when it covers, which data
 sources went into it, and what to cite. EML is what repositories such as
 EDI and the LTER network expect alongside a deposited dataset.
@@ -28,7 +28,7 @@ write_eml(
 - x:
 
   an `sf` object from
-  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md),
+  [`matchData()`](https://camilleross.org/datamatch/reference/matchData.md),
   or any of the access functions
 
 - file:
@@ -84,7 +84,7 @@ Nearly all of it, because the package already knows:
   time, `LON`/`LAT`, `<var>_source` and `<var>_depth` columns.
 
 - **Methods and citations** from the `<var>_source` columns
-  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+  [`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
   writes. This is the part worth having: a table with four sources
   chained onto it produces a methods section naming all four and a
   reference for each, rather than leaving you to reconstruct which fetch
@@ -103,9 +103,9 @@ the mechanism EML provides for it, and the resulting document validates.
 
 ## See also
 
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md),
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md),
 which writes the `<var>_source` columns this reads, and
-[`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
+[`source_of()`](https://camilleross.org/datamatch/reference/source_of.md)
 
 ## Examples
 

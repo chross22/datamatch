@@ -13,7 +13,7 @@ download_ccmp_day(spec, day, destination)
 - spec:
 
   one entry of
-  [`ccmp_versions()`](https://chross22.github.io/datamatch/reference/ccmp_versions.md)
+  [`ccmp_versions()`](https://camilleross.org/datamatch/reference/ccmp_versions.md)
 
 - day:
 
@@ -38,5 +38,5 @@ discarded.
 That makes CCMP much heavier per day than any other source here, and a
 long record genuinely expensive — a year is roughly 12 GB of transfer to
 keep a few megabytes.
-[`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+[`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md)
 says so before starting a large request.

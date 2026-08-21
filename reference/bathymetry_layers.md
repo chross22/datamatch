@@ -1,7 +1,7 @@
 # Convert a marmap bathy object into terrain layers
 
 Split from
-[`fetch_bathymetry()`](https://chross22.github.io/datamatch/reference/fetch_bathymetry.md)
+[`fetch_bathymetry()`](https://camilleross.org/datamatch/reference/fetch_bathymetry.md)
 so the conversion can be tested without a network call.
 
 ## Usage

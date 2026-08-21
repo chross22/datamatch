@@ -47,7 +47,7 @@ a prediction.
 
 ## See also
 
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md),
 which takes `mode = "forecast"`
 
 ## Examples

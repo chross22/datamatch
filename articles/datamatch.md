@@ -17,7 +17,7 @@ env <- accessCopernicus(vars = c("SST", "MLD"), years = 2015, months = 1:12,
                     bounding_box = bb)
 ```
 
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 returns one row per grid cell per time step, as an `sf` point object:
 
 ``` r
@@ -47,7 +47,7 @@ env
 Three plots answer the questions worth asking of a download, and each
 returns the data it drew rather than only drawing it.
 
-[`plot_env()`](https://chross22.github.io/datamatch/reference/plot_env.md)
+[`plot_env()`](https://camilleross.org/datamatch/reference/plot_env.md)
 maps one variable for one time step. This is the fastest way to catch a
 bounding box that landed somewhere unintended, or a variable that is
 entirely `NA`:
@@ -59,7 +59,7 @@ plot_env(env, "SST", time = c(MONTH = 8))
 
 ![](datamatch_files/figure-html/plot-env-1.png)
 
-[`plot_series()`](https://chross22.github.io/datamatch/reference/plot_series.md)
+[`plot_series()`](https://camilleross.org/datamatch/reference/plot_series.md)
 reduces each step to one number over the study area, so the seasonal
 cycle and its spatial spread are both visible:
 
@@ -95,7 +95,7 @@ env$CHL[winter][sample(sum(winter), round(sum(winter) * 0.8))] <- NA
 env$CHL[!winter][sample(sum(!winter), round(sum(!winter) * 0.1))] <- NA
 ```
 
-[`plot_coverage()`](https://chross22.github.io/datamatch/reference/plot_coverage.md)
+[`plot_coverage()`](https://camilleross.org/datamatch/reference/plot_coverage.md)
 is the one to run before trusting a monthly mean:
 
 ``` r
@@ -116,7 +116,7 @@ the shape that decides whether a winter value means anything.
 
 ## Matching
 
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
 joins each observation to the nearest cell within the same time period.
 Some observations here are deliberately placed in a month the covariates
 do not cover, and some outside the grid:
@@ -146,7 +146,7 @@ sf::st_drop_geometry(matched)[c("MONTH", "count", "SST", "MLD", "CHL")]
 
 Every observation comes back, in the same order, with the covariates
 attached. The last one sits well outside the grid and still matched —
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
 uses the *nearest* cell, and nearest has no maximum distance. That is
 worth knowing: an observation far outside the study area is joined to
 the closest edge cell rather than dropped, so check your bounding box
@@ -255,13 +255,13 @@ as.data.frame(index_dictionary())[c("name", "units", "source")]
 
 ## Where to go next
 
-- [`vignette("datamatch")`](https://chross22.github.io/datamatch/articles/datamatch.md)
+- [`vignette("datamatch")`](https://camilleross.org/datamatch/articles/datamatch.md)
   is this document; the [README](https://github.com/chross22/datamatch)
   covers the same ground in more depth, including forecasts, daily data,
   and gap filling.
-- [`variable_dictionary()`](https://chross22.github.io/datamatch/reference/variable_dictionary.md)
+- [`variable_dictionary()`](https://camilleross.org/datamatch/reference/variable_dictionary.md)
   and
-  [`index_dictionary()`](https://chross22.github.io/datamatch/reference/index_dictionary.md)
+  [`index_dictionary()`](https://camilleross.org/datamatch/reference/index_dictionary.md)
   list what can be fetched.
 - The README’s References section lists the DOI for every data source,
   since the obligation to cite travels with the data.

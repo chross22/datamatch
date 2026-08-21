@@ -14,7 +14,7 @@ a data frame of class `datamatch_dictionary`
 
 ## See also
 
-[`erddap_datasets()`](https://chross22.github.io/datamatch/reference/erddap_datasets.md)
+[`erddap_datasets()`](https://camilleross.org/datamatch/reference/erddap_datasets.md)
 
 ## Examples
 

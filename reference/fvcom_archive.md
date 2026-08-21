@@ -1,6 +1,6 @@
 # Describe any FVCOM archive, so it can be read like a built-in one
 
-[`fvcom_archives()`](https://chross22.github.io/datamatch/reference/fvcom_archives.md)
+[`fvcom_archives()`](https://camilleross.org/datamatch/reference/fvcom_archives.md)
 ships the NECOFS Gulf of Maine hindcast because that is what one server
 publishes. FVCOM itself is run for coastlines everywhere, by groups who
 publish on their own THREDDS servers, and this is how to reach any of
@@ -39,9 +39,9 @@ fvcom_archive(
 ## Value
 
 a list in the shape
-[`fvcom_archives()`](https://chross22.github.io/datamatch/reference/fvcom_archives.md)
+[`fvcom_archives()`](https://camilleross.org/datamatch/reference/fvcom_archives.md)
 entries take, ready to pass to
-[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md)
+[`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md)
 as `archive`
 
 ## Details
@@ -71,8 +71,8 @@ a monthly aggregation, or a single file, over a long hourly one.
 
 ## See also
 
-[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
-[`fvcom_archives()`](https://chross22.github.io/datamatch/reference/fvcom_archives.md)
+[`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md),
+[`fvcom_archives()`](https://camilleross.org/datamatch/reference/fvcom_archives.md)
 
 ## Examples
 

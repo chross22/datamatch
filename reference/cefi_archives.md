@@ -32,7 +32,7 @@ than smoothing across them.
 It also publishes **sea-floor salinity directly** as `sob`, where
 GLORYS12V1 does not — so `BOTS` from CEFI is the model's own diagnostic
 rather than the deepest-wet-level derivation
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 has to fall back on.
 
 ## The regridded product is what is read
@@ -59,12 +59,12 @@ than in the model's own grid directions.
 reach for. `decadal_forecast` is a ten-year prediction initialised each
 January, with ten ensemble members, and is a fundamentally different
 kind of number — see the Forecasts are experimental section of
-[`accessCEFI()`](https://chross22.github.io/datamatch/reference/accessCEFI.md).
+[`accessCEFI()`](https://camilleross.org/datamatch/reference/accessCEFI.md).
 
 ## See also
 
-[`accessCEFI()`](https://chross22.github.io/datamatch/reference/accessCEFI.md),
-[`cefi_archive()`](https://chross22.github.io/datamatch/reference/cefi_archive.md)
+[`accessCEFI()`](https://camilleross.org/datamatch/reference/accessCEFI.md),
+[`cefi_archive()`](https://camilleross.org/datamatch/reference/cefi_archive.md)
 for any other CEFI path
 
 ## Examples

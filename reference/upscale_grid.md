@@ -24,13 +24,13 @@ upscale_grid(
 - env_dat:
 
   an `sf` POINT object on a regular grid, from
-  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
-  [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
-  [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+  [`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md),
+  [`accessHYCOM()`](https://camilleross.org/datamatch/reference/accessHYCOM.md),
+  [`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md)
   or
-  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md).
+  [`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md).
   Not
-  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md):
+  [`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md):
   its mesh is unstructured, so there are no rows and columns to
   aggregate over - match it to points, or regrid a regular product onto
   it.
@@ -44,7 +44,7 @@ upscale_grid(
 - vars:
 
   columns to resample; `NULL` uses all covariate columns, as
-  [`covariate_columns()`](https://chross22.github.io/datamatch/reference/covariate_columns.md)
+  [`covariate_columns()`](https://camilleross.org/datamatch/reference/covariate_columns.md)
   reports them
 
 - method:
@@ -91,7 +91,7 @@ question:
 
 Pass one method for everything, or a named vector to vary it by
 variable: `method = c(CHL = "median", DEPTH = "min")`, in the style
-[`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md)
+[`fill_satellite_gaps()`](https://camilleross.org/datamatch/reference/fill_satellite_gaps.md)
 takes its `vars`.
 
 ## Partial cells
@@ -111,9 +111,9 @@ variable and judge for yourself.
 
 ## See also
 
-[`downscale_grid()`](https://chross22.github.io/datamatch/reference/downscale_grid.md)
+[`downscale_grid()`](https://camilleross.org/datamatch/reference/downscale_grid.md)
 for the other direction,
-[`grid_resolution()`](https://chross22.github.io/datamatch/reference/grid_resolution.md)
+[`grid_resolution()`](https://camilleross.org/datamatch/reference/grid_resolution.md)
 
 ## Examples
 

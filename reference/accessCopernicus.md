@@ -28,7 +28,7 @@ accessCopernicus(
 - vars:
 
   variables to access: names from
-  [`variable_dictionary()`](https://chross22.github.io/datamatch/reference/variable_dictionary.md),
+  [`variable_dictionary()`](https://camilleross.org/datamatch/reference/variable_dictionary.md),
   raw Copernicus variable codes, or a mixture
 
 - years:
@@ -70,7 +70,7 @@ accessCopernicus(
   `"reanalysis"` (the default) for the multi-year hindcast, or
   `"forecast"` for the analysis-and-forecast products, which run to
   about ten days ahead. See
-  [`forecast_variables()`](https://chross22.github.io/datamatch/reference/forecast_variables.md)
+  [`forecast_variables()`](https://camilleross.org/datamatch/reference/forecast_variables.md)
   for which variables have a forecast equivalent and how the identifiers
   differ.
 
@@ -103,7 +103,7 @@ variable
 ## Requesting variables by name
 
 `vars` accepts the short names in
-[`variable_dictionary()`](https://chross22.github.io/datamatch/reference/variable_dictionary.md)
+[`variable_dictionary()`](https://camilleross.org/datamatch/reference/variable_dictionary.md)
 — `"SST"`, `"CHL"`, `"MLD"` — as well as raw Copernicus codes.
 Copernicus codes are terse and easy to misremember (`thetao` for
 temperature, `mlotst` for mixed layer depth, `zos` for sea surface
@@ -117,9 +117,9 @@ column called `SST` rather than `thetao`.
 
 The products carry their own DOIs and Copernicus asks that they be cited
 with an access date.
-[`variable_dataset()`](https://chross22.github.io/datamatch/reference/variable_dataset.md)
+[`variable_dataset()`](https://camilleross.org/datamatch/reference/variable_dataset.md)
 says which product a variable came from, and
-[`product_url()`](https://chross22.github.io/datamatch/reference/product_url.md)
+[`product_url()`](https://camilleross.org/datamatch/reference/product_url.md)
 links to its page. The README's References section lists every DOI.
 
 Because the catalog knows which product and dataset holds each variable,
@@ -193,7 +193,7 @@ Not every variable has a daily equivalent. `PH`, `PP`, `DIATO` and
 daily is refused before anything is downloaded. Daily `CHL` comes from
 the gap-free interpolated ocean colour dataset rather than the monthly
 composite, which `accessCopernicus()` reports when it happens — see
-[`copernicus_variables()`](https://chross22.github.io/datamatch/reference/copernicus_variables.md).
+[`copernicus_variables()`](https://camilleross.org/datamatch/reference/copernicus_variables.md).
 
 ## Hourly wind
 
@@ -203,7 +203,7 @@ one — the ocean reanalyses are daily at finest.
 
 The result carries an `HOUR` column alongside `YEAR`/`MONTH`/`DAY`, so a
 day is 24 rows per cell rather than one, and
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
 joins on the hour. Observations must then carry an hour of their own, on
 UTC.
 

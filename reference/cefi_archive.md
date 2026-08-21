@@ -1,6 +1,6 @@
 # Describe any CEFI directory, so it can be read like a built-in one
 
-[`cefi_archives()`](https://chross22.github.io/datamatch/reference/cefi_archives.md)
+[`cefi_archives()`](https://camilleross.org/datamatch/reference/cefi_archives.md)
 ships the Northwest Atlantic hindcast and its decadal forecast, because
 that is the domain this package was written for. CEFI also publishes the
 Northeast Pacific, the Arctic, the Pacific Islands and the Great Lakes,
@@ -24,7 +24,7 @@ cefi_archive(
 - path:
 
   the catalog path under the THREDDS root, as in a
-  [`cefi_archives()`](https://chross22.github.io/datamatch/reference/cefi_archives.md)
+  [`cefi_archives()`](https://camilleross.org/datamatch/reference/cefi_archives.md)
   entry's `path`
 
 - frequency:
@@ -49,9 +49,9 @@ cefi_archive(
 ## Value
 
 a list in the shape
-[`cefi_archives()`](https://chross22.github.io/datamatch/reference/cefi_archives.md)
+[`cefi_archives()`](https://camilleross.org/datamatch/reference/cefi_archives.md)
 entries take, ready to pass to
-[`accessCEFI()`](https://chross22.github.io/datamatch/reference/accessCEFI.md)
+[`accessCEFI()`](https://camilleross.org/datamatch/reference/accessCEFI.md)
 as `archive`
 
 ## What it checks
@@ -64,8 +64,8 @@ in that directory come back in the returned spec, so
 
 ## See also
 
-[`accessCEFI()`](https://chross22.github.io/datamatch/reference/accessCEFI.md),
-[`cefi_archives()`](https://chross22.github.io/datamatch/reference/cefi_archives.md)
+[`accessCEFI()`](https://camilleross.org/datamatch/reference/accessCEFI.md),
+[`cefi_archives()`](https://camilleross.org/datamatch/reference/cefi_archives.md)
 
 ## Examples
 

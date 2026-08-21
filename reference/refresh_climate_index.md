@@ -27,8 +27,8 @@ cannot produce anything new.
 
 ## See also
 
-[`climate_index_status()`](https://chross22.github.io/datamatch/reference/climate_index_status.md),
-[`fetch_climate_index()`](https://chross22.github.io/datamatch/reference/fetch_climate_index.md)
+[`climate_index_status()`](https://camilleross.org/datamatch/reference/climate_index_status.md),
+[`fetch_climate_index()`](https://camilleross.org/datamatch/reference/fetch_climate_index.md)
 
 ## Examples
 

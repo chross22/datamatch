@@ -20,12 +20,12 @@ downscale_time(
 - env_dat:
 
   an `sf` POINT object from any access function -
-  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
-  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
-  [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
-  [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+  [`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md),
+  [`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md),
+  [`accessHYCOM()`](https://camilleross.org/datamatch/reference/accessHYCOM.md),
+  [`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md)
   or
-  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+  [`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md)
 
 - to:
 
@@ -53,7 +53,7 @@ an `sf` POINT object with one row per cell per target step
 ## What this does and does not do
 
 As with
-[`downscale_grid()`](https://chross22.github.io/datamatch/reference/downscale_grid.md),
+[`downscale_grid()`](https://camilleross.org/datamatch/reference/downscale_grid.md),
 this adds time steps rather than information. A monthly mean rendered
 daily still resolves nothing within the month.
 
@@ -90,9 +90,9 @@ difference.
 
 ## See also
 
-[`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md)
+[`upscale_time()`](https://camilleross.org/datamatch/reference/upscale_time.md)
 for the other direction,
-[`downscale_grid()`](https://chross22.github.io/datamatch/reference/downscale_grid.md)
+[`downscale_grid()`](https://camilleross.org/datamatch/reference/downscale_grid.md)
 
 ## Examples
 

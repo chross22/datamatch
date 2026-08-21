@@ -12,7 +12,7 @@ gigabytes.
 
 The four models first:
 
-|  | [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md) | [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md) | [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md) | [`accessCEFI()`](https://chross22.github.io/datamatch/reference/accessCEFI.md) |
+|  | [`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md) | [`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md) | [`accessHYCOM()`](https://camilleross.org/datamatch/reference/accessHYCOM.md) | [`accessCEFI()`](https://camilleross.org/datamatch/reference/accessCEFI.md) |
 |----|----|----|----|----|
 | Source | Copernicus Marine | NECOFS / any FVCOM | HYCOM GOFS 3.1 | NOAA CEFI, MOM6-COBALT |
 | Kind | global reanalysis, forecast, satellite | regional coastal model | global model | regional coupled model |
@@ -28,7 +28,7 @@ The four models first:
 
 Then the three observational products:
 
-|  | [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md) | [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md) | [`accessOBDAAC()`](https://chross22.github.io/datamatch/reference/accessOBDAAC.md) |
+|  | [`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md) | [`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md) | [`accessOBDAAC()`](https://camilleross.org/datamatch/reference/accessOBDAAC.md) |
 |----|----|----|----|
 | Source | RSS CCMP v3.1 | NOAA ERDDAP | NASA OB.DAAC |
 | Kind | wind analysis | satellite analysis | satellite Level-3 composites |
@@ -72,7 +72,7 @@ a question about trend rather than state needs.
 
 A covariate arrives in a column of the same name whichever source
 supplied it, so everything downstream —
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md),
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md),
 resampling, plotting, and whatever model you fit — works unchanged:
 
 ``` r
@@ -154,7 +154,7 @@ alongside all three VIIRS so there is a sensor either side of any gap
 you need to bridge. Its costs are an Earthdata Login, whole-globe
 downloads, and cloud: these are single-sensor composites, so a daily
 field outside the tropics is mostly `NA`. Composite to monthly, or use
-[`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md).
+[`fill_satellite_gaps()`](https://camilleross.org/datamatch/reference/fill_satellite_gaps.md).
 
 Two warnings that belong with it. The **sensors are not
 interchangeable** — where they overlap they disagree, and a series
@@ -165,7 +165,7 @@ Copernicus-GlobColour entries are multi-sensor and built for that. And
 mapped catalog publishes no chlorophyll suite, and its filenames carry a
 processing version that changes with each reprocessing and cannot be
 constructed.
-[`?obdaac_sensors`](https://chross22.github.io/datamatch/reference/obdaac_sensors.md)
+[`?obdaac_sensors`](https://camilleross.org/datamatch/reference/obdaac_sensors.md)
 gives the detail.
 
 ## Bottom salinity, five ways
@@ -213,13 +213,13 @@ publishes a daily mean:
 The other three stop at daily. CEFI is monthly or daily and nothing
 finer; ERDDAP is daily; OB.DAAC is daily or a monthly composite, and its
 eight-day composite is refused because
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
 has no step that means eight days.
 
 Where a source has no mean, none is invented. `frequency = "daily"` on
 HYCOM and CCMP takes one **snapshot** at a chosen hour — an instant, not
 an average. A real mean is
-[`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md)’s
+[`upscale_time()`](https://camilleross.org/datamatch/reference/upscale_time.md)’s
 job, which keeps the aggregation visible and the choice of summary
 yours:
 
@@ -326,7 +326,7 @@ Analysis-and-forecast products, used with `mode = "forecast"`:
 | Global Ocean Physics Analysis and Forecast | [10.48670/moi-00016](https://doi.org/10.48670/moi-00016) |
 | Global Ocean Biogeochemistry Analysis and Forecast | [10.48670/moi-00015](https://doi.org/10.48670/moi-00015) |
 
-[`variable_dataset()`](https://chross22.github.io/datamatch/reference/variable_dataset.md)
+[`variable_dataset()`](https://camilleross.org/datamatch/reference/variable_dataset.md)
 says which product a variable came from, so only the ones you used need
 citing. Downloads go through the [Copernicus Marine
 Toolbox](https://toolbox-docs.marine.copernicus.eu/), which publishes no
@@ -360,7 +360,7 @@ DOI of its own — cite the products.
   <https://psl.noaa.gov/cefi_portal/>*. There is no separate data DOI.
 
   **Say which release** —
-  [`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
+  [`source_of()`](https://camilleross.org/datamatch/reference/source_of.md)
   records it, as `cefi:NWA12-hindcast-r20250715`. Releases extend and
   revise the record, so two results from different releases are not the
   same numbers. For a forecast, say which initialisation and ensemble
@@ -394,9 +394,9 @@ DOI of its own — cite the products.
   DOI rather than shipping a table of them that would go stale silently
   — look yours up at <https://www.earthdata.nasa.gov/centers/ob-daac>
   and cite it alongside the mission.
-  [`obdaac_sensors()`](https://chross22.github.io/datamatch/reference/obdaac_sensors.md)
+  [`obdaac_sensors()`](https://camilleross.org/datamatch/reference/obdaac_sensors.md)
   carries the mission papers at runtime, and
-  [`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
+  [`source_of()`](https://camilleross.org/datamatch/reference/source_of.md)
   records which sensor answered, as `obdaac:MODISA-4km`.
 
   - *SeaWiFS* — McClain CR, Feldman GC, Hooker SB (2004). An overview of
@@ -417,7 +417,7 @@ DOI of its own — cite the products.
 Say which archive as well as which model — a value from the HYCOM
 reanalysis and one from an operational experiment are not the same run,
 and
-[`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
+[`source_of()`](https://camilleross.org/datamatch/reference/source_of.md)
 records exactly that.
 
 ### Seafloor terrain
@@ -429,7 +429,7 @@ records exactly that.
   Analyze Bathymetric and Topographic Data*.
   <https://doi.org/10.32614/CRAN.package.marmap>
 
-[`fetch_bathymetry()`](https://chross22.github.io/datamatch/reference/fetch_bathymetry.md)
+[`fetch_bathymetry()`](https://camilleross.org/datamatch/reference/fetch_bathymetry.md)
 requests the 60 arc-second bedrock grid (`ETOPO_2022_v1_60s_bed`)
 through `marmap`.
 
@@ -452,7 +452,7 @@ used**:
 
   BODC mints a new DOI for each release and retires the old one, so this
   changes when RAPID publishes a new version.
-  [`index_dictionary()`](https://chross22.github.io/datamatch/reference/index_dictionary.md)
+  [`index_dictionary()`](https://camilleross.org/datamatch/reference/index_dictionary.md)
   carries the current reference.
 
 The other four are operational products with no single paper behind
@@ -567,7 +567,7 @@ Two consequences, both deliberate:
 - **It must be fetched on its own.** The whole depth column is a
   different request from the single level `SST` wants, so mixing them is
   an error rather than a quiet second download. Call twice and chain
-  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md).
+  [`matchData()`](https://camilleross.org/datamatch/reference/matchData.md).
 - **It costs far more.** Roughly fifty levels are downloaded over the
   same box to keep one, so a large box is much slower than the same box
   of `SST`.
@@ -622,9 +622,9 @@ options(datamatch.copernicusmarine = "~/miniconda3/bin/copernicusmarine")
 
 Expected, not a fault. `SST` is physics and `CHL` is biogeochemistry, on
 different grids. Fetch them separately and chain
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md),
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md),
 as in [Putting several together](#putting-several-together).
-[`variable_dataset()`](https://chross22.github.io/datamatch/reference/variable_dataset.md)
+[`variable_dataset()`](https://camilleross.org/datamatch/reference/variable_dataset.md)
 shows which dataset each variable comes from.
 
 In forecast mode this happens more often, because the forecast products
@@ -649,18 +649,18 @@ monthly.
 
 Bottom salinity is derived from the whole depth column, which is a
 different request from the single level a surface variable wants. Call
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 once for `BOTS` and once for the rest, then chain
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md).
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md).
 See [Bottom salinity](#bottom-salinity).
 
 **`These variables sit on different parts of the FVCOM mesh`**
 
 Scalars sit on mesh nodes and velocities on element centroids, so the
 two kinds cannot be read together. Call
-[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md)
+[`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md)
 once for each and chain
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md).
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md).
 
 **`The CEFI hindcast saves no daily SST`**
 
@@ -715,7 +715,7 @@ indistinguishable from the response.
 The sensor does not carry that suite. SeaWiFS measures no temperature at
 all; only MODIS carries `NFLH`; VIIRSJ2 has no SST yet. The message
 lists what that sensor does carry, and
-[`obdaac_sensors()`](https://chross22.github.io/datamatch/reference/obdaac_sensors.md)
+[`obdaac_sensors()`](https://camilleross.org/datamatch/reference/obdaac_sensors.md)
 has the full table.
 
 **`The download did not return: uo, vo`**

@@ -3,9 +3,9 @@
 Reads an unstructured-mesh FVCOM archive over OPeNDAP and returns it as
 an `sf` point object with one row per mesh point and time step — the
 same shape
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 returns, so
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
 joins it unchanged.
 
 ## Usage
@@ -29,7 +29,7 @@ accessFVCOM(
 - vars:
 
   variables to read, from
-  [`fvcom_variables()`](https://chross22.github.io/datamatch/reference/fvcom_variables.md)
+  [`fvcom_variables()`](https://camilleross.org/datamatch/reference/fvcom_variables.md)
 
 - years:
 
@@ -62,12 +62,12 @@ accessFVCOM(
 - archive:
 
   which archive to read: the name of one from
-  [`fvcom_archives()`](https://chross22.github.io/datamatch/reference/fvcom_archives.md),
+  [`fvcom_archives()`](https://camilleross.org/datamatch/reference/fvcom_archives.md),
   or a spec from
-  [`fvcom_archive()`](https://chross22.github.io/datamatch/reference/fvcom_archive.md)
+  [`fvcom_archive()`](https://camilleross.org/datamatch/reference/fvcom_archive.md)
   describing any other FVCOM endpoint. The built-in list covers the
   Northeast US shelf only, because that is what one server publishes;
-  [`fvcom_archive()`](https://chross22.github.io/datamatch/reference/fvcom_archive.md)
+  [`fvcom_archive()`](https://camilleross.org/datamatch/reference/fvcom_archive.md)
   is how every other region is reached.
 
 - overwrite:
@@ -102,14 +102,14 @@ velocities and stresses (`UO`, `VO`, `UBAR`, `VBAR`, `TAUX`, `TAUY`) sit
 on element centroids. Those are two different sets of points, so the two
 kinds cannot be fetched together — mixing them is an error rather than a
 silent interpolation of one onto the other. Fetch each and chain
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md).
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md).
 
 ## Bottom salinity
 
 `BOTS` costs nothing here. FVCOM's sigma coordinate makes the deepest
 layer the sea floor at every node, so bottom salinity is a layer index
 rather than the derivation
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 needs against GLORYS. If bottom properties are the point of the
 analysis, this is the cheaper source for them.
 
@@ -129,7 +129,7 @@ Everything this function does depends on FVCOM's structure rather than
 on the region, so any FVCOM output should read. What differs between
 deployments — the mesh, the period, which fields were saved — is read
 from the file, and
-[`fvcom_archive()`](https://chross22.github.io/datamatch/reference/fvcom_archive.md)
+[`fvcom_archive()`](https://camilleross.org/datamatch/reference/fvcom_archive.md)
 reports it.
 
 ## Hindcast and forecast archive are different products
@@ -166,7 +166,7 @@ The default is the snapshot deliberately. A month of hourly GOM7 is 720
 reads of a 207,081-node field, which is a long transfer to keep a
 shelf-sized corner of it, and a snapshot is usually what a daily
 covariate wants. A snapshot is an instant rather than a daily mean;
-[`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md)
+[`upscale_time()`](https://camilleross.org/datamatch/reference/upscale_time.md)
 makes a real mean from `frequency = "hourly"` if that is what is needed.
 
 `frequency` does nothing on a monthly archive such as `GOM3`, and saying
@@ -187,15 +187,15 @@ aggregation, read one month at a time.
 
 ## See also
 
-[`fvcom_variables()`](https://chross22.github.io/datamatch/reference/fvcom_variables.md)
+[`fvcom_variables()`](https://camilleross.org/datamatch/reference/fvcom_variables.md)
 for what can be read,
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
-[`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
-[`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md),
+[`accessHYCOM()`](https://camilleross.org/datamatch/reference/accessHYCOM.md),
+[`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md)
 and
-[`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+[`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md)
 for the other sources,
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
 for joining any of them to observations
 
 ## Examples

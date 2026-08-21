@@ -13,7 +13,7 @@ source_reference(tag)
 - tag:
 
   a tag as
-  [`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
+  [`source_of()`](https://camilleross.org/datamatch/reference/source_of.md)
   returns
 
 ## Value
@@ -23,7 +23,7 @@ the reference, or `NA` when the source carries none
 ## Every source family needs a branch here
 
 A family with none returns `NA`, and
-[`eml_methods()`](https://chross22.github.io/datamatch/reference/eml_methods.md)
+[`eml_methods()`](https://camilleross.org/datamatch/reference/eml_methods.md)
 then writes a methods section that names the source and cites nothing —
 which is the failure the methods section exists to prevent, arriving
 silently. A test walks the families rather than trusting this list to

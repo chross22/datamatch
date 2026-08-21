@@ -15,9 +15,9 @@ as_markdown(x, columns = NULL)
 - x:
 
   a dictionary from
-  [`variable_dictionary()`](https://chross22.github.io/datamatch/reference/variable_dictionary.md)
+  [`variable_dictionary()`](https://camilleross.org/datamatch/reference/variable_dictionary.md)
   or
-  [`index_dictionary()`](https://chross22.github.io/datamatch/reference/index_dictionary.md)
+  [`index_dictionary()`](https://camilleross.org/datamatch/reference/index_dictionary.md)
 
 - columns:
 

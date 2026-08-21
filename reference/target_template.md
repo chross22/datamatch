@@ -21,7 +21,7 @@ target_template(env_dat, to, source_res, direction)
 - source_res:
 
   the source resolution from
-  [`grid_resolution()`](https://chross22.github.io/datamatch/reference/grid_resolution.md)
+  [`grid_resolution()`](https://camilleross.org/datamatch/reference/grid_resolution.md)
 
 - direction:
 

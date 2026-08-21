@@ -3,14 +3,14 @@
 Reads the NOAA CEFI regional ocean model over OPeNDAP and returns it as
 an `sf` point object with one row per grid cell and time step — the same
 shape
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
-[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
-[`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
-[`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md),
+[`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md),
+[`accessHYCOM()`](https://camilleross.org/datamatch/reference/accessHYCOM.md),
+[`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md)
 and
-[`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+[`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md)
 return, so
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
 joins it unchanged.
 
 ## Usage
@@ -37,7 +37,7 @@ accessCEFI(
 - vars:
 
   variables to read, from
-  [`cefi_variables()`](https://chross22.github.io/datamatch/reference/cefi_variables.md)
+  [`cefi_variables()`](https://camilleross.org/datamatch/reference/cefi_variables.md)
 
 - years:
 
@@ -66,7 +66,7 @@ accessCEFI(
   which CEFI experiment to read. `"hindcast"` is the default;
   `"decadal_forecast"` is experimental. The rest are refused with the
   reason — see
-  [`cefi_experiments()`](https://chross22.github.io/datamatch/reference/cefi_experiments.md).
+  [`cefi_experiments()`](https://camilleross.org/datamatch/reference/cefi_experiments.md).
 
 - init:
 
@@ -87,7 +87,7 @@ accessCEFI(
 - archive:
 
   a spec from
-  [`cefi_archive()`](https://chross22.github.io/datamatch/reference/cefi_archive.md),
+  [`cefi_archive()`](https://camilleross.org/datamatch/reference/cefi_archive.md),
   to read a domain this package does not ship. Overrides `experiment`,
   `frequency` and `release`.
 
@@ -114,7 +114,7 @@ there is nothing to read, and a bounding box outside the domain is
 refused rather than returning an empty join. It is also **a model
 throughout** — its `CHL` is simulated, not retrieved, and is not the
 satellite `CHL` from
-[`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+[`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md)
 under another name.
 
 ## Forecasts are experimental
@@ -140,14 +140,14 @@ default and neither is guessed:
   is a question about your analysis, not about the archive.
 
 The source tag records both, so
-[`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
+[`source_of()`](https://camilleross.org/datamatch/reference/source_of.md)
 on the result says which initialisation and which member produced it.
 
 ## What is monthly and what is also daily
 
 The hindcast saves everything monthly. Its **daily** output is
 biogeochemistry only — see the section of the same name in
-[`cefi_variables()`](https://chross22.github.io/datamatch/reference/cefi_variables.md)
+[`cefi_variables()`](https://camilleross.org/datamatch/reference/cefi_variables.md)
 — and a daily request for `SST` is refused with the list of what is
 available daily rather than returning nothing.
 
@@ -159,10 +159,10 @@ conversion in either direction.
 
 ## See also
 
-[`cefi_variables()`](https://chross22.github.io/datamatch/reference/cefi_variables.md),
-[`cefi_archives()`](https://chross22.github.io/datamatch/reference/cefi_archives.md),
-[`cefi_archive()`](https://chross22.github.io/datamatch/reference/cefi_archive.md),
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+[`cefi_variables()`](https://camilleross.org/datamatch/reference/cefi_variables.md),
+[`cefi_archives()`](https://camilleross.org/datamatch/reference/cefi_archives.md),
+[`cefi_archive()`](https://camilleross.org/datamatch/reference/cefi_archive.md),
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 for a global reanalysis to compare against
 
 ## Examples

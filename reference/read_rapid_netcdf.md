@@ -5,7 +5,7 @@ while the ASCII equivalent sits behind a signup form. So this reads the
 overturning variable from the downloaded binary and aggregates it to the
 monthly step the rest of the indices use. Downloading and caching happen
 in
-[`cached_index_file()`](https://chross22.github.io/datamatch/reference/cached_index_file.md),
+[`cached_index_file()`](https://camilleross.org/datamatch/reference/cached_index_file.md),
 which every index shares.
 
 ## Usage

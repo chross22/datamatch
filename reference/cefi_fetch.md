@@ -17,7 +17,7 @@ cefi_fetch(spec, entries, files, plan, bounding_box, frequency, init)
 - entries:
 
   the requested entries of
-  [`cefi_variables()`](https://chross22.github.io/datamatch/reference/cefi_variables.md)
+  [`cefi_variables()`](https://camilleross.org/datamatch/reference/cefi_variables.md)
 
 - files:
 

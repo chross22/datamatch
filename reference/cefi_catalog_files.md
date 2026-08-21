@@ -13,7 +13,7 @@ cefi_catalog_files(path, frequency, grid, release)
 - path:
 
   the catalog path, as in a
-  [`cefi_archives()`](https://chross22.github.io/datamatch/reference/cefi_archives.md)
+  [`cefi_archives()`](https://camilleross.org/datamatch/reference/cefi_archives.md)
   entry
 
 - frequency:

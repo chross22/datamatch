@@ -22,13 +22,13 @@ downscale_grid(
 - env_dat:
 
   an `sf` POINT object on a regular grid, from
-  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
-  [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
-  [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+  [`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md),
+  [`accessHYCOM()`](https://camilleross.org/datamatch/reference/accessHYCOM.md),
+  [`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md)
   or
-  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md).
+  [`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md).
   Not
-  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md):
+  [`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md):
   its mesh is unstructured, so there are no rows and columns to
   aggregate over - match it to points, or regrid a regular product onto
   it.
@@ -42,7 +42,7 @@ downscale_grid(
 - vars:
 
   columns to resample; `NULL` uses all covariate columns, as
-  [`covariate_columns()`](https://chross22.github.io/datamatch/reference/covariate_columns.md)
+  [`covariate_columns()`](https://camilleross.org/datamatch/reference/covariate_columns.md)
   reports them
 
 - method:
@@ -99,14 +99,14 @@ result, because that gradient is then a property of the interpolator.
   `idw_radius`. Unlike the others it fills across holes rather than
   propagating them, which makes it the one to use on gappy satellite
   data where
-  [`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md)
+  [`fill_satellite_gaps()`](https://camilleross.org/datamatch/reference/fill_satellite_gaps.md)
   is not an option.
 
 ## See also
 
-[`upscale_grid()`](https://chross22.github.io/datamatch/reference/upscale_grid.md)
+[`upscale_grid()`](https://camilleross.org/datamatch/reference/upscale_grid.md)
 for the other direction,
-[`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md)
+[`fill_satellite_gaps()`](https://camilleross.org/datamatch/reference/fill_satellite_gaps.md)
 
 ## Examples
 

@@ -15,12 +15,12 @@ grid_resolution(env_dat)
 - env_dat:
 
   an `sf` POINT object from any access function -
-  [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
-  [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
-  [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md),
-  [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
+  [`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md),
+  [`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md),
+  [`accessHYCOM()`](https://camilleross.org/datamatch/reference/accessHYCOM.md),
+  [`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md)
   or
-  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+  [`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md)
 
 ## Value
 
@@ -34,13 +34,13 @@ which has no regular spacing to report.
 Useful on its own for deciding which way to resample: compare two
 products and the coarser one is the one to bring the other onto, or not,
 depending on which trade-off you want. See
-[`upscale_grid()`](https://chross22.github.io/datamatch/reference/upscale_grid.md)
+[`upscale_grid()`](https://camilleross.org/datamatch/reference/upscale_grid.md)
 for what that choice costs.
 
 ## See also
 
-[`upscale_grid()`](https://chross22.github.io/datamatch/reference/upscale_grid.md),
-[`downscale_grid()`](https://chross22.github.io/datamatch/reference/downscale_grid.md)
+[`upscale_grid()`](https://camilleross.org/datamatch/reference/upscale_grid.md),
+[`downscale_grid()`](https://camilleross.org/datamatch/reference/downscale_grid.md)
 
 ## Examples
 

@@ -14,7 +14,7 @@ a data frame of class `datamatch_dictionary`
 
 ## See also
 
-[`cefi_variables()`](https://chross22.github.io/datamatch/reference/cefi_variables.md)
+[`cefi_variables()`](https://camilleross.org/datamatch/reference/cefi_variables.md)
 
 ## Examples
 

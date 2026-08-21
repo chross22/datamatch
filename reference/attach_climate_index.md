@@ -25,7 +25,7 @@ attach_climate_index(
 - indices:
 
   index names to attach, or a data frame from
-  [`fetch_climate_index()`](https://chross22.github.io/datamatch/reference/fetch_climate_index.md)
+  [`fetch_climate_index()`](https://camilleross.org/datamatch/reference/fetch_climate_index.md)
 
 - years:
 

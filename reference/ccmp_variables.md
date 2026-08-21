@@ -35,8 +35,8 @@ data in a region or period with poor coverage.
 
 ## See also
 
-[`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md),
-[`ccmp_versions()`](https://chross22.github.io/datamatch/reference/ccmp_versions.md)
+[`accessCCMP()`](https://camilleross.org/datamatch/reference/accessCCMP.md),
+[`ccmp_versions()`](https://camilleross.org/datamatch/reference/ccmp_versions.md)
 
 ## Examples
 

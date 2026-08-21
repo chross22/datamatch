@@ -19,7 +19,7 @@ a named list, one entry per sensor, each with `id`, `prefix`, `start`,
 
 ## Why reach for it, and why not
 
-[`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+[`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md)
 serves satellite chlorophyll with no account at all, which is genuinely
 easier, and it is the right first stop. What it cannot give you is
 **length**: its VIIRS entries begin in 2012 at the earliest. OB.DAAC has
@@ -34,7 +34,7 @@ and inorganic carbon — on the same grid, from the same retrieval.
 Against that: **every fetch needs an Earthdata Login**, which is the one
 place in this package where a download will not work until you have gone
 and created an account.
-[`accessOBDAAC()`](https://chross22.github.io/datamatch/reference/accessOBDAAC.md)
+[`accessOBDAAC()`](https://camilleross.org/datamatch/reference/accessOBDAAC.md)
 says how.
 
 ## The sensors are not interchangeable
@@ -44,12 +44,12 @@ on the same day are two retrievals with different bands, different
 atmospheric corrections and different calibration histories, and
 stitching a series across a mission boundary puts a step in it that is
 instrumental rather than oceanographic.
-[`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
+[`source_of()`](https://camilleross.org/datamatch/reference/source_of.md)
 records which sensor produced a fetch for exactly this reason.
 
 Where a long consistent record matters more than any one sensor, prefer
 a merged product — the Copernicus-GlobColour entries in
-[`copernicus_variables()`](https://chross22.github.io/datamatch/reference/copernicus_variables.md)
+[`copernicus_variables()`](https://camilleross.org/datamatch/reference/copernicus_variables.md)
 are multi-sensor and built for that.
 
 ## What each carries
@@ -91,8 +91,8 @@ Read PACE directly with `earthdatalogin` or `rsi` where you need it.
 
 ## See also
 
-[`accessOBDAAC()`](https://chross22.github.io/datamatch/reference/accessOBDAAC.md),
-[`obdaac_variables()`](https://chross22.github.io/datamatch/reference/obdaac_variables.md)
+[`accessOBDAAC()`](https://camilleross.org/datamatch/reference/accessOBDAAC.md),
+[`obdaac_variables()`](https://camilleross.org/datamatch/reference/obdaac_variables.md)
 
 ## Examples
 

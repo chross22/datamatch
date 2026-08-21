@@ -17,7 +17,7 @@ fvcom_read_variable(handle, entry, step, layers, keep)
 - entry:
 
   one entry of
-  [`fvcom_variables()`](https://chross22.github.io/datamatch/reference/fvcom_variables.md)
+  [`fvcom_variables()`](https://camilleross.org/datamatch/reference/fvcom_variables.md)
 
 - step:
 

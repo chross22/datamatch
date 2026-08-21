@@ -3,13 +3,13 @@
 Downloads the CCMP wind analysis from Remote Sensing Systems and returns
 it as an `sf` point object with one row per grid cell and time step —
 the same shape
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md),
-[`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md),
-[`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md)
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md),
+[`accessFVCOM()`](https://camilleross.org/datamatch/reference/accessFVCOM.md),
+[`accessHYCOM()`](https://camilleross.org/datamatch/reference/accessHYCOM.md)
 and
-[`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+[`accessERDDAP()`](https://camilleross.org/datamatch/reference/accessERDDAP.md)
 return, so
-[`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+[`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
 joins it unchanged.
 
 ## Usage
@@ -33,7 +33,7 @@ accessCCMP(
 - vars:
 
   variables to read, from
-  [`ccmp_variables()`](https://chross22.github.io/datamatch/reference/ccmp_variables.md)
+  [`ccmp_variables()`](https://camilleross.org/datamatch/reference/ccmp_variables.md)
 
 - years:
 
@@ -66,7 +66,7 @@ accessCCMP(
 - version:
 
   which CCMP version to read, from
-  [`ccmp_versions()`](https://chross22.github.io/datamatch/reference/ccmp_versions.md)
+  [`ccmp_versions()`](https://camilleross.org/datamatch/reference/ccmp_versions.md)
 
 - overwrite:
 
@@ -118,7 +118,7 @@ monthly mean in the archive, so none is invented:
 - `frequency = "6hourly"` returns all four steps, with an `HOUR` column.
 
 A real mean is
-[`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md)'s
+[`upscale_time()`](https://camilleross.org/datamatch/reference/upscale_time.md)'s
 job, which keeps it visible:
 
     steps <- accessCCMP(vars = c("UWND", "VWND"), frequency = "6hourly",
@@ -140,8 +140,8 @@ adjustment.
 
 ## See also
 
-[`ccmp_variables()`](https://chross22.github.io/datamatch/reference/ccmp_variables.md),
-[`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md)
+[`ccmp_variables()`](https://camilleross.org/datamatch/reference/ccmp_variables.md),
+[`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 for the Copernicus wind, which carries stress
 
 ## Examples

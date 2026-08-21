@@ -34,5 +34,5 @@ initialisation. That is the route if you need them.
 `long_term_projection` and `multi_decadal_outlook` have directories on
 the server and no files in them. The portal announces an experiment
 before its output is posted, so this may simply be early;
-[`cefi_archive()`](https://chross22.github.io/datamatch/reference/cefi_archive.md)
+[`cefi_archive()`](https://camilleross.org/datamatch/reference/cefi_archive.md)
 will read them the moment they appear.
