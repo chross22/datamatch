@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">datamatch</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -61,18 +61,14 @@
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">ccmp_dictionary</span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> FVCOM variables available by name</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> CCMP variables available by name</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ------------------------------------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  name variable label                  units on  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  WSPD ws       Wind speed             m/s   CCMP</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  UWND uwnd     Eastward wind          m/s   CCMP</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  VWND vwnd     Northward wind         m/s   CCMP</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  NOBS nobs     Satellite observations count CCMP</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> `on` is where a value sits: which part of the mesh, and which sigma</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> layer. Node and element variables cannot be fetched together - see</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ?accessFVCOM. A sigma layer is a fraction of the local depth, not a depth.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Full descriptions: as.data.frame(fvcom_dictionary())$description</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  name variable label                  units source</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  WSPD ws       Wind speed             m/s   CCMP  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  UWND uwnd     Eastward wind          m/s   CCMP  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  VWND vwnd     Northward wind         m/s   CCMP  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  NOBS nobs     Satellite observations count CCMP  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Full descriptions: as.data.frame(ccmp_dictionary())$description</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -24,4 +24,15 @@ a data frame with `units` (as this package writes them), `eml`, and
 Which names are valid was established by validating documents against
 the schema rather than by reading a list — `milligramsPerCubicMeter` is
 accepted and `milligramPerCubicMeter` is not, and there is no way to
-tell from the outside which spelling a vocabulary chose.
+tell from the outside which spelling a vocabulary chose. The vocabulary
+is not even self-consistent about it: `milligramsPerCubicMeter` is
+plural on both words and `molePerCubicMeter` singular on both, and both
+are standard.
+
+## The unit type is not checked
+
+EML validates a *unit* name against its vocabulary but accepts any
+string as a custom unit's `unitType` — a deliberately nonsensical one
+passes the schema. So the types below are not kept honest by anything
+except being written honestly, which is worth knowing before copying
+one.

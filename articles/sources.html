@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">datamatch</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -68,31 +68,30 @@
 
     
     
-<p>datamatch fetches from five sources and joins any of them to your
+<p>datamatch fetches from seven sources and joins any of them to your
 observations the same way. This is about which one to reach for, and
 what changes when you do.</p>
 <p>Nothing here is downloaded when the vignette is built — the fetches
 are shown but not run, because each needs a network and some need
 several gigabytes.</p>
 <div class="section level2">
-<h2 id="the-five-side-by-side">The five, side by side<a class="anchor" aria-label="anchor" href="#the-five-side-by-side"></a>
+<h2 id="the-seven-side-by-side">The seven, side by side<a class="anchor" aria-label="anchor" href="#the-seven-side-by-side"></a>
 </h2>
-<table style="width:100%;" class="table">
+<p>The four models first:</p>
+<table class="table">
 <colgroup>
-<col width="16%">
-<col width="16%">
-<col width="16%">
-<col width="16%">
-<col width="16%">
-<col width="16%">
+<col width="20%">
+<col width="20%">
+<col width="20%">
+<col width="20%">
+<col width="20%">
 </colgroup>
 <thead><tr class="header">
 <th></th>
 <th><code><a href="../reference/accessCopernicus.html">accessCopernicus()</a></code></th>
 <th><code><a href="../reference/accessFVCOM.html">accessFVCOM()</a></code></th>
 <th><code><a href="../reference/accessHYCOM.html">accessHYCOM()</a></code></th>
-<th><code><a href="../reference/accessCCMP.html">accessCCMP()</a></code></th>
-<th><code><a href="../reference/accessERDDAP.html">accessERDDAP()</a></code></th>
+<th><code><a href="../reference/accessCEFI.html">accessCEFI()</a></code></th>
 </tr></thead>
 <tbody>
 <tr class="odd">
@@ -100,54 +99,61 @@ several gigabytes.</p>
 <td>Copernicus Marine</td>
 <td>NECOFS / any FVCOM</td>
 <td>HYCOM GOFS 3.1</td>
-<td>RSS CCMP v3.1</td>
-<td>NOAA ERDDAP</td>
+<td>NOAA CEFI, MOM6-COBALT</td>
 </tr>
 <tr class="even">
 <td>Kind</td>
 <td>global reanalysis, forecast, satellite</td>
 <td>regional coastal model</td>
 <td>global model</td>
-<td>wind analysis</td>
-<td>satellite analysis</td>
+<td>regional coupled model</td>
 </tr>
 <tr class="odd">
 <td>Grid</td>
 <td>0.083°–4 km, regular</td>
 <td>unstructured mesh</td>
 <td>0.08° regular</td>
-<td>0.25° regular</td>
-<td>0.01°–0.04° regular</td>
+<td>0.083° regular (regridded)</td>
 </tr>
 <tr class="even">
+<td>Extent</td>
+<td>global</td>
+<td>Gulf of Maine</td>
+<td>global</td>
+<td>NW Atlantic only</td>
+</tr>
+<tr class="odd">
 <td>Steps</td>
 <td>monthly, daily, hourly</td>
 <td>monthly (GOM3), hourly (GOM7)</td>
 <td>3-hourly</td>
-<td>6-hourly</td>
-<td>daily</td>
+<td>monthly, daily</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Record</td>
 <td>1993–</td>
 <td>1978–2013, then 2025–</td>
 <td>1994–2024 across archives</td>
-<td>1993–present</td>
-<td>2002– (SST), 2012– (chl)</td>
+<td>1993–2023</td>
+</tr>
+<tr class="odd">
+<td>Biogeochemistry</td>
+<td>0.25°, separate product</td>
+<td>—</td>
+<td>—</td>
+<td><strong>same grid as physics</strong></td>
 </tr>
 <tr class="even">
 <td>Bottom salinity</td>
 <td>derived</td>
 <td>free</td>
 <td>free</td>
-<td>—</td>
-<td>—</td>
+<td>free</td>
 </tr>
 <tr class="odd">
 <td>Wind stress</td>
 <td>yes</td>
 <td>GOM3 only</td>
-<td>—</td>
 <td>—</td>
 <td>—</td>
 </tr>
@@ -156,7 +162,6 @@ several gigabytes.</p>
 <td>server-side</td>
 <td>client-side</td>
 <td>server-side</td>
-<td><strong>whole globe</strong></td>
 <td>server-side</td>
 </tr>
 <tr class="odd">
@@ -165,7 +170,71 @@ several gigabytes.</p>
 <td>no</td>
 <td>no</td>
 <td>no</td>
+</tr>
+</tbody>
+</table>
+<p>Then the three observational products:</p>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th></th>
+<th><code><a href="../reference/accessCCMP.html">accessCCMP()</a></code></th>
+<th><code><a href="../reference/accessERDDAP.html">accessERDDAP()</a></code></th>
+<th><code><a href="../reference/accessOBDAAC.html">accessOBDAAC()</a></code></th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Source</td>
+<td>RSS CCMP v3.1</td>
+<td>NOAA ERDDAP</td>
+<td>NASA OB.DAAC</td>
+</tr>
+<tr class="even">
+<td>Kind</td>
+<td>wind analysis</td>
+<td>satellite analysis</td>
+<td>satellite Level-3 composites</td>
+</tr>
+<tr class="odd">
+<td>Grid</td>
+<td>0.25° regular</td>
+<td>0.01°–0.04° regular</td>
+<td>4 km or 9 km regular</td>
+</tr>
+<tr class="even">
+<td>Steps</td>
+<td>6-hourly</td>
+<td>daily</td>
+<td>daily, monthly</td>
+</tr>
+<tr class="odd">
+<td>Record</td>
+<td>1993–present</td>
+<td>2002– (SST), 2012– (chl)</td>
+<td><strong>1997–</strong></td>
+</tr>
+<tr class="even">
+<td>Gaps under cloud</td>
+<td>n/a</td>
+<td>none (analysed)</td>
+<td><strong>yes, single-sensor</strong></td>
+</tr>
+<tr class="odd">
+<td>Subsetting</td>
+<td><strong>whole globe</strong></td>
+<td>server-side</td>
+<td><strong>whole globe</strong></td>
+</tr>
+<tr class="even">
+<td>Account needed</td>
 <td>no</td>
+<td>no</td>
+<td><strong>yes, Earthdata</strong></td>
 </tr>
 </tbody>
 </table>
@@ -184,8 +253,17 @@ date can be the change of run rather than the ocean.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/variable_dictionary.html">variable_dictionary</a></span><span class="op">(</span><span class="op">)</span>   <span class="co"># Copernicus</span></span>
 <span><span class="fu"><a href="../reference/fvcom_dictionary.html">fvcom_dictionary</a></span><span class="op">(</span><span class="op">)</span>      <span class="co"># FVCOM</span></span>
 <span><span class="fu"><a href="../reference/hycom_dictionary.html">hycom_dictionary</a></span><span class="op">(</span><span class="op">)</span>      <span class="co"># HYCOM</span></span>
+<span><span class="fu"><a href="../reference/cefi_dictionary.html">cefi_dictionary</a></span><span class="op">(</span><span class="op">)</span>       <span class="co"># CEFI</span></span>
 <span><span class="fu"><a href="../reference/ccmp_dictionary.html">ccmp_dictionary</a></span><span class="op">(</span><span class="op">)</span>       <span class="co"># CCMP</span></span>
-<span><span class="fu"><a href="../reference/erddap_dictionary.html">erddap_dictionary</a></span><span class="op">(</span><span class="op">)</span>     <span class="co"># MUR and VIIRS</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/erddap_dictionary.html">erddap_dictionary</a></span><span class="op">(</span><span class="op">)</span>     <span class="co"># MUR and VIIRS</span></span>
+<span><span class="fu"><a href="../reference/obdaac_dictionary.html">obdaac_dictionary</a></span><span class="op">(</span><span class="op">)</span>     <span class="co"># SeaWiFS, MODIS, VIIRS</span></span></code></pre></div>
+<p>CEFI and OB.DAAC are the two most recently added, and each is here
+for one thing the other six do not do. CEFI is the only source carrying
+<strong>physics and biogeochemistry on one grid at one
+resolution</strong>, which is what a question about nutrients or oxygen
+alongside temperature actually needs. OB.DAAC is the only one reaching
+back to <strong>1997</strong>, which is what a question about trend
+rather than state needs.</p>
 </div>
 <div class="section level2">
 <h2 id="they-share-variable-names-on-purpose">They share variable names on purpose<a class="anchor" aria-label="anchor" href="#they-share-variable-names-on-purpose"></a>
@@ -244,9 +322,39 @@ no account, where the same product at PO.DAAC needs an Earthdata login.
 It is a satellite analysis of the <em>foundation</em> temperature rather
 than a model level, which is a different quantity from a model
 <code>SST</code>, not a better measurement of the same one.</p>
+<p><strong>Reach for CEFI for biogeochemistry on the shelf.</strong> It
+is the only source here where nitrate, oxygen, pH, pCO2, phytoplankton
+carbon and mesozooplankton biomass sit on the same twelfth-degree grid
+as the temperature and salinity — the Copernicus biogeochemical
+reanalysis is a quarter degree and a separate product, so pairing them
+means regridding across a factor of three. CEFI also publishes sea-floor
+salinity outright rather than by derivation. Its cost is extent: the
+Northwest Atlantic and nothing else, so a box outside roughly 98°W–36°W
+and 5°N–58°N is refused. Its daily output is biogeochemistry only.</p>
+<p><strong>Reach for OB.DAAC for the length of the ocean colour
+record.</strong> SeaWiFS begins in September 1997, where the ERDDAP
+chlorophyll entries begin in 2012 — the difference between a decade of
+chlorophyll and nearly three. It carries what ocean colour measures
+besides chlorophyll (<code>KD490</code>, <code>PAR</code>,
+<code>POC</code>, <code>PIC</code>) from the same retrieval, and both
+MODIS instruments alongside all three VIIRS so there is a sensor either
+side of any gap you need to bridge. Its costs are an Earthdata Login,
+whole-globe downloads, and cloud: these are single-sensor composites, so
+a daily field outside the tropics is mostly <code>NA</code>. Composite
+to monthly, or use <code><a href="../reference/fill_satellite_gaps.html">fill_satellite_gaps()</a></code>.</p>
+<p>Two warnings that belong with it. The <strong>sensors are not
+interchangeable</strong> — where they overlap they disagree, and a
+series stitched across a mission boundary has an instrumental step in
+it; where a long consistent record matters more than any one sensor, the
+Copernicus-GlobColour entries are multi-sensor and built for that. And
+<strong>PACE is not among the sensors</strong>, deliberately: its
+standard Level-3 mapped catalog publishes no chlorophyll suite, and its
+filenames carry a processing version that changes with each reprocessing
+and cannot be constructed. <code><a href="../reference/obdaac_sensors.html">?obdaac_sensors</a></code> gives the
+detail.</p>
 </div>
 <div class="section level2">
-<h2 id="bottom-salinity-four-ways">Bottom salinity, four ways<a class="anchor" aria-label="anchor" href="#bottom-salinity-four-ways"></a>
+<h2 id="bottom-salinity-five-ways">Bottom salinity, five ways<a class="anchor" aria-label="anchor" href="#bottom-salinity-five-ways"></a>
 </h2>
 <p><code>BOTS</code> is the clearest case of the same name costing
 different amounts:</p>
@@ -264,7 +372,10 @@ different amounts:</p>
 <span><span class="fu"><a href="../reference/accessFVCOM.html">accessFVCOM</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BOTT"</span>, <span class="st">"BOTS"</span><span class="op">)</span>, years <span class="op">=</span> <span class="fl">2010</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>, bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># HYCOM: `salinity_bottom` is its own field. Free.</span></span>
-<span><span class="fu"><a href="../reference/accessHYCOM.html">accessHYCOM</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BOTT"</span>, <span class="st">"BOTS"</span><span class="op">)</span>, years <span class="op">=</span> <span class="fl">2010</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>, bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/accessHYCOM.html">accessHYCOM</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BOTT"</span>, <span class="st">"BOTS"</span><span class="op">)</span>, years <span class="op">=</span> <span class="fl">2010</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>, bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># CEFI: `sob` is the model's own sea-floor diagnostic. Free, and NW Atlantic only.</span></span>
+<span><span class="fu"><a href="../reference/accessCEFI.html">accessCEFI</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"BOTT"</span>, <span class="st">"BOTS"</span><span class="op">)</span>, years <span class="op">=</span> <span class="fl">2010</span>, months <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">12</span>, bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span></code></pre></div>
 <p>Only the first is expensive, and only the first returns
 <code>BOTS_depth</code> — because only the first had to choose a level.
 The deepest wet model level is not the sea floor, and in deep water sits
@@ -273,7 +384,7 @@ well above it, so the depth is reported rather than left to assume.</p>
 <div class="section level2">
 <h2 id="sub-daily-data-and-means-that-are-not-means">Sub-daily data, and means that are not means<a class="anchor" aria-label="anchor" href="#sub-daily-data-and-means-that-are-not-means"></a>
 </h2>
-<p>Four of the five publish below daily somewhere, and none of them
+<p>Four of the seven publish below daily somewhere, and none of them
 publishes a daily mean:</p>
 <table class="table">
 <thead><tr class="header">
@@ -308,6 +419,10 @@ publishes a daily mean:</p>
 </tr>
 </tbody>
 </table>
+<p>The other three stop at daily. CEFI is monthly or daily and nothing
+finer; ERDDAP is daily; OB.DAAC is daily or a monthly composite, and its
+eight-day composite is refused because <code><a href="../reference/matchData.html">matchData()</a></code> has no
+step that means eight days.</p>
 <p>Where a source has no mean, none is invented.
 <code>frequency = "daily"</code> on HYCOM and CCMP takes one
 <strong>snapshot</strong> at a chosen hour — an instant, not an average.
@@ -479,6 +594,25 @@ system. <em>Oceanography</em> <strong>19</strong>(1):78–89. <a href="https://d
 Smedstad OM, Halliwell GR, Hogan PJ, Wallcraft AJ, Baraille R, Bleck R
 (2007). The HYCOM (HYbrid Coordinate Ocean Model) data assimilative
 system. <em>Journal of Marine Systems</em> <strong>65</strong>:60–83. <a href="https://doi.org/10.1016/j.jmarsys.2005.09.016" class="external-link uri">https://doi.org/10.1016/j.jmarsys.2005.09.016</a></p></li>
+<li>
+<p><strong>NOAA CEFI / MOM6-COBALT-NWA12</strong> — Ross AC, Stock
+CA, Adcroft A, Curchitser E, Hallberg R, Harrison MJ, Hedstrom K, Zadeh
+N, Alexander M, Chen W, Drenkard EJ, du Pontavice H, Dussin R, Gomez F,
+John JG, Kang D, Lavoie D, Resplandy L, Roobaert A, Saba V, Shin S-I,
+Siedlecki S, Simkins J (2023). A high-resolution physical–biogeochemical
+model for marine resource applications in the northwest Atlantic
+(MOM6-COBALT-NWA12 v1.0). <em>Geoscientific Model Development</em>
+<strong>16</strong>:6943–6985. <a href="https://doi.org/10.5194/gmd-16-6943-2023" class="external-link uri">https://doi.org/10.5194/gmd-16-6943-2023</a></p>
+<p>The paper is the model; the data is separately owed an
+acknowledgement, in the form PSL asks for: <em>Data provided by the NOAA
+Physical Sciences Laboratory, Boulder, Colorado, USA, from <a href="https://psl.noaa.gov/cefi_portal/" class="external-link uri">https://psl.noaa.gov/cefi_portal/</a></em>. There is no
+separate data DOI.</p>
+<p><strong>Say which release</strong> — <code><a href="../reference/source_of.html">source_of()</a></code> records
+it, as <code>cefi:NWA12-hindcast-r20250715</code>. Releases extend and
+revise the record, so two results from different releases are not the
+same numbers. For a forecast, say which initialisation and ensemble
+member as well.</p>
+</li>
 <li><p><strong>CCMP</strong> — Mears C, Lee T, Ricciardulli L, Wang X,
 Wentz F (2022). Improving the Accuracy of the Cross-Calibrated
 Multi-Platform (CCMP) Ocean Vector Winds. <em>Remote Sensing</em>
@@ -491,6 +625,43 @@ temperature. <em>Remote Sensing of Environment</em>
 (2018). Gap filling of missing data for VIIRS global ocean color
 products using the DINEOF method. <em>IEEE Transactions on Geoscience
 and Remote Sensing</em> <strong>56</strong>:4464–4476. <a href="https://doi.org/10.1109/TGRS.2018.2820423" class="external-link uri">https://doi.org/10.1109/TGRS.2018.2820423</a></p></li>
+<li>
+<p><strong>NASA OB.DAAC</strong> — <strong>two citations are owed,
+not one.</strong> The mission paper below describes the instrument; the
+<em>data</em> has a DOI of its own, under the <code>10.5067</code>
+prefix, minted per mission, per suite and per reprocessing — for example
+<a href="https://doi.org/10.5067/AQUA/MODIS/L3M/CHL/2022" class="external-link">10.5067/AQUA/MODIS/L3M/CHL/2022</a>
+for Aqua MODIS chlorophyll.</p>
+<p>The trailing version is not predictable from the suite: for Aqua
+MODIS the <code>PAR</code> DOI ending 2022 resolves where the
+<code>SST</code> one ending 2019 does not, and a reprocessing changes
+it. So this package points at the DOI rather than shipping a table of
+them that would go stale silently — look yours up at <a href="https://www.earthdata.nasa.gov/centers/ob-daac" class="external-link uri">https://www.earthdata.nasa.gov/centers/ob-daac</a> and cite
+it alongside the mission. <code><a href="../reference/obdaac_sensors.html">obdaac_sensors()</a></code> carries the
+mission papers at runtime, and <code><a href="../reference/source_of.html">source_of()</a></code> records which
+sensor answered, as <code>obdaac:MODISA-4km</code>.</p>
+<ul>
+<li>
+<em>SeaWiFS</em> — McClain CR, Feldman GC, Hooker SB (2004). An
+overview of the SeaWiFS project and strategies for producing a climate
+research quality global ocean bio-optical time series. <em>Deep-Sea
+Research II</em> <strong>51</strong>:5–42. <a href="https://doi.org/10.1016/j.dsr2.2003.11.001" class="external-link uri">https://doi.org/10.1016/j.dsr2.2003.11.001</a>
+</li>
+<li>
+<em>MODIS</em> — Esaias WE, Abbott MR, Barton I, Brown OB, Campbell
+JW, Carder KL, Clark DK, Evans RH, Hoge FE, Gordon HR, Balch WM,
+Letelier R, Minnett PJ (1998). An overview of MODIS capabilities for
+ocean science observations. <em>IEEE Transactions on Geoscience and
+Remote Sensing</em> <strong>36</strong>:1250–1265. <a href="https://doi.org/10.1109/36.701076" class="external-link uri">https://doi.org/10.1109/36.701076</a>
+</li>
+<li>
+<em>VIIRS</em> — Wang M, Liu X, Tan L, Jiang L, Son S, Shi W, Rausch
+K, Voss K (2013). Impacts of VIIRS SDR performance on ocean color
+products. <em>Journal of Geophysical Research: Atmospheres</em>
+<strong>118</strong>:10347–10360. <a href="https://doi.org/10.1002/jgrd.50793" class="external-link uri">https://doi.org/10.1002/jgrd.50793</a>
+</li>
+</ul>
+</li>
 </ul>
 <p>Say which archive as well as which model — a value from the HYCOM
 reanalysis and one from an operational experiment are not the same run,
@@ -746,6 +917,51 @@ the rest, then chain <code><a href="../reference/matchData.html">matchData()</a>
 <p>Scalars sit on mesh nodes and velocities on element centroids, so the
 two kinds cannot be read together. Call <code><a href="../reference/accessFVCOM.html">accessFVCOM()</a></code> once
 for each and chain <code><a href="../reference/matchData.html">matchData()</a></code>.</p>
+<p><strong><code>The CEFI hindcast saves no daily SST</code></strong></p>
+<p>Expected. CEFI’s daily output is biogeochemistry only —
+<code>CHL</code>, <code>NO3</code>, <code>PH</code>, <code>PCO2</code>,
+<code>PHYC</code>, <code>MESOZOO</code> and <code>BOTO2</code>.
+Everything else is monthly, and the message lists what is available
+daily.</p>
+<p><strong><code>The bounding box selects no CEFI cells</code></strong></p>
+<p>CEFI is a regional model, not a global one. The Northwest Atlantic
+domain runs roughly 98°W–36°W and 5°N–58°N, and the message gives the
+actual extent. Longitudes are negative west, and the regridded files are
+already on that convention, so no conversion is needed in either
+direction.</p>
+<p><strong><code>CEFI's 'seasonal_forecast' cannot be read through this package</code></strong></p>
+<p>Not a fault in your call. Those files carry a 64-bit integer
+coordinate that DAP2 has no type for, so the server returns HTTP 500 to
+every OPeNDAP request; the DAP4 endpoint describes them and then reads
+them wrongly, crashing R. The files download whole from the THREDDS
+<code>fileServer</code> endpoint and open correctly once local, at
+roughly 260 MB per variable per initialisation.</p>
+<p><strong><code>init</code> / <code>member</code>
+<code>is required for CEFI's decadal forecast</code></strong></p>
+<p>Deliberate. A decadal file is ten years from one January and there
+are sixty of them, so which initialisation you mean is a question about
+your analysis. Each holds ten ensemble members, and averaging them is a
+modelling decision this package will not make silently — read the
+members you want and combine them yourself, so the combination is
+visible in your code.</p>
+<p><strong><code>Reading OB.DAAC needs an Earthdata Login</code></strong></p>
+<p>The one account this package cannot work around. Register at <a href="https://urs.earthdata.nasa.gov/users/new" class="external-link uri">https://urs.earthdata.nasa.gov/users/new</a>, generate an
+appkey at <a href="https://oceandata.sci.gsfc.nasa.gov/appkey/" class="external-link uri">https://oceandata.sci.gsfc.nasa.gov/appkey/</a>, and put it
+in <code>~/.Renviron</code> as <code>EARTHDATA_APPKEY=</code>. A
+<code>~/.netrc</code> entry for <code>urs.earthdata.nasa.gov</code>
+works too.</p>
+<p><strong><code>the server returned a login page rather than the file</code></strong></p>
+<p>The credential is missing, wrong, or revoked. NASA answers an
+unauthenticated request with HTTP 200 and the login page rather than a
+401, so this is caught by checking the bytes; nothing is written to
+disk. A date the sensor did not return lands here too, since the two are
+indistinguishable from the response.</p>
+<p><strong><code>MODISA does not publish: NFLH</code></strong> <em>(or
+similar)</em></p>
+<p>The sensor does not carry that suite. SeaWiFS measures no temperature
+at all; only MODIS carries <code>NFLH</code>; VIIRSJ2 has no SST yet.
+The message lists what that sensor does carry, and
+<code><a href="../reference/obdaac_sensors.html">obdaac_sensors()</a></code> has the full table.</p>
 <p><strong><code>The download did not return: uo, vo</code></strong></p>
 <p>Those variables were requested but are not in the returned file.
 Either the dataset does not serve them, or they are unavailable at the

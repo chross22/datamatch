@@ -6,7 +6,7 @@ stations, tag positions, or another gridded product — and the package
 also covers regridding, gap filling, seafloor terrain, and basin-scale
 climate indices.
 
-Five sources sit behind one interface, sharing one set of variable
+Seven sources sit behind one interface, sharing one set of variable
 names:
 
 | Source | Function | Gives | Steps | Record |
@@ -14,8 +14,10 @@ names:
 | Copernicus Marine | [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md) | physics, biogeochemistry, ocean colour, wind and stress | monthly, daily, hourly | 1993– |
 | FVCOM / NECOFS | [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md) | coastal model on a triangular mesh | monthly, hourly | 1978–2013, then 2025– |
 | HYCOM | [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md) | independent global model, sea-floor fields | 3-hourly | 1994–2024 |
+| NOAA CEFI | [`accessCEFI()`](https://chross22.github.io/datamatch/reference/accessCEFI.md) | regional NW Atlantic model, coupled biogeochemistry | monthly, daily | 1993–2023 |
 | CCMP | [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md) | surface winds | 6-hourly | 1993–present |
 | MUR / VIIRS | [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md) | satellite SST and chlorophyll | daily | 2002– / 2012– |
+| NASA OB.DAAC | [`accessOBDAAC()`](https://chross22.github.io/datamatch/reference/accessOBDAAC.md) | the full satellite ocean colour record | daily, monthly | 1997– |
 
 Each takes `vars`, a `bounding_box`, and either `years`/`months` or
 `dates`, and each returns one row per cell per time step, as `sf`. So
@@ -30,11 +32,12 @@ matched <- matchData(matched,      accessCCMP(vars = "WSPD", ...))
 ```
 
 > **One name, several sources, and they are not the same number.** `SST`
-> from Copernicus, FVCOM and HYCOM are three different models, and
-> `WSPD` from Copernicus and CCMP two different analyses. Sharing the
-> column name is what makes them interchangeable *mechanically* — so
-> everything downstream works unchanged — and is exactly why it is worth
-> recording which one you used.
+> from Copernicus, FVCOM, HYCOM and CEFI are four different models, and
+> `CHL` from Copernicus, ERDDAP, OB.DAAC and CEFI four different things
+> — three retrievals and a simulation. Sharing the column name is what
+> makes them interchangeable *mechanically* — so everything downstream
+> works unchanged — and is exactly why it is worth recording which one
+> you used.
 > [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
 > writes a `<var>_source` column saying which, and
 > [`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
@@ -43,7 +46,7 @@ matched <- matchData(matched,      accessCCMP(vars = "WSPD", ...))
 This README is the front door. The detail lives in [four
 articles](#vignettes), and [“Choosing a data
 source”](https://chross22.github.io/datamatch/articles/sources.html)
-compares the five side by side if that is what you came for.
+compares the seven side by side if that is what you came for.
 
 ## Installation
 
@@ -193,10 +196,12 @@ prints the same thing grouped by product, with the dataset identifiers
 and documentation links.
 [`fvcom_dictionary()`](https://chross22.github.io/datamatch/reference/fvcom_dictionary.md),
 [`hycom_dictionary()`](https://chross22.github.io/datamatch/reference/hycom_dictionary.md),
-[`ccmp_dictionary()`](https://chross22.github.io/datamatch/reference/ccmp_dictionary.md)
+[`ccmp_dictionary()`](https://chross22.github.io/datamatch/reference/ccmp_dictionary.md),
+[`erddap_dictionary()`](https://chross22.github.io/datamatch/reference/erddap_dictionary.md),
+[`cefi_dictionary()`](https://chross22.github.io/datamatch/reference/cefi_dictionary.md)
 and
-[`erddap_dictionary()`](https://chross22.github.io/datamatch/reference/erddap_dictionary.md)
-do the same for the other four sources, and
+[`obdaac_dictionary()`](https://chross22.github.io/datamatch/reference/obdaac_dictionary.md)
+do the same for the other six sources, and
 [`as_markdown()`](https://chross22.github.io/datamatch/reference/as_markdown.md)
 renders any of them as a pipe table.
 
@@ -351,6 +356,52 @@ operational model never claims to be the reanalysis.
 Note also that some three-hourly steps are simply absent, so a daily
 request at a missing hour skips that day and warns.
 
+## NOAA CEFI
+
+[`accessCEFI()`](https://chross22.github.io/datamatch/reference/accessCEFI.md)
+reads NOAA’s Changing Ecosystems and Fisheries Initiative regional model
+— MOM6-COBALT run for the **Northwest Atlantic at a twelfth of a
+degree**, from the US east coast to the Caribbean, 1993–2023. No account
+needed.
+
+It is the only source here that carries **coupled physics and
+biogeochemistry on one grid at one resolution**: temperature and
+salinity beside nitrate, oxygen, pH, pCO2, phytoplankton carbon and
+mesozooplankton biomass. The Copernicus biogeochemical reanalysis is a
+quarter degree; this resolves the Gulf of Maine rather than smoothing
+across it. It also publishes **sea-floor salinity outright** as `sob`,
+so `BOTS` needs none of the deepest-wet-level derivation GLORYS forces.
+
+Two things to know. **It is one region** — outside roughly 98°W–36°W and
+5°N–58°N there is nothing, and a box outside the domain is refused
+rather than returning an empty join. And **the daily output is
+biogeochemistry only**: `CHL`, `NO3`, `PH`, `PCO2`, `PHYC`, `MESOZOO`
+and `BOTO2` have a daily step, everything else is monthly, and a daily
+request for `SST` says so.
+
+[`cefi_variables()`](https://chross22.github.io/datamatch/reference/cefi_variables.md)
+and
+[`cefi_dictionary()`](https://chross22.github.io/datamatch/reference/cefi_dictionary.md)
+list the catalog;
+[`cefi_archives()`](https://chross22.github.io/datamatch/reference/cefi_archives.md)
+names the runs that ship, and
+[`cefi_archive()`](https://chross22.github.io/datamatch/reference/cefi_archive.md)
+reaches the domains that do not — Northeast Pacific, Arctic, Pacific
+Islands, Great Lakes — the same way
+[`fvcom_archive()`](https://chross22.github.io/datamatch/reference/fvcom_archive.md)
+does for FVCOM.
+
+> **Forecasts are experimental.** `experiment = "decadal_forecast"`
+> reads a prediction rather than a reconstruction, warns on every call,
+> and will not choose for you: `init` says which of the sixty
+> initialisations to read and `member` which of the ten ensemble
+> members, because averaging members is a modelling decision this
+> package will not make silently. CEFI’s seasonal forecast cannot be
+> read here at all — its files carry a 64-bit coordinate that OPeNDAP
+> cannot serve — and
+> [`accessCEFI()`](https://chross22.github.io/datamatch/reference/accessCEFI.md)
+> says so with the workaround.
+
 ## CCMP
 
 [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
@@ -408,6 +459,49 @@ describes any of them for
 the same way
 [`fvcom_archive()`](https://chross22.github.io/datamatch/reference/fvcom_archive.md)
 does for FVCOM.
+
+## NASA OB.DAAC
+
+[`accessOBDAAC()`](https://chross22.github.io/datamatch/reference/accessOBDAAC.md)
+reads Level-3 mapped ocean colour from NASA’s Ocean Biology DAAC. What
+it adds over
+[`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+is **length**: SeaWiFS from September 1997, then both MODIS instruments
+and all three VIIRS, all reprocessed together, where the ERDDAP entries
+start in 2012 at the earliest.
+
+| Sensor             | Gives               | Record          |
+|--------------------|---------------------|-----------------|
+| `SEAWIFS`          | colour only         | 1997-09–2010-12 |
+| `MODIST`           | colour, SST, `NFLH` | 2000-02–        |
+| `MODISA` (default) | colour, SST, `NFLH` | 2002-07–        |
+| `VIIRS`            | colour, SST         | 2012-01–        |
+| `VIIRSJ1`          | colour, SST         | 2017-12–        |
+| `VIIRSJ2`          | colour only         | 2023-03–        |
+
+Beyond `CHL` it carries what ocean colour measures besides chlorophyll —
+`KD490`, `PAR`, `POC`, `PIC` — from the same retrieval on the same grid.
+
+Three things to know. **It is the one source needing a NASA Earthdata
+Login**, and the failure without one is misleading: NASA answers an
+unauthenticated request with HTTP 200 and the login page, so
+[`accessOBDAAC()`](https://chross22.github.io/datamatch/reference/accessOBDAAC.md)
+checks the bytes and refuses it by name rather than writing HTML into a
+`.nc` file. Register once and generate an appkey, then put it in
+`~/.Renviron` as `EARTHDATA_APPKEY=`. **There is no server-side
+subsetting** — a variable-day is one global file, about 15 MB at 4 km
+and 5 MB at 9 km, subset locally and cached. And **daily fields are
+gappy**: these are single-sensor composites, so outside the tropics a
+daily `CHL` is mostly cloud. Use `frequency = "monthly"`, or
+[`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md).
+
+> **The sensors are not interchangeable.** Where they overlap they
+> disagree, and stitching a series across a mission boundary puts an
+> instrumental step in it.
+> [`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
+> records which one answered. Where a long consistent record matters
+> more than any one sensor, the Copernicus-GlobColour entries are
+> multi-sensor and built for that.
 
 ## Matching
 
@@ -560,13 +654,13 @@ page for each export. In brief:
 
 |  |  |
 |----|----|
-| **Fetching** | [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md), [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md), [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md), [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md), [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md) |
+| **Fetching** | [`accessCopernicus()`](https://chross22.github.io/datamatch/reference/accessCopernicus.md), [`accessFVCOM()`](https://chross22.github.io/datamatch/reference/accessFVCOM.md), [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md), [`accessCEFI()`](https://chross22.github.io/datamatch/reference/accessCEFI.md), [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md), [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md), [`accessOBDAAC()`](https://chross22.github.io/datamatch/reference/accessOBDAAC.md) |
 | **Matching** | [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md), [`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md), [`write_eml()`](https://chross22.github.io/datamatch/reference/write_eml.md), [`covariate_columns()`](https://chross22.github.io/datamatch/reference/covariate_columns.md) |
 | **Resampling** | [`upscale_grid()`](https://chross22.github.io/datamatch/reference/upscale_grid.md), [`downscale_grid()`](https://chross22.github.io/datamatch/reference/downscale_grid.md), [`upscale_time()`](https://chross22.github.io/datamatch/reference/upscale_time.md), [`downscale_time()`](https://chross22.github.io/datamatch/reference/downscale_time.md), [`grid_resolution()`](https://chross22.github.io/datamatch/reference/grid_resolution.md), [`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md) |
 | **Plotting** | [`plot_env()`](https://chross22.github.io/datamatch/reference/plot_env.md), [`plot_coverage()`](https://chross22.github.io/datamatch/reference/plot_coverage.md), [`plot_series()`](https://chross22.github.io/datamatch/reference/plot_series.md), [`plot_matched()`](https://chross22.github.io/datamatch/reference/plot_matched.md), [`plot_mesh()`](https://chross22.github.io/datamatch/reference/plot_mesh.md) |
 | **Terrain and indices** | [`fetch_bathymetry()`](https://chross22.github.io/datamatch/reference/fetch_bathymetry.md), [`attach_bathymetry()`](https://chross22.github.io/datamatch/reference/attach_bathymetry.md), [`bathymetry_variables()`](https://chross22.github.io/datamatch/reference/bathymetry_variables.md), [`fetch_climate_index()`](https://chross22.github.io/datamatch/reference/fetch_climate_index.md), [`attach_climate_index()`](https://chross22.github.io/datamatch/reference/attach_climate_index.md), [`climate_indices()`](https://chross22.github.io/datamatch/reference/climate_indices.md), [`index_dictionary()`](https://chross22.github.io/datamatch/reference/index_dictionary.md), [`climate_index_status()`](https://chross22.github.io/datamatch/reference/climate_index_status.md), [`refresh_climate_index()`](https://chross22.github.io/datamatch/reference/refresh_climate_index.md) |
-| **Catalogs** | [`variable_dictionary()`](https://chross22.github.io/datamatch/reference/variable_dictionary.md), [`fvcom_dictionary()`](https://chross22.github.io/datamatch/reference/fvcom_dictionary.md), [`hycom_dictionary()`](https://chross22.github.io/datamatch/reference/hycom_dictionary.md), [`ccmp_dictionary()`](https://chross22.github.io/datamatch/reference/ccmp_dictionary.md), [`erddap_dictionary()`](https://chross22.github.io/datamatch/reference/erddap_dictionary.md), [`as_markdown()`](https://chross22.github.io/datamatch/reference/as_markdown.md) |
-| **Escape hatches** | [`fvcom_archive()`](https://chross22.github.io/datamatch/reference/fvcom_archive.md), [`erddap_dataset()`](https://chross22.github.io/datamatch/reference/erddap_dataset.md), [`hycom_covering()`](https://chross22.github.io/datamatch/reference/hycom_covering.md), [`fvcom_mesh()`](https://chross22.github.io/datamatch/reference/fvcom_mesh.md) |
+| **Catalogs** | [`variable_dictionary()`](https://chross22.github.io/datamatch/reference/variable_dictionary.md), [`fvcom_dictionary()`](https://chross22.github.io/datamatch/reference/fvcom_dictionary.md), [`hycom_dictionary()`](https://chross22.github.io/datamatch/reference/hycom_dictionary.md), [`cefi_dictionary()`](https://chross22.github.io/datamatch/reference/cefi_dictionary.md), [`ccmp_dictionary()`](https://chross22.github.io/datamatch/reference/ccmp_dictionary.md), [`erddap_dictionary()`](https://chross22.github.io/datamatch/reference/erddap_dictionary.md), [`obdaac_dictionary()`](https://chross22.github.io/datamatch/reference/obdaac_dictionary.md), [`as_markdown()`](https://chross22.github.io/datamatch/reference/as_markdown.md) |
+| **Escape hatches** | [`fvcom_archive()`](https://chross22.github.io/datamatch/reference/fvcom_archive.md), [`cefi_archive()`](https://chross22.github.io/datamatch/reference/cefi_archive.md), [`erddap_dataset()`](https://chross22.github.io/datamatch/reference/erddap_dataset.md), [`hycom_covering()`](https://chross22.github.io/datamatch/reference/hycom_covering.md), [`fvcom_mesh()`](https://chross22.github.io/datamatch/reference/fvcom_mesh.md) |
 
 The `_dictionary()` functions print as tables and are what to read; the
 plain catalog functions return lists and are what to write code against
@@ -581,10 +675,14 @@ for Copernicus, and
 [`fvcom_archives()`](https://chross22.github.io/datamatch/reference/fvcom_archives.md),
 [`hycom_variables()`](https://chross22.github.io/datamatch/reference/hycom_variables.md),
 [`hycom_archives()`](https://chross22.github.io/datamatch/reference/hycom_archives.md),
+[`cefi_variables()`](https://chross22.github.io/datamatch/reference/cefi_variables.md),
+[`cefi_archives()`](https://chross22.github.io/datamatch/reference/cefi_archives.md),
 [`ccmp_variables()`](https://chross22.github.io/datamatch/reference/ccmp_variables.md),
-[`ccmp_versions()`](https://chross22.github.io/datamatch/reference/ccmp_versions.md)
+[`ccmp_versions()`](https://chross22.github.io/datamatch/reference/ccmp_versions.md),
+[`erddap_datasets()`](https://chross22.github.io/datamatch/reference/erddap_datasets.md),
+[`obdaac_variables()`](https://chross22.github.io/datamatch/reference/obdaac_variables.md)
 and
-[`erddap_datasets()`](https://chross22.github.io/datamatch/reference/erddap_datasets.md)
+[`obdaac_sensors()`](https://chross22.github.io/datamatch/reference/obdaac_sensors.md)
 for the rest.
 [`accessEnvDat()`](https://chross22.github.io/datamatch/reference/accessEnvDat.md)
 is the old name for
@@ -596,7 +694,7 @@ it works, and warns.
 |  |  |
 |----|----|
 | [Getting started](https://chross22.github.io/datamatch/articles/datamatch.html) | observations to a modelling table, end to end |
-| [Choosing a data source](https://chross22.github.io/datamatch/articles/sources.html) | which of the five to reach for, what changes when you do, error messages, and what to cite |
+| [Choosing a data source](https://chross22.github.io/datamatch/articles/sources.html) | which of the seven to reach for, what changes when you do, error messages, and what to cite |
 | [Working with what comes back](https://chross22.github.io/datamatch/articles/working-with-data.html) | resampling, gap filling, and looking at the data |
 | [Static and basin-scale covariates](https://chross22.github.io/datamatch/articles/covariates.html) | seafloor terrain and climate indices |
 
@@ -619,9 +717,11 @@ lists them all with DOIs,
 links to each Copernicus product page, and
 [`index_dictionary()`](https://chross22.github.io/datamatch/reference/index_dictionary.md),
 [`fvcom_archives()`](https://chross22.github.io/datamatch/reference/fvcom_archives.md),
-[`hycom_archives()`](https://chross22.github.io/datamatch/reference/hycom_archives.md)
-and
+[`hycom_archives()`](https://chross22.github.io/datamatch/reference/hycom_archives.md),
+[`cefi_archives()`](https://chross22.github.io/datamatch/reference/cefi_archives.md),
 [`ccmp_versions()`](https://chross22.github.io/datamatch/reference/ccmp_versions.md)
+and
+[`obdaac_sensors()`](https://chross22.github.io/datamatch/reference/obdaac_sensors.md)
 carry their references at runtime.
 
 ``` r

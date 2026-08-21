@@ -17,7 +17,7 @@ provides for exactly this and is what data repositories expect."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">datamatch</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -74,7 +74,18 @@ provides for exactly this and is what data repositories expect.</p>
     <p>Which names are valid was established by validating documents against the
 schema rather than by reading a list — <code>milligramsPerCubicMeter</code> is accepted
 and <code>milligramPerCubicMeter</code> is not, and there is no way to tell from the
-outside which spelling a vocabulary chose.</p>
+outside which spelling a vocabulary chose. The vocabulary is not even
+self-consistent about it: <code>milligramsPerCubicMeter</code> is plural on both words
+and <code>molePerCubicMeter</code> singular on both, and both are standard.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="the-unit-type-is-not-checked">The unit type is not checked<a class="anchor" aria-label="anchor" href="#the-unit-type-is-not-checked"></a></h2>
+
+
+<p>EML validates a <em>unit</em> name against its vocabulary but accepts any string as
+a custom unit's <code>unitType</code> — a deliberately nonsensical one passes the
+schema. So the types below are not kept honest by anything except being
+written honestly, which is worth knowing before copying one.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -1,5 +1,171 @@
 # Changelog
 
+## datamatch 0.3.0
+
+### New features
+
+- **Two new sources:
+  [`accessCEFI()`](https://chross22.github.io/datamatch/reference/accessCEFI.md)
+  and
+  [`accessOBDAAC()`](https://chross22.github.io/datamatch/reference/accessOBDAAC.md).**
+  Seven sources now sit behind one interface, and each of the two is
+  here for something the other five do not do.
+
+  **NOAA CEFI**
+  ([`accessCEFI()`](https://chross22.github.io/datamatch/reference/accessCEFI.md))
+  reads the Changing Ecosystems and Fisheries Initiative regional
+  model - MOM6-COBALT run for the Northwest Atlantic at a twelfth of a
+  degree, 1993-2023, over OPeNDAP from the NOAA Physical Sciences
+  Laboratory, with no account. It is the only source here carrying
+  **coupled physics and biogeochemistry on one grid at one resolution**:
+  `NO3`, `PO4`, `O2`, `PH`, `PCO2`, `PHYC`, `MESOZOO` and `BOTO2` beside
+  `SST`, `SSS`, `BOTT`, `BOTS`, `SSH`, `MLD`, `SIC`, `UO` and `VO`. The
+  Copernicus biogeochemical reanalysis is a quarter degree and a
+  separate product, so pairing them otherwise means regridding across a
+  factor of three.
+
+  It also publishes sea-floor salinity outright, so `BOTS` from CEFI
+  needs none of the deepest-wet-level derivation GLORYS forces, and
+  returns no `BOTS_depth`.
+  [`cefi_archive()`](https://chross22.github.io/datamatch/reference/cefi_archive.md)
+  reaches the domains that do not ship - Northeast Pacific, Arctic,
+  Pacific Islands, Great Lakes - the way
+  [`fvcom_archive()`](https://chross22.github.io/datamatch/reference/fvcom_archive.md)
+  does for FVCOM.
+
+  **NASA OB.DAAC**
+  ([`accessOBDAAC()`](https://chross22.github.io/datamatch/reference/accessOBDAAC.md))
+  reads Level-3 mapped ocean colour from NASA’s Ocean Biology DAAC. What
+  it adds over
+  [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
+  is length: SeaWiFS from September 1997, then both MODIS instruments
+  and all three VIIRS, where the ERDDAP chlorophyll entries begin
+  in 2012. Beyond `CHL` it carries `KD490`, `PAR`, `POC`, `PIC`, `SST`,
+  `SST_NIGHT` and `NFLH`.
+
+  It is the one source in this package needing an account.
+  [`obdaac_credentials()`](https://chross22.github.io/datamatch/reference/obdaac_credentials.md)
+  documents both routes - an OB.DAAC appkey, or a `~/.netrc` entry for
+  `urs.earthdata.nasa.gov` - and where each is looked for.
+
+- **A failed Earthdata login is reported as one.** NASA answers an
+  unauthenticated request with **HTTP 200 and the login page**, not a
+  401, so a download that trusts the status code writes nine kilobytes
+  of HTML into a file named `.nc` and the mistake surfaces much later as
+  a corrupt netCDF.
+  [`accessOBDAAC()`](https://chross22.github.io/datamatch/reference/accessOBDAAC.md)
+  checks the first bytes for the netCDF signature instead, names the
+  credential as the cause, and leaves nothing on disk.
+
+- **CEFI forecasts are supported, and say that they are experimental.**
+  `experiment = "decadal_forecast"` warns on every call, and requires
+  `init` and `member` rather than defaulting them. Neither has a
+  defensible default: a decadal file is ten years from one January and
+  there are sixty of them, and each holds ten ensemble members whose
+  average is a modelling decision this package will not make silently.
+  [`source_of()`](https://chross22.github.io/datamatch/reference/source_of.md)
+  records both, as `cefi:NWA12-decadal_forecast-r20250925-i198001-m01`.
+
+- **A CEFI source tag names the release, not the alias.**
+  `release = "latest"` is the default because a pinned release goes
+  stale, but it is a poor thing to record - two runs a year apart would
+  carry the same tag and different numbers. The tag is taken from the
+  filename actually read, so a fetch made with `"latest"` records
+  `cefi:NWA12-hindcast-r20250715`.
+
+- **Both new sources are described in the EML
+  [`write_eml()`](https://chross22.github.io/datamatch/reference/write_eml.md)
+  writes.**
+  [`known_variables()`](https://chross22.github.io/datamatch/reference/known_variables.md)
+  gathers labels and units from every source catalog, and a catalog
+  missing from it is silent: the source still fetches, still joins, and
+  then produces a document in which its columns have no definition and
+  no units. CEFI’s and OB.DAAC’s catalogs are now listed, and a test
+  checks every catalog reaches it rather than only checking the units.
+
+  Seven units came with them. Only `mol/m3` had a standard EML
+  spelling - `molePerCubicMeter`, singular on both words where
+  `milligramsPerCubicMeter` is plural on both, which is the sort of
+  thing only validation tells you. The other six (`umol/kg`, `uatm`,
+  `mol/m2`, `1/m`, `einstein/m2/day`, `W/m2/um/sr`) are emitted as
+  declared custom units, and a test writes a table carrying all of them
+  and validates it against the schema.
+
+- **Both new sources are cited in the EML methods section, and the data
+  is cited as well as the paper.**
+  [`source_reference()`](https://chross22.github.io/datamatch/reference/source_reference.md)
+  switches on the source family, and a family with no branch returns
+  `NA` - at which point the methods section names the source and cites
+  nothing, which is the failure that section exists to prevent, arriving
+  silently. A test now walks the families instead of trusting the list
+  to stay complete.
+
+  For CEFI that is the model paper plus the acknowledgement NOAA PSL
+  asks for, with the release named, since releases revise the record.
+  For OB.DAAC it is the mission paper plus a pointer to the dataset DOI,
+  which is a **separate obligation**: OB.DAAC mints one per mission,
+  suite and reprocessing, and the version token is not predictable from
+  the suite - Aqua MODIS `PAR/2022` resolves where `SST/2019` does not.
+  A hard-coded table of them would be wrong at the next reprocessing and
+  wrong silently, so the citation names the dataset and says where its
+  DOI lives, as the Copernicus one already did.
+
+### Bug fixes
+
+- **[`ccmp_dictionary()`](https://chross22.github.io/datamatch/reference/ccmp_dictionary.md)
+  and
+  [`erddap_dictionary()`](https://chross22.github.io/datamatch/reference/erddap_dictionary.md)
+  no longer print as FVCOM.**
+  [`print.datamatch_dictionary()`](https://chross22.github.io/datamatch/reference/variable_dictionary.md)
+  told the dictionaries apart by the absence of the Copernicus `product`
+  column, which is true of four of them, so every non-Copernicus
+  dictionary printed FVCOM’s header and FVCOM’s footer - telling a CCMP
+  user about sigma layers and pointing them at
+  [`?accessFVCOM`](https://chross22.github.io/datamatch/reference/accessFVCOM.md).
+  Each dictionary now carries a tag saying which source it describes,
+  and prints its own header, its own explanation of the last column, and
+  its own `Full descriptions:` line.
+
+### Refusals worth knowing about
+
+- **CEFI’s seasonal forecast and reforecast cannot be read**, and are
+  refused with the reason rather than attempted. Those files carry a
+  64-bit integer coordinate that DAP2 has no type for, so the PSL server
+  returns HTTP 500 to every OPeNDAP request for one; the DAP4 endpoint
+  describes them and then reads them wrongly, transposing start against
+  count and crashing R with a bus error. A reader that segfaults the
+  session is worse than no reader. The files download whole from the
+  THREDDS `fileServer` endpoint and open correctly once local, at
+  roughly 260 MB per variable per initialisation.
+
+- **CEFI’s long-term projection and multi-decadal outlook have
+  directories and no files.** The portal announces an experiment before
+  its output is posted.
+  [`cefi_archive()`](https://chross22.github.io/datamatch/reference/cefi_archive.md)
+  will read them when they appear.
+
+- **OB.DAAC eight-day composites are refused.** They are the obvious
+  answer to cloud gaps, but
+  [`matchData()`](https://chross22.github.io/datamatch/reference/matchData.md)
+  joins on an hour, a day, a month or a year, and an eight-day bin is
+  none of those: stamped as a day it would demand an observation fall on
+  the bin’s first date, and nearly every row would go unmatched. Use
+  `frequency = "monthly"`, or
+  [`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md)
+  on the daily field.
+
+- **PACE is not among the OB.DAAC sensors.** Its standard Level-3 mapped
+  catalog publishes no chlorophyll suite, and its filenames carry a
+  processing version that changes with each reprocessing and cannot be
+  constructed - only looked up, through a file search that accepts POST
+  only. Hard-coding a version would work until the next reprocessing and
+  then fail silently.
+
+- **CEFI has no `PP`.** It writes `intpp`, production integrated over
+  the water column in mol/m2/s, which is not the satellite `PP`’s
+  volumetric rate in mg/m2/day. Giving them one name would make a
+  nonsense of any comparison.
+
 ## datamatch 0.2.0
 
 ### Breaking changes

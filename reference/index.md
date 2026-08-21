@@ -2,7 +2,7 @@
 
 ## Fetching data
 
-Four sources behind one interface, sharing one set of variable names,
+Seven sources behind one interface, sharing one set of variable names,
 and all returning the same shape. A value of the same name from two of
 them is not the same number - each function’s help says what its source
 is and is not good for.
@@ -15,10 +15,14 @@ is and is not good for.
   : Access FVCOM output from the NECOFS hindcast
 - [`accessHYCOM()`](https://chross22.github.io/datamatch/reference/accessHYCOM.md)
   : Access HYCOM output from the GOFS 3.1 reanalysis
+- [`accessCEFI()`](https://chross22.github.io/datamatch/reference/accessCEFI.md)
+  : Access CEFI regional MOM6 output
 - [`accessCCMP()`](https://chross22.github.io/datamatch/reference/accessCCMP.md)
   : Access CCMP ocean surface winds
 - [`accessERDDAP()`](https://chross22.github.io/datamatch/reference/accessERDDAP.md)
   : Access satellite data through ERDDAP
+- [`accessOBDAAC()`](https://chross22.github.io/datamatch/reference/accessOBDAAC.md)
+  : Access NASA OB.DAAC ocean colour and sea surface temperature
 - [`fill_satellite_gaps()`](https://chross22.github.io/datamatch/reference/fill_satellite_gaps.md)
   : Fill satellite gaps with the model equivalent
 - [`forecast_variables()`](https://chross22.github.io/datamatch/reference/forecast_variables.md)
@@ -133,6 +137,14 @@ and where it is documented.
   : HYCOM archives this package can read
 - [`hycom_covering()`](https://chross22.github.io/datamatch/reference/hycom_covering.md)
   : Which HYCOM archives cover a given date
+- [`cefi_variables()`](https://chross22.github.io/datamatch/reference/cefi_variables.md)
+  : Catalog of CEFI variables under familiar names
+- [`cefi_dictionary()`](https://chross22.github.io/datamatch/reference/cefi_dictionary.md)
+  : Printable dictionary of CEFI variables
+- [`cefi_archives()`](https://chross22.github.io/datamatch/reference/cefi_archives.md)
+  : The CEFI regional MOM6 runs this package ships with
+- [`cefi_archive()`](https://chross22.github.io/datamatch/reference/cefi_archive.md)
+  : Describe any CEFI directory, so it can be read like a built-in one
 - [`ccmp_variables()`](https://chross22.github.io/datamatch/reference/ccmp_variables.md)
   : Catalog of CCMP wind variables
 - [`ccmp_dictionary()`](https://chross22.github.io/datamatch/reference/ccmp_dictionary.md)
@@ -146,6 +158,12 @@ and where it is documented.
   built-in one
 - [`erddap_dictionary()`](https://chross22.github.io/datamatch/reference/erddap_dictionary.md)
   : Printable dictionary of the ERDDAP datasets and their variables
+- [`obdaac_variables()`](https://chross22.github.io/datamatch/reference/obdaac_variables.md)
+  : Catalog of OB.DAAC variables under familiar names
+- [`obdaac_dictionary()`](https://chross22.github.io/datamatch/reference/obdaac_dictionary.md)
+  : Printable dictionary of OB.DAAC variables
+- [`obdaac_sensors()`](https://chross22.github.io/datamatch/reference/obdaac_sensors.md)
+  : Ocean colour sensors read through NASA OB.DAAC
 - [`product_url()`](https://chross22.github.io/datamatch/reference/product_url.md)
   : Copernicus Marine product page for a product identifier
 - [`as_markdown()`](https://chross22.github.io/datamatch/reference/as_markdown.md)

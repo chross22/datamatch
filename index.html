@@ -11,8 +11,8 @@
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Fetch Ocean Data from Several Sources and Match It in Space and Time">
-<meta name="description" content="Downloads ocean and atmosphere data and joins it to point data in space and time, at the downloaded datas own resolution. The join is a general spatiotemporal nearest-feature match, so either side may be species observations, survey stations, tag positions, or another gridded product. Five sources are covered behind one interface and one set of variable names, so a covariate arrives in a column of the same name whichever supplied it: the Copernicus Marine Service (&lt;https://marine.copernicus.eu/access-data/&gt;) for global reanalysis, analysis-and-forecast, satellite ocean colour and surface wind; HYCOM for an independent global model publishing sea-floor fields; FVCOM for unstructured-mesh coastal models such as NECOFS, or any other FVCOM output; CCMP for a long six-hourly surface wind record; and NOAA ERDDAP for high-resolution satellite sea surface temperature and chlorophyll. Variables are requested by familiar names such as SST' rather than product-specific codes, over monthly, daily, named-date or sub-daily steps, in parallel and cached. Also provides spatial and temporal resampling for combining products of different resolution, gap filling for satellite ocean colour, seafloor terrain from NOAA ETOPO, basin-scale climate indices, and plots for inspecting what was downloaded. Values sharing a name across sources are not interchangeable, and the documentation says so where it matters.">
-<meta property="og:description" content="Downloads ocean and atmosphere data and joins it to point data in space and time, at the downloaded datas own resolution. The join is a general spatiotemporal nearest-feature match, so either side may be species observations, survey stations, tag positions, or another gridded product. Five sources are covered behind one interface and one set of variable names, so a covariate arrives in a column of the same name whichever supplied it: the Copernicus Marine Service (&lt;https://marine.copernicus.eu/access-data/&gt;) for global reanalysis, analysis-and-forecast, satellite ocean colour and surface wind; HYCOM for an independent global model publishing sea-floor fields; FVCOM for unstructured-mesh coastal models such as NECOFS, or any other FVCOM output; CCMP for a long six-hourly surface wind record; and NOAA ERDDAP for high-resolution satellite sea surface temperature and chlorophyll. Variables are requested by familiar names such as SST' rather than product-specific codes, over monthly, daily, named-date or sub-daily steps, in parallel and cached. Also provides spatial and temporal resampling for combining products of different resolution, gap filling for satellite ocean colour, seafloor terrain from NOAA ETOPO, basin-scale climate indices, and plots for inspecting what was downloaded. Values sharing a name across sources are not interchangeable, and the documentation says so where it matters.">
+<meta name="description" content="Downloads ocean and atmosphere data and joins it to point data in space and time, at the downloaded datas own resolution. The join is a general spatiotemporal nearest-feature match, so either side may be species observations, survey stations, tag positions, or another gridded product. Seven sources are covered behind one interface and one set of variable names, so a covariate arrives in a column of the same name whichever supplied it: the Copernicus Marine Service (&lt;https://marine.copernicus.eu/access-data/&gt;) for global reanalysis, analysis-and-forecast, satellite ocean colour and surface wind; HYCOM for an independent global model publishing sea-floor fields; FVCOM for unstructured-mesh coastal models such as NECOFS, or any other FVCOM output; the NOAA Changing Ecosystems and Fisheries Initiative (&lt;https://psl.noaa.gov/cefi_portal/&gt;) for a regional Northwest Atlantic model carrying coupled biogeochemistry at the resolution of its physics; CCMP for a long six-hourly surface wind record; NOAA ERDDAP for high-resolution satellite sea surface temperature and chlorophyll; and the NASA Ocean Biology DAAC (&lt;https://oceancolor.gsfc.nasa.gov/&gt;) for the satellite ocean colour record from 1997 onward, which needs an Earthdata Login. Variables are requested by familiar names such as SST' rather than product-specific codes, over monthly, daily, named-date or sub-daily steps, in parallel and cached. Also provides spatial and temporal resampling for combining products of different resolution, gap filling for satellite ocean colour, seafloor terrain from NOAA ETOPO, basin-scale climate indices, and plots for inspecting what was downloaded. Values sharing a name across sources are not interchangeable, and the documentation says so where it matters.">
+<meta property="og:description" content="Downloads ocean and atmosphere data and joins it to point data in space and time, at the downloaded datas own resolution. The join is a general spatiotemporal nearest-feature match, so either side may be species observations, survey stations, tag positions, or another gridded product. Seven sources are covered behind one interface and one set of variable names, so a covariate arrives in a column of the same name whichever supplied it: the Copernicus Marine Service (&lt;https://marine.copernicus.eu/access-data/&gt;) for global reanalysis, analysis-and-forecast, satellite ocean colour and surface wind; HYCOM for an independent global model publishing sea-floor fields; FVCOM for unstructured-mesh coastal models such as NECOFS, or any other FVCOM output; the NOAA Changing Ecosystems and Fisheries Initiative (&lt;https://psl.noaa.gov/cefi_portal/&gt;) for a regional Northwest Atlantic model carrying coupled biogeochemistry at the resolution of its physics; CCMP for a long six-hourly surface wind record; NOAA ERDDAP for high-resolution satellite sea surface temperature and chlorophyll; and the NASA Ocean Biology DAAC (&lt;https://oceancolor.gsfc.nasa.gov/&gt;) for the satellite ocean colour record from 1997 onward, which needs an Earthdata Login. Variables are requested by familiar names such as SST' rather than product-specific codes, over monthly, daily, named-date or sub-daily steps, in parallel and cached. Also provides spatial and temporal resampling for combining products of different resolution, gap filling for satellite ocean colour, seafloor terrain from NOAA ETOPO, basin-scale climate indices, and plots for inspecting what was downloaded. Values sharing a name across sources are not interchangeable, and the documentation says so where it matters.">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">datamatch</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -61,7 +61,7 @@
 <!-- badges: start -->
 
 <p>datamatch pulls ocean and atmosphere data and joins it to point data in space and time. The join is general — species observations, survey stations, tag positions, or another gridded product — and the package also covers regridding, gap filling, seafloor terrain, and basin-scale climate indices.</p>
-<p>Five sources sit behind one interface, sharing one set of variable names:</p>
+<p>Seven sources sit behind one interface, sharing one set of variable names:</p>
 <table class="table">
 <colgroup>
 <col width="20%">
@@ -100,6 +100,13 @@
 <td>1994–2024</td>
 </tr>
 <tr>
+<td>NOAA CEFI</td>
+<td><code><a href="reference/accessCEFI.html">accessCEFI()</a></code></td>
+<td>regional NW Atlantic model, coupled biogeochemistry</td>
+<td>monthly, daily</td>
+<td>1993–2023</td>
+</tr>
+<tr>
 <td>CCMP</td>
 <td><code><a href="reference/accessCCMP.html">accessCCMP()</a></code></td>
 <td>surface winds</td>
@@ -113,6 +120,13 @@
 <td>daily</td>
 <td>2002– / 2012–</td>
 </tr>
+<tr>
+<td>NASA OB.DAAC</td>
+<td><code><a href="reference/accessOBDAAC.html">accessOBDAAC()</a></code></td>
+<td>the full satellite ocean colour record</td>
+<td>daily, monthly</td>
+<td>1997–</td>
+</tr>
 </tbody>
 </table>
 <p>Each takes <code>vars</code>, a <code>bounding_box</code>, and either <code>years</code>/<code>months</code> or <code>dates</code>, and each returns one row per cell per time step, as <code>sf</code>. So <code><a href="reference/matchData.html">matchData()</a></code> joins any of them to your observations, and they chain:</p>
@@ -121,9 +135,9 @@
 <span><span class="va">matched</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/matchData.html">matchData</a></span><span class="op">(</span><span class="va">matched</span>,      <span class="fu"><a href="reference/accessHYCOM.html">accessHYCOM</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"BOTS"</span>, <span class="va">...</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">matched</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/matchData.html">matchData</a></span><span class="op">(</span><span class="va">matched</span>,      <span class="fu"><a href="reference/accessCCMP.html">accessCCMP</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"WSPD"</span>, <span class="va">...</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <blockquote>
-<p><strong>One name, several sources, and they are not the same number.</strong> <code>SST</code> from Copernicus, FVCOM and HYCOM are three different models, and <code>WSPD</code> from Copernicus and CCMP two different analyses. Sharing the column name is what makes them interchangeable <em>mechanically</em> — so everything downstream works unchanged — and is exactly why it is worth recording which one you used. <code><a href="reference/matchData.html">matchData()</a></code> writes a <code>&lt;var&gt;_source</code> column saying which, and <code><a href="reference/source_of.html">source_of()</a></code> reads it back.</p>
+<p><strong>One name, several sources, and they are not the same number.</strong> <code>SST</code> from Copernicus, FVCOM, HYCOM and CEFI are four different models, and <code>CHL</code> from Copernicus, ERDDAP, OB.DAAC and CEFI four different things — three retrievals and a simulation. Sharing the column name is what makes them interchangeable <em>mechanically</em> — so everything downstream works unchanged — and is exactly why it is worth recording which one you used. <code><a href="reference/matchData.html">matchData()</a></code> writes a <code>&lt;var&gt;_source</code> column saying which, and <code><a href="reference/source_of.html">source_of()</a></code> reads it back.</p>
 </blockquote>
-<p>This README is the front door. The detail lives in <a href="#vignettes">four articles</a>, and <a href="https://chross22.github.io/datamatch/articles/sources.html">“Choosing a data source”</a> compares the five side by side if that is what you came for.</p>
+<p>This README is the front door. The detail lives in <a href="#vignettes">four articles</a>, and <a href="https://chross22.github.io/datamatch/articles/sources.html">“Choosing a data source”</a> compares the seven side by side if that is what you came for.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -204,12 +218,6 @@
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/as_markdown.html">as_markdown</a></span><span class="op">(</span><span class="fu"><a href="reference/variable_dictionary.html">variable_dictionary</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
-<colgroup>
-<col width="11%">
-<col width="26%">
-<col width="50%">
-<col width="11%">
-</colgroup>
 <thead><tr>
 <th>name</th>
 <th>variable</th>
@@ -369,7 +377,7 @@
 </tr>
 </tbody>
 </table>
-<p><code><a href="reference/variable_dictionary.html">variable_dictionary()</a></code> prints the same thing grouped by product, with the dataset identifiers and documentation links. <code><a href="reference/fvcom_dictionary.html">fvcom_dictionary()</a></code>, <code><a href="reference/hycom_dictionary.html">hycom_dictionary()</a></code>, <code><a href="reference/ccmp_dictionary.html">ccmp_dictionary()</a></code> and <code><a href="reference/erddap_dictionary.html">erddap_dictionary()</a></code> do the same for the other four sources, and <code><a href="reference/as_markdown.html">as_markdown()</a></code> renders any of them as a pipe table.</p>
+<p><code><a href="reference/variable_dictionary.html">variable_dictionary()</a></code> prints the same thing grouped by product, with the dataset identifiers and documentation links. <code><a href="reference/fvcom_dictionary.html">fvcom_dictionary()</a></code>, <code><a href="reference/hycom_dictionary.html">hycom_dictionary()</a></code>, <code><a href="reference/ccmp_dictionary.html">ccmp_dictionary()</a></code>, <code><a href="reference/erddap_dictionary.html">erddap_dictionary()</a></code>, <code><a href="reference/cefi_dictionary.html">cefi_dictionary()</a></code> and <code><a href="reference/obdaac_dictionary.html">obdaac_dictionary()</a></code> do the same for the other six sources, and <code><a href="reference/as_markdown.html">as_markdown()</a></code> renders any of them as a pipe table.</p>
 <p><strong><code>product_id</code> and <code>dataset_id</code> can be omitted</strong> when every variable is in the dictionary — the catalog already knows where they live. Raw source codes work the same way. Anything outside the dictionary is passed through to the API with a warning, since these services serve far more than this catalog covers.</p>
 </div>
 <div class="section level2">
@@ -427,6 +435,17 @@
 <p>Note also that some three-hourly steps are simply absent, so a daily request at a missing hour skips that day and warns.</p>
 </div>
 <div class="section level2">
+<h2 id="noaa-cefi">NOAA CEFI<a class="anchor" aria-label="anchor" href="#noaa-cefi"></a>
+</h2>
+<p><code><a href="reference/accessCEFI.html">accessCEFI()</a></code> reads NOAA’s Changing Ecosystems and Fisheries Initiative regional model — MOM6-COBALT run for the <strong>Northwest Atlantic at a twelfth of a degree</strong>, from the US east coast to the Caribbean, 1993–2023. No account needed.</p>
+<p>It is the only source here that carries <strong>coupled physics and biogeochemistry on one grid at one resolution</strong>: temperature and salinity beside nitrate, oxygen, pH, pCO2, phytoplankton carbon and mesozooplankton biomass. The Copernicus biogeochemical reanalysis is a quarter degree; this resolves the Gulf of Maine rather than smoothing across it. It also publishes <strong>sea-floor salinity outright</strong> as <code>sob</code>, so <code>BOTS</code> needs none of the deepest-wet-level derivation GLORYS forces.</p>
+<p>Two things to know. <strong>It is one region</strong> — outside roughly 98°W–36°W and 5°N–58°N there is nothing, and a box outside the domain is refused rather than returning an empty join. And <strong>the daily output is biogeochemistry only</strong>: <code>CHL</code>, <code>NO3</code>, <code>PH</code>, <code>PCO2</code>, <code>PHYC</code>, <code>MESOZOO</code> and <code>BOTO2</code> have a daily step, everything else is monthly, and a daily request for <code>SST</code> says so.</p>
+<p><code><a href="reference/cefi_variables.html">cefi_variables()</a></code> and <code><a href="reference/cefi_dictionary.html">cefi_dictionary()</a></code> list the catalog; <code><a href="reference/cefi_archives.html">cefi_archives()</a></code> names the runs that ship, and <code><a href="reference/cefi_archive.html">cefi_archive()</a></code> reaches the domains that do not — Northeast Pacific, Arctic, Pacific Islands, Great Lakes — the same way <code><a href="reference/fvcom_archive.html">fvcom_archive()</a></code> does for FVCOM.</p>
+<blockquote>
+<p><strong>Forecasts are experimental.</strong> <code>experiment = "decadal_forecast"</code> reads a prediction rather than a reconstruction, warns on every call, and will not choose for you: <code>init</code> says which of the sixty initialisations to read and <code>member</code> which of the ten ensemble members, because averaging members is a modelling decision this package will not make silently. CEFI’s seasonal forecast cannot be read here at all — its files carry a 64-bit coordinate that OPeNDAP cannot serve — and <code><a href="reference/accessCEFI.html">accessCEFI()</a></code> says so with the workaround.</p>
+</blockquote>
+</div>
+<div class="section level2">
 <h2 id="ccmp">CCMP<a class="anchor" aria-label="anchor" href="#ccmp"></a>
 </h2>
 <p><code><a href="reference/accessCCMP.html">accessCCMP()</a></code> reads the Cross-Calibrated Multi-Platform ocean surface wind analysis from Remote Sensing Systems, with no account needed. It is the longest and finest-in-time wind record here — <strong>six-hourly from January 1993 to within days of the present</strong>, where the Copernicus wind is monthly from mid-1994 or hourly only from 2007.</p>
@@ -442,10 +461,10 @@
 <p><code><a href="reference/accessERDDAP.html">accessERDDAP()</a></code> reads satellite products from NOAA’s ERDDAP servers — no account needed, and subset server-side:</p>
 <table class="table">
 <colgroup>
-<col width="25%">
-<col width="25%">
-<col width="25%">
-<col width="25%">
+<col width="22%">
+<col width="36%">
+<col width="17%">
+<col width="22%">
 </colgroup>
 <thead><tr>
 <th>Dataset</th>
@@ -481,6 +500,58 @@
 </table>
 <p><strong>MUR is the finest field here by a wide margin</strong> — 0.01° is about 1 km, where the physics reanalysis is 9 km. But <strong>a satellite SST is not a model SST</strong>: MUR measures the <em>foundation</em> temperature, below the daily warming layer, where a model <code>SST</code> is its topmost level. On a calm sunny afternoon they differ by a degree or more. Both arrive in a column called <code>SST</code>, which is why <code><a href="reference/matchData.html">matchData()</a></code> records <code>&lt;var&gt;_source</code>.</p>
 <p>MUR is also gap-free by construction — it is an analysis, so cloud is interpolated over rather than left <code>NA</code>. Fetch <code>SST_ERROR</code> alongside if that matters. ERDDAP hosts thousands more datasets; <code><a href="reference/erddap_dataset.html">erddap_dataset()</a></code> describes any of them for <code><a href="reference/accessERDDAP.html">accessERDDAP()</a></code>, the same way <code><a href="reference/fvcom_archive.html">fvcom_archive()</a></code> does for FVCOM.</p>
+</div>
+<div class="section level2">
+<h2 id="nasa-obdaac">NASA OB.DAAC<a class="anchor" aria-label="anchor" href="#nasa-obdaac"></a>
+</h2>
+<p><code><a href="reference/accessOBDAAC.html">accessOBDAAC()</a></code> reads Level-3 mapped ocean colour from NASA’s Ocean Biology DAAC. What it adds over <code><a href="reference/accessERDDAP.html">accessERDDAP()</a></code> is <strong>length</strong>: SeaWiFS from September 1997, then both MODIS instruments and all three VIIRS, all reprocessed together, where the ERDDAP entries start in 2012 at the earliest.</p>
+<table class="table">
+<thead><tr>
+<th>Sensor</th>
+<th>Gives</th>
+<th>Record</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>SEAWIFS</code></td>
+<td>colour only</td>
+<td>1997-09–2010-12</td>
+</tr>
+<tr>
+<td><code>MODIST</code></td>
+<td>colour, SST, <code>NFLH</code>
+</td>
+<td>2000-02–</td>
+</tr>
+<tr>
+<td>
+<code>MODISA</code> (default)</td>
+<td>colour, SST, <code>NFLH</code>
+</td>
+<td>2002-07–</td>
+</tr>
+<tr>
+<td><code>VIIRS</code></td>
+<td>colour, SST</td>
+<td>2012-01–</td>
+</tr>
+<tr>
+<td><code>VIIRSJ1</code></td>
+<td>colour, SST</td>
+<td>2017-12–</td>
+</tr>
+<tr>
+<td><code>VIIRSJ2</code></td>
+<td>colour only</td>
+<td>2023-03–</td>
+</tr>
+</tbody>
+</table>
+<p>Beyond <code>CHL</code> it carries what ocean colour measures besides chlorophyll — <code>KD490</code>, <code>PAR</code>, <code>POC</code>, <code>PIC</code> — from the same retrieval on the same grid.</p>
+<p>Three things to know. <strong>It is the one source needing a NASA Earthdata Login</strong>, and the failure without one is misleading: NASA answers an unauthenticated request with HTTP 200 and the login page, so <code><a href="reference/accessOBDAAC.html">accessOBDAAC()</a></code> checks the bytes and refuses it by name rather than writing HTML into a <code>.nc</code> file. Register once and generate an appkey, then put it in <code>~/.Renviron</code> as <code>EARTHDATA_APPKEY=</code>. <strong>There is no server-side subsetting</strong> — a variable-day is one global file, about 15 MB at 4 km and 5 MB at 9 km, subset locally and cached. And <strong>daily fields are gappy</strong>: these are single-sensor composites, so outside the tropics a daily <code>CHL</code> is mostly cloud. Use <code>frequency = "monthly"</code>, or <code><a href="reference/fill_satellite_gaps.html">fill_satellite_gaps()</a></code>.</p>
+<blockquote>
+<p><strong>The sensors are not interchangeable.</strong> Where they overlap they disagree, and stitching a series across a mission boundary puts an instrumental step in it. <code><a href="reference/source_of.html">source_of()</a></code> records which one answered. Where a long consistent record matters more than any one sensor, the Copernicus-GlobColour entries are multi-sensor and built for that.</p>
+</blockquote>
 </div>
 <div class="section level2">
 <h2 id="matching">Matching<a class="anchor" aria-label="anchor" href="#matching"></a>
@@ -566,7 +637,7 @@
 <tr>
 <td><strong>Fetching</strong></td>
 <td>
-<code><a href="reference/accessCopernicus.html">accessCopernicus()</a></code>, <code><a href="reference/accessFVCOM.html">accessFVCOM()</a></code>, <code><a href="reference/accessHYCOM.html">accessHYCOM()</a></code>, <code><a href="reference/accessCCMP.html">accessCCMP()</a></code>, <code><a href="reference/accessERDDAP.html">accessERDDAP()</a></code>
+<code><a href="reference/accessCopernicus.html">accessCopernicus()</a></code>, <code><a href="reference/accessFVCOM.html">accessFVCOM()</a></code>, <code><a href="reference/accessHYCOM.html">accessHYCOM()</a></code>, <code><a href="reference/accessCEFI.html">accessCEFI()</a></code>, <code><a href="reference/accessCCMP.html">accessCCMP()</a></code>, <code><a href="reference/accessERDDAP.html">accessERDDAP()</a></code>, <code><a href="reference/accessOBDAAC.html">accessOBDAAC()</a></code>
 </td>
 </tr>
 <tr>
@@ -596,18 +667,18 @@
 <tr>
 <td><strong>Catalogs</strong></td>
 <td>
-<code><a href="reference/variable_dictionary.html">variable_dictionary()</a></code>, <code><a href="reference/fvcom_dictionary.html">fvcom_dictionary()</a></code>, <code><a href="reference/hycom_dictionary.html">hycom_dictionary()</a></code>, <code><a href="reference/ccmp_dictionary.html">ccmp_dictionary()</a></code>, <code><a href="reference/erddap_dictionary.html">erddap_dictionary()</a></code>, <code><a href="reference/as_markdown.html">as_markdown()</a></code>
+<code><a href="reference/variable_dictionary.html">variable_dictionary()</a></code>, <code><a href="reference/fvcom_dictionary.html">fvcom_dictionary()</a></code>, <code><a href="reference/hycom_dictionary.html">hycom_dictionary()</a></code>, <code><a href="reference/cefi_dictionary.html">cefi_dictionary()</a></code>, <code><a href="reference/ccmp_dictionary.html">ccmp_dictionary()</a></code>, <code><a href="reference/erddap_dictionary.html">erddap_dictionary()</a></code>, <code><a href="reference/obdaac_dictionary.html">obdaac_dictionary()</a></code>, <code><a href="reference/as_markdown.html">as_markdown()</a></code>
 </td>
 </tr>
 <tr>
 <td><strong>Escape hatches</strong></td>
 <td>
-<code><a href="reference/fvcom_archive.html">fvcom_archive()</a></code>, <code><a href="reference/erddap_dataset.html">erddap_dataset()</a></code>, <code><a href="reference/hycom_covering.html">hycom_covering()</a></code>, <code><a href="reference/fvcom_mesh.html">fvcom_mesh()</a></code>
+<code><a href="reference/fvcom_archive.html">fvcom_archive()</a></code>, <code><a href="reference/cefi_archive.html">cefi_archive()</a></code>, <code><a href="reference/erddap_dataset.html">erddap_dataset()</a></code>, <code><a href="reference/hycom_covering.html">hycom_covering()</a></code>, <code><a href="reference/fvcom_mesh.html">fvcom_mesh()</a></code>
 </td>
 </tr>
 </tbody>
 </table>
-<p>The <code>_dictionary()</code> functions print as tables and are what to read; the plain catalog functions return lists and are what to write code against — <code><a href="reference/copernicus_variables.html">copernicus_variables()</a></code>, <code><a href="reference/variable_dataset.html">variable_dataset()</a></code>, <code><a href="reference/forecast_variables.html">forecast_variables()</a></code> and <code><a href="reference/product_url.html">product_url()</a></code> for Copernicus, and <code><a href="reference/fvcom_variables.html">fvcom_variables()</a></code>, <code><a href="reference/fvcom_archives.html">fvcom_archives()</a></code>, <code><a href="reference/hycom_variables.html">hycom_variables()</a></code>, <code><a href="reference/hycom_archives.html">hycom_archives()</a></code>, <code><a href="reference/ccmp_variables.html">ccmp_variables()</a></code>, <code><a href="reference/ccmp_versions.html">ccmp_versions()</a></code> and <code><a href="reference/erddap_datasets.html">erddap_datasets()</a></code> for the rest. <code><a href="reference/accessEnvDat.html">accessEnvDat()</a></code> is the old name for <code><a href="reference/accessCopernicus.html">accessCopernicus()</a></code>; it works, and warns.</p>
+<p>The <code>_dictionary()</code> functions print as tables and are what to read; the plain catalog functions return lists and are what to write code against — <code><a href="reference/copernicus_variables.html">copernicus_variables()</a></code>, <code><a href="reference/variable_dataset.html">variable_dataset()</a></code>, <code><a href="reference/forecast_variables.html">forecast_variables()</a></code> and <code><a href="reference/product_url.html">product_url()</a></code> for Copernicus, and <code><a href="reference/fvcom_variables.html">fvcom_variables()</a></code>, <code><a href="reference/fvcom_archives.html">fvcom_archives()</a></code>, <code><a href="reference/hycom_variables.html">hycom_variables()</a></code>, <code><a href="reference/hycom_archives.html">hycom_archives()</a></code>, <code><a href="reference/cefi_variables.html">cefi_variables()</a></code>, <code><a href="reference/cefi_archives.html">cefi_archives()</a></code>, <code><a href="reference/ccmp_variables.html">ccmp_variables()</a></code>, <code><a href="reference/ccmp_versions.html">ccmp_versions()</a></code>, <code><a href="reference/erddap_datasets.html">erddap_datasets()</a></code>, <code><a href="reference/obdaac_variables.html">obdaac_variables()</a></code> and <code><a href="reference/obdaac_sensors.html">obdaac_sensors()</a></code> for the rest. <code><a href="reference/accessEnvDat.html">accessEnvDat()</a></code> is the old name for <code><a href="reference/accessCopernicus.html">accessCopernicus()</a></code>; it works, and warns.</p>
 </div>
 <div class="section level2">
 <h2 id="vignettes">Vignettes<a class="anchor" aria-label="anchor" href="#vignettes"></a>
@@ -624,7 +695,7 @@
 </tr>
 <tr>
 <td><a href="https://chross22.github.io/datamatch/articles/sources.html">Choosing a data source</a></td>
-<td>which of the five to reach for, what changes when you do, error messages, and what to cite</td>
+<td>which of the seven to reach for, what changes when you do, error messages, and what to cite</td>
 </tr>
 <tr>
 <td><a href="https://chross22.github.io/datamatch/articles/working-with-data.html">Working with what comes back</a></td>
@@ -648,7 +719,7 @@
 <div class="section level2">
 <h2 id="citing">Citing<a class="anchor" aria-label="anchor" href="#citing"></a>
 </h2>
-<p>Everything datamatch returns comes from someone else’s data, and the obligation to cite travels with the data rather than with this package. <strong>Cite whichever products you actually used</strong> — <a href="https://chross22.github.io/datamatch/articles/sources.html#what-to-cite">Choosing a data source</a> lists them all with DOIs, <code><a href="reference/variable_dictionary.html">variable_dictionary()</a></code> links to each Copernicus product page, and <code><a href="reference/index_dictionary.html">index_dictionary()</a></code>, <code><a href="reference/fvcom_archives.html">fvcom_archives()</a></code>, <code><a href="reference/hycom_archives.html">hycom_archives()</a></code> and <code><a href="reference/ccmp_versions.html">ccmp_versions()</a></code> carry their references at runtime.</p>
+<p>Everything datamatch returns comes from someone else’s data, and the obligation to cite travels with the data rather than with this package. <strong>Cite whichever products you actually used</strong> — <a href="https://chross22.github.io/datamatch/articles/sources.html#what-to-cite">Choosing a data source</a> lists them all with DOIs, <code><a href="reference/variable_dictionary.html">variable_dictionary()</a></code> links to each Copernicus product page, and <code><a href="reference/index_dictionary.html">index_dictionary()</a></code>, <code><a href="reference/fvcom_archives.html">fvcom_archives()</a></code>, <code><a href="reference/hycom_archives.html">hycom_archives()</a></code>, <code><a href="reference/cefi_archives.html">cefi_archives()</a></code>, <code><a href="reference/ccmp_versions.html">ccmp_versions()</a></code> and <code><a href="reference/obdaac_sensors.html">obdaac_sensors()</a></code> carry their references at runtime.</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"datamatch"</span><span class="op">)</span></span></code></pre></div>
 </div>

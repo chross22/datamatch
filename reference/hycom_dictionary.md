@@ -20,9 +20,9 @@ a data frame of class `datamatch_dictionary`
 
 ``` r
 hycom_dictionary()
-#> FVCOM variables available by name
+#> Variables available by name
 #> ------------------------------------------------------------------
-#>  name      variable          label                      units     on       
+#>  name      variable          label                      units     source   
 #>  SST       water_temp        Sea surface temperature    degrees C 0 m level
 #>  SSS       salinity          Sea surface salinity       PSU       0 m level
 #>  BOTT      water_temp_bottom Bottom temperature         degrees C own field
@@ -32,9 +32,4 @@ hycom_dictionary()
 #>  VO        water_v           Northward current velocity m/s       0 m level
 #>  UO_BOTTOM water_u_bottom    Eastward bottom velocity   m/s       own field
 #>  VO_BOTTOM water_v_bottom    Northward bottom velocity  m/s       own field
-#> 
-#> `on` is where a value sits: which part of the mesh, and which sigma
-#> layer. Node and element variables cannot be fetched together - see
-#> ?accessFVCOM. A sigma layer is a fraction of the local depth, not a depth.
-#> Full descriptions: as.data.frame(fvcom_dictionary())$description
 ```

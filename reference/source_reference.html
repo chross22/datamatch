@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">datamatch</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -60,6 +60,28 @@
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><char> the reference, or <code>NA</code> when the source carries none</char></p>
+    </div>
+    <div class="section level2">
+    <h2 id="every-source-family-needs-a-branch-here">Every source family needs a branch here<a class="anchor" aria-label="anchor" href="#every-source-family-needs-a-branch-here"></a></h2>
+
+
+<p>A family with none returns <code>NA</code>, and <code><a href="eml_methods.html">eml_methods()</a></code> then writes a methods
+section that names the source and cites nothing — which is the failure the
+methods section exists to prevent, arriving silently. A test walks the
+families rather than trusting this list to stay complete.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="where-the-citation-is-a-pointer-rather-than-a-reference">Where the citation is a pointer rather than a reference<a class="anchor" aria-label="anchor" href="#where-the-citation-is-a-pointer-rather-than-a-reference"></a></h2>
+
+
+<p>Copernicus and OB.DAAC both mint a DOI per dataset per reprocessing, and
+those move: OB.DAAC's version token differs by suite and by mission, so a
+<code>PAR</code> DOI ending 2022 resolves where the matching <code>SST</code> one ending 2019 does
+not.
+A table of them hard-coded here would be wrong at the next reprocessing and
+wrong silently, so both name the dataset precisely and say where its DOI
+lives instead. The mission or model paper is given alongside, because it is
+stable and is a different obligation from the data citation.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
