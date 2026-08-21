@@ -10,7 +10,15 @@
 #' Which names are valid was established by validating documents against the
 #' schema rather than by reading a list — `milligramsPerCubicMeter` is accepted
 #' and `milligramPerCubicMeter` is not, and there is no way to tell from the
-#' outside which spelling a vocabulary chose.
+#' outside which spelling a vocabulary chose. The vocabulary is not even
+#' self-consistent about it: `milligramsPerCubicMeter` is plural on both words
+#' and `molePerCubicMeter` singular on both, and both are standard.
+#'
+#' @section The unit type is not checked:
+#' EML validates a *unit* name against its vocabulary but accepts any string as
+#' a custom unit's `unitType` — a deliberately nonsensical one passes the
+#' schema. So the types below are not kept honest by anything except being
+#' written honestly, which is worth knowing before copying one.
 #'
 #' @return a data frame with `units` (as this package writes them), `eml`, and
 #'   `standard` (whether it is a standard EML unit or needs declaring)
@@ -30,6 +38,7 @@ eml_unit_table <- function() {
     standard("m", "meter"),
     standard("m/s", "metersPerSecond"),
     standard("mg/m3", "milligramsPerCubicMeter"),
+    standard("mol/m3", "molePerCubicMeter"),
     standard("W/m2", "wattPerMeterSquared"),
     standard("fraction", "dimensionless"),
     standard("unitless", "dimensionless"),
@@ -51,15 +60,45 @@ eml_unit_table <- function() {
     custom("Sv", "sverdrup", "volumetricRate",
            "Sverdrup: one million cubic metres per second of volume transport."),
     custom("degrees", "degree", "angle",
-           "Degrees of arc, for a direction such as slope aspect.")
+           "Degrees of arc, for a direction such as slope aspect."),
+
+    # CEFI and OB.DAAC brought these. Only mol/m3 turned out to have a standard
+    # spelling; the rest are declared.
+    custom("umol/kg", "micromolesPerKilogram",
+           "amountOfSubstancePerUnitMass",
+           paste("Micromoles per kilogram of seawater. Dissolved oxygen is",
+                 "conventionally reported per unit mass rather than per unit",
+                 "volume, and converting between the two needs a density.")),
+    custom("uatm", "microatmosphere", "pressure",
+           paste("Microatmospheres: the conventional unit for the partial",
+                 "pressure of carbon dioxide in seawater.")),
+    custom("mol/m2", "molesPerSquareMeter", "arealAmountOfSubstanceDensity",
+           paste("Moles per square metre: an amount integrated over the water",
+                 "column rather than a concentration in it.")),
+    custom("1/m", "perMeter", "lengthReciprocal",
+           paste("Reciprocal metres, as a diffuse attenuation coefficient:",
+                 "the rate at which light is extinguished with depth.")),
+    custom("einstein/m2/day", "einsteinPerSquareMeterPerDay",
+           "arealAmountOfSubstanceRate",
+           paste("Einsteins per square metre per day: a mole of photons",
+                 "reaching a square metre of sea surface over a day.")),
+    custom("W/m2/um/sr", "wattPerSquareMeterPerMicrometerPerSteradian",
+           "spectralRadiance",
+           paste("Watts per square metre per micrometre per steradian: a",
+                 "spectral radiance, as fluorescence line height is."))
   )
 }
 
 #' Everything the catalogs know about a variable name
 #'
-#' The five source catalogs each hold a label and units for the names they
-#' offer, and EML wants both for every column. Gathered here so a matched table
-#' can be described without the caller repeating what the package already knows.
+#' Each source catalog holds a label and units for the names it offers, and EML
+#' wants both for every column. Gathered here so a matched table can be
+#' described without the caller repeating what the package already knows.
+#'
+#' Every catalog has to be listed here, and nothing enforces that: a source
+#' added without being added here still fetches, still joins, and then writes
+#' EML in which its columns have no definition and no units. The unit table test
+#' catches a unit with no mapping, not a catalog with no entry.
 #'
 #' Where two sources define the same name — which is the whole point of the
 #' shared vocabulary — the first found wins. They agree on units by construction;
@@ -91,10 +130,18 @@ known_variables <- function() {
     entry <- ccmp_variables()[[name]]
     add(name, entry$label, entry$units)
   }
+  for (name in names(cefi_variables())) {
+    entry <- cefi_variables()[[name]]
+    add(name, entry$label, entry$units)
+  }
   for (spec in erddap_datasets()) {
     for (name in names(spec$variables)) {
       add(name, spec$label, unname(spec$units[name]))
     }
+  }
+  for (name in names(obdaac_variables())) {
+    entry <- obdaac_variables()[[name]]
+    add(name, entry$label, entry$units)
   }
   for (name in names(bathymetry_variables())) {
     entry <- bathymetry_variables()[[name]]

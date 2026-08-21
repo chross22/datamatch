@@ -1,6 +1,6 @@
 Package: datamatch
 Title: Fetch Ocean Data from Several Sources and Match It in Space and Time
-Version: 0.2.0
+Version: 0.3.0
 Authors@R: 
     person("Camille", "Ross", email = "camille.ross@maine.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-1428-2294"))
@@ -8,15 +8,21 @@ Description: Downloads ocean and atmosphere data and joins it to point data in
     space and time, at the downloaded data's own resolution. The join is a
     general spatiotemporal nearest-feature match, so either side may be species
     observations, survey stations, tag positions, or another gridded product.
-    Five sources are covered behind one interface and one set of variable names,
+    Seven sources are covered behind one interface and one set of variable names,
     so a covariate arrives in a column of the same name whichever supplied it:
     the Copernicus Marine Service
     (<https://marine.copernicus.eu/access-data/>) for global reanalysis,
     analysis-and-forecast, satellite ocean colour and surface wind; HYCOM for an
     independent global model publishing sea-floor fields; FVCOM for
     unstructured-mesh coastal models such as NECOFS, or any other FVCOM output;
-    CCMP for a long six-hourly surface wind record; and NOAA ERDDAP for
-    high-resolution satellite sea surface temperature and chlorophyll. Variables are requested
+    the NOAA Changing Ecosystems and Fisheries Initiative
+    (<https://psl.noaa.gov/cefi_portal/>) for a regional Northwest Atlantic
+    model carrying coupled biogeochemistry at the resolution of its physics;
+    CCMP for a long six-hourly surface wind record; NOAA ERDDAP for
+    high-resolution satellite sea surface temperature and chlorophyll; and the
+    NASA Ocean Biology DAAC
+    (<https://oceancolor.gsfc.nasa.gov/>) for the satellite ocean colour record
+    from 1997 onward, which needs an Earthdata Login. Variables are requested
     by familiar names such as 'SST' rather than product-specific codes, over
     monthly, daily, named-date or sub-daily steps, in parallel and cached. Also
     provides spatial and temporal resampling for combining products of different

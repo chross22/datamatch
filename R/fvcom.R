@@ -910,6 +910,8 @@ fvcom_dictionary <- function(mesh = c("all", "node", "element")) {
   }
 
   class(dictionary) <- c("datamatch_dictionary", "data.frame")
+  # Named so print() describes this dictionary rather than guessing at it.
+  attr(dictionary, "datamatch_family") <- "fvcom"
   dictionary
 }
 

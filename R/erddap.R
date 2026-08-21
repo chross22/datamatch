@@ -534,5 +534,7 @@ erddap_dictionary <- function() {
   }))
 
   class(dictionary) <- c("datamatch_dictionary", "data.frame")
+  # Named so print() describes this dictionary rather than guessing at it.
+  attr(dictionary, "datamatch_family") <- "erddap"
   dictionary
 }

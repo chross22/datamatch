@@ -25,15 +25,17 @@ and time. The join is general — species observations, survey stations, tag
 positions, or another gridded product — and the package also covers regridding,
 gap filling, seafloor terrain, and basin-scale climate indices.
 
-Five sources sit behind one interface, sharing one set of variable names:
+Seven sources sit behind one interface, sharing one set of variable names:
 
 | Source | Function | Gives | Steps | Record |
 |---|---|---|---|---|
 | Copernicus Marine | `accessCopernicus()` | physics, biogeochemistry, ocean colour, wind and stress | monthly, daily, hourly | 1993– |
 | FVCOM / NECOFS | `accessFVCOM()` | coastal model on a triangular mesh | monthly, hourly | 1978–2013, then 2025– |
 | HYCOM | `accessHYCOM()` | independent global model, sea-floor fields | 3-hourly | 1994–2024 |
+| NOAA CEFI | `accessCEFI()` | regional NW Atlantic model, coupled biogeochemistry | monthly, daily | 1993–2023 |
 | CCMP | `accessCCMP()` | surface winds | 6-hourly | 1993–present |
 | MUR / VIIRS | `accessERDDAP()` | satellite SST and chlorophyll | daily | 2002– / 2012– |
+| NASA OB.DAAC | `accessOBDAAC()` | the full satellite ocean colour record | daily, monthly | 1997– |
 
 Each takes `vars`, a `bounding_box`, and either `years`/`months` or `dates`, and
 each returns one row per cell per time step, as `sf`. So `matchData()` joins any
@@ -46,8 +48,9 @@ matched <- matchData(matched,      accessCCMP(vars = "WSPD", ...))
 ```
 
 > **One name, several sources, and they are not the same number.** `SST` from
-> Copernicus, FVCOM and HYCOM are three different models, and `WSPD` from
-> Copernicus and CCMP two different analyses. Sharing the column name is what
+> Copernicus, FVCOM, HYCOM and CEFI are four different models, and `CHL` from
+> Copernicus, ERDDAP, OB.DAAC and CEFI four different things — three retrievals
+> and a simulation. Sharing the column name is what
 > makes them interchangeable *mechanically* — so everything downstream works
 > unchanged — and is exactly why it is worth recording which one you used.
 > `matchData()` writes a `<var>_source` column saying which, and `source_of()`
@@ -56,7 +59,7 @@ matched <- matchData(matched,      accessCCMP(vars = "WSPD", ...))
 This README is the front door. The detail lives in
 [four articles](#vignettes), and
 ["Choosing a data source"](https://chross22.github.io/datamatch/articles/sources.html)
-compares the five side by side if that is what you came for.
+compares the seven side by side if that is what you came for.
 
 ## Installation
 
@@ -164,8 +167,9 @@ as_markdown(variable_dictionary())
 
 `variable_dictionary()` prints the same thing grouped by product, with the
 dataset identifiers and documentation links. `fvcom_dictionary()`,
-`hycom_dictionary()`, `ccmp_dictionary()` and `erddap_dictionary()` do the same
-for the other four sources, and `as_markdown()` renders any of them as a pipe
+`hycom_dictionary()`, `ccmp_dictionary()`, `erddap_dictionary()`,
+`cefi_dictionary()` and `obdaac_dictionary()` do the same for the other six
+sources, and `as_markdown()` renders any of them as a pipe
 table.
 
 **`product_id` and `dataset_id` can be omitted** when every variable is in the
@@ -294,6 +298,40 @@ operational model never claims to be the reanalysis.
 Note also that some three-hourly steps are simply absent, so a daily request at
 a missing hour skips that day and warns.
 
+## NOAA CEFI
+
+`accessCEFI()` reads NOAA's Changing Ecosystems and Fisheries Initiative
+regional model — MOM6-COBALT run for the **Northwest Atlantic at a twelfth of a
+degree**, from the US east coast to the Caribbean, 1993–2023. No account
+needed.
+
+It is the only source here that carries **coupled physics and biogeochemistry
+on one grid at one resolution**: temperature and salinity beside nitrate,
+oxygen, pH, pCO2, phytoplankton carbon and mesozooplankton biomass. The
+Copernicus biogeochemical reanalysis is a quarter degree; this resolves the Gulf
+of Maine rather than smoothing across it. It also publishes **sea-floor salinity
+outright** as `sob`, so `BOTS` needs none of the deepest-wet-level derivation
+GLORYS forces.
+
+Two things to know. **It is one region** — outside roughly 98°W–36°W and
+5°N–58°N there is nothing, and a box outside the domain is refused rather than
+returning an empty join. And **the daily output is biogeochemistry only**:
+`CHL`, `NO3`, `PH`, `PCO2`, `PHYC`, `MESOZOO` and `BOTO2` have a daily step,
+everything else is monthly, and a daily request for `SST` says so.
+
+`cefi_variables()` and `cefi_dictionary()` list the catalog; `cefi_archives()`
+names the runs that ship, and `cefi_archive()` reaches the domains that do not —
+Northeast Pacific, Arctic, Pacific Islands, Great Lakes — the same way
+`fvcom_archive()` does for FVCOM.
+
+> **Forecasts are experimental.** `experiment = "decadal_forecast"` reads a
+> prediction rather than a reconstruction, warns on every call, and will not
+> choose for you: `init` says which of the sixty initialisations to read and
+> `member` which of the ten ensemble members, because averaging members is a
+> modelling decision this package will not make silently. CEFI's seasonal
+> forecast cannot be read here at all — its files carry a 64-bit coordinate that
+> OPeNDAP cannot serve — and `accessCEFI()` says so with the workaround.
+
 ## CCMP
 
 `accessCCMP()` reads the Cross-Calibrated Multi-Platform ocean surface wind
@@ -340,6 +378,41 @@ MUR is also gap-free by construction — it is an analysis, so cloud is
 interpolated over rather than left `NA`. Fetch `SST_ERROR` alongside if that
 matters. ERDDAP hosts thousands more datasets; `erddap_dataset()` describes any
 of them for `accessERDDAP()`, the same way `fvcom_archive()` does for FVCOM.
+
+## NASA OB.DAAC
+
+`accessOBDAAC()` reads Level-3 mapped ocean colour from NASA's Ocean Biology
+DAAC. What it adds over `accessERDDAP()` is **length**: SeaWiFS from September
+1997, then both MODIS instruments and all three VIIRS, all reprocessed together,
+where the ERDDAP entries start in 2012 at the earliest.
+
+| Sensor | Gives | Record |
+|---|---|---|
+| `SEAWIFS` | colour only | 1997-09–2010-12 |
+| `MODIST` | colour, SST, `NFLH` | 2000-02– |
+| `MODISA` (default) | colour, SST, `NFLH` | 2002-07– |
+| `VIIRS` | colour, SST | 2012-01– |
+| `VIIRSJ1` | colour, SST | 2017-12– |
+| `VIIRSJ2` | colour only | 2023-03– |
+
+Beyond `CHL` it carries what ocean colour measures besides chlorophyll —
+`KD490`, `PAR`, `POC`, `PIC` — from the same retrieval on the same grid.
+
+Three things to know. **It is the one source needing a NASA Earthdata Login**,
+and the failure without one is misleading: NASA answers an unauthenticated
+request with HTTP 200 and the login page, so `accessOBDAAC()` checks the bytes
+and refuses it by name rather than writing HTML into a `.nc` file. Register once
+and generate an appkey, then put it in `~/.Renviron` as `EARTHDATA_APPKEY=`.
+**There is no server-side subsetting** — a variable-day is one global file, about
+15 MB at 4 km and 5 MB at 9 km, subset locally and cached. And **daily fields are
+gappy**: these are single-sensor composites, so outside the tropics a daily `CHL`
+is mostly cloud. Use `frequency = "monthly"`, or `fill_satellite_gaps()`.
+
+> **The sensors are not interchangeable.** Where they overlap they disagree, and
+> stitching a series across a mission boundary puts an instrumental step in it.
+> `source_of()` records which one answered. Where a long consistent record
+> matters more than any one sensor, the Copernicus-GlobColour entries are
+> multi-sensor and built for that.
 
 ## Matching
 
@@ -476,20 +549,21 @@ each export. In brief:
 
 | | |
 |---|---|
-| **Fetching** | `accessCopernicus()`, `accessFVCOM()`, `accessHYCOM()`, `accessCCMP()`, `accessERDDAP()` |
+| **Fetching** | `accessCopernicus()`, `accessFVCOM()`, `accessHYCOM()`, `accessCEFI()`, `accessCCMP()`, `accessERDDAP()`, `accessOBDAAC()` |
 | **Matching** | `matchData()`, `source_of()`, `write_eml()`, `covariate_columns()` |
 | **Resampling** | `upscale_grid()`, `downscale_grid()`, `upscale_time()`, `downscale_time()`, `grid_resolution()`, `fill_satellite_gaps()` |
 | **Plotting** | `plot_env()`, `plot_coverage()`, `plot_series()`, `plot_matched()`, `plot_mesh()` |
 | **Terrain and indices** | `fetch_bathymetry()`, `attach_bathymetry()`, `bathymetry_variables()`, `fetch_climate_index()`, `attach_climate_index()`, `climate_indices()`, `index_dictionary()`, `climate_index_status()`, `refresh_climate_index()` |
-| **Catalogs** | `variable_dictionary()`, `fvcom_dictionary()`, `hycom_dictionary()`, `ccmp_dictionary()`, `erddap_dictionary()`, `as_markdown()` |
-| **Escape hatches** | `fvcom_archive()`, `erddap_dataset()`, `hycom_covering()`, `fvcom_mesh()` |
+| **Catalogs** | `variable_dictionary()`, `fvcom_dictionary()`, `hycom_dictionary()`, `cefi_dictionary()`, `ccmp_dictionary()`, `erddap_dictionary()`, `obdaac_dictionary()`, `as_markdown()` |
+| **Escape hatches** | `fvcom_archive()`, `cefi_archive()`, `erddap_dataset()`, `hycom_covering()`, `fvcom_mesh()` |
 
 The `_dictionary()` functions print as tables and are what to read; the plain
 catalog functions return lists and are what to write code against —
 `copernicus_variables()`, `variable_dataset()`, `forecast_variables()` and
 `product_url()` for Copernicus, and `fvcom_variables()`, `fvcom_archives()`,
-`hycom_variables()`, `hycom_archives()`, `ccmp_variables()`, `ccmp_versions()`
-and `erddap_datasets()` for the rest. `accessEnvDat()` is the old name for
+`hycom_variables()`, `hycom_archives()`, `cefi_variables()`, `cefi_archives()`,
+`ccmp_variables()`, `ccmp_versions()`, `erddap_datasets()`,
+`obdaac_variables()` and `obdaac_sensors()` for the rest. `accessEnvDat()` is the old name for
 `accessCopernicus()`; it works, and warns.
 
 ## Vignettes
@@ -497,7 +571,7 @@ and `erddap_datasets()` for the rest. `accessEnvDat()` is the old name for
 | | |
 |---|---|
 | [Getting started](https://chross22.github.io/datamatch/articles/datamatch.html) | observations to a modelling table, end to end |
-| [Choosing a data source](https://chross22.github.io/datamatch/articles/sources.html) | which of the five to reach for, what changes when you do, error messages, and what to cite |
+| [Choosing a data source](https://chross22.github.io/datamatch/articles/sources.html) | which of the seven to reach for, what changes when you do, error messages, and what to cite |
 | [Working with what comes back](https://chross22.github.io/datamatch/articles/working-with-data.html) | resampling, gap filling, and looking at the data |
 | [Static and basin-scale covariates](https://chross22.github.io/datamatch/articles/covariates.html) | seafloor terrain and climate indices |
 
@@ -514,8 +588,9 @@ to cite travels with the data rather than with this package. **Cite whichever
 products you actually used** — [Choosing a data
 source](https://chross22.github.io/datamatch/articles/sources.html#what-to-cite)
 lists them all with DOIs, `variable_dictionary()` links to each Copernicus
-product page, and `index_dictionary()`, `fvcom_archives()`, `hycom_archives()`
-and `ccmp_versions()` carry their references at runtime.
+product page, and `index_dictionary()`, `fvcom_archives()`, `hycom_archives()`,
+`cefi_archives()`, `ccmp_versions()` and `obdaac_sensors()` carry their
+references at runtime.
 
 ```r
 citation("datamatch")

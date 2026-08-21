@@ -1,11 +1,12 @@
-# The five access functions are meant to be interchangeable at the call site:
+# The seven access functions are meant to be interchangeable at the call site:
 # swapping accessHYCOM() for accessCopernicus() should be a rename, not a
 # rewrite. That only holds if they agree on argument order, and nothing else
 # enforces it - accessCopernicus() had drifted to leading with product_id and
 # dataset_id, so a reader who learned one signature had learned the wrong one.
 
 access_functions <- c("accessCopernicus", "accessFVCOM", "accessHYCOM",
-                      "accessCCMP", "accessERDDAP")
+                      "accessCCMP", "accessERDDAP", "accessCEFI",
+                      "accessOBDAAC")
 
 test_that("every access function is there to be checked", {
   for (fn in access_functions) {
