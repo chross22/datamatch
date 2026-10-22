@@ -69,11 +69,11 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="datamatch-fetch-ocean-data-from-several-sources-and-match-it-in-space-and-time">datamatch: Fetch Ocean Data from Several Sources and Match It in Space and Time<a class="anchor" aria-label="anchor" href="#datamatch-fetch-ocean-data-from-several-sources-and-match-it-in-space-and-time"></a>
+<div class="page-header"><h1 id="datamatch-fetch-ocean-data-from-several-sources-and-match-spatially-and-temporally">datamatch: Fetch Ocean Data from Several Sources and Match Spatially and Temporally<a class="anchor" aria-label="anchor" href="#datamatch-fetch-ocean-data-from-several-sources-and-match-spatially-and-temporally"></a>
 </h1></div>
 <!-- badges: start -->
 
-<p>datamatch pulls ocean and atmosphere data and joins it to point data in space and time. The join is general — species observations, survey stations, tag positions, or another gridded product — and the package also covers regridding, gap filling, seafloor terrain, and basin-scale climate indices.</p>
+<p>datamatch pulls ocean and atmosphere data and joins it to point data in space and time. The join is general to handle any gridded product — e.g., species observations, survey stations, tag positions. The package also covers regridding, gap filling, seafloor terrain, and basin-scale climate indices.</p>
 <p>Seven sources sit behind one interface, sharing one set of variable names:</p>
 <table class="table">
 <colgroup>
@@ -221,11 +221,10 @@
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/accessCopernicus.html">accessCopernicus</a></span><span class="op">(</span>vars <span class="op">=</span> <span class="st">"SST"</span>, dates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">observations</span><span class="op">$</span><span class="va">date</span><span class="op">)</span>,</span>
 <span>                        bounding_box <span class="op">=</span> <span class="va">bb</span><span class="op">)</span></span></code></pre></div>
-<p>It is also how a long record is thinned rather than fetched whole — a weekly sequence through a decade is 574 downloads rather than 4,017. Daily is a real cost, not a flag: three months is 91 downloads and 91 grids in memory.</p>
 <p>→ <a href="https://chross22.github.io/datamatch/articles/sources.html#sub-daily-data-and-means-that-are-not-means" class="external-link">Choosing a data source</a> covers sub-daily data, and which sources have a real mean to fetch rather than a snapshot.</p>
 </div>
 <div class="section level2">
-<h2 id="the-shared-vocabulary">The shared vocabulary<a class="anchor" aria-label="anchor" href="#the-shared-vocabulary"></a>
+<h2 id="variable-dictionary">Variable dictionary<a class="anchor" aria-label="anchor" href="#variable-dictionary"></a>
 </h2>
 <p>Source codes are terse and easy to misremember — <code>thetao</code> is temperature, <code>mlotst</code> is mixed layer depth. Get one wrong and you get a failed download rather than an obvious mistake. So variables are requested by name, and come back in columns of that name:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
