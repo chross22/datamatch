@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# datamatch: Fetch Ocean Data from Several Sources and Match It in Space and Time
+# datamatch: Fetch Ocean Data from Several Sources and Match Spatially and Temporally
 
 <!-- badges: start -->
 
@@ -9,8 +9,8 @@
 <!-- badges: end -->
 
 datamatch pulls ocean and atmosphere data and joins it to point data in
-space and time. The join is general — species observations, survey
-stations, tag positions, or another gridded product — and the package
+space and time. The join is general to handle any gridded product — e.g., species observations, survey
+stations, tag positions. The package
 also covers regridding, gap filling, seafloor terrain, and basin-scale
 climate indices.
 
@@ -136,17 +136,12 @@ env <- accessCopernicus(vars = "SST", dates = unique(observations$date),
                         bounding_box = bb)
 ```
 
-It is also how a long record is thinned rather than fetched whole — a
-weekly sequence through a decade is 574 downloads rather than 4,017.
-Daily is a real cost, not a flag: three months is 91 downloads and 91
-grids in memory.
-
 → [Choosing a data
 source](https://chross22.github.io/datamatch/articles/sources.html#sub-daily-data-and-means-that-are-not-means)
 covers sub-daily data, and which sources have a real mean to fetch
 rather than a snapshot.
 
-## The shared vocabulary
+## Variable dictionary
 
 Source codes are terse and easy to misremember — `thetao` is
 temperature, `mlotst` is mixed layer depth. Get one wrong and you get a
