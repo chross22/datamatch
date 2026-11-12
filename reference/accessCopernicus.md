@@ -72,7 +72,8 @@ accessCopernicus(
   about ten days ahead. See
   [`forecast_variables()`](https://camilleross.org/datamatch/reference/forecast_variables.md)
   for which variables have a forecast equivalent and how the identifiers
-  differ.
+  differ. In forecast mode, days from today onward are not cached; see
+  the Downloading in parallel section.
 
 - product_id:
 
@@ -278,3 +279,21 @@ would cost more in serialisation than the read saves.
 A day that fails does not abort the others. Every day is attempted, the
 successful ones stay in the cache, and the error names each day that
 failed — so re-running the same call retries only those.
+
+In forecast mode, a day from today onward is still a forecast, and the
+product replaces it with an analysis once the day has passed. Those days
+are downloaded on every call and never cached, so the forecast is not
+served for that day after the analysis exists. Days before today are
+cached as usual.
+
+## Empty cells
+
+A cell with no value at a time step - cloud over a satellite field,
+typically
+
+- comes back as a row with `NA`, so
+  [`fill_satellite_gaps()`](https://camilleross.org/datamatch/reference/fill_satellite_gaps.md)
+  can fill it. A cell with no value at any requested time step is land
+  or outside the product's domain, and is dropped. A cell clouded at
+  every requested time step cannot be told apart from land and is
+  dropped too.

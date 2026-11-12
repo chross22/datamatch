@@ -26,6 +26,7 @@
 <url><loc>https://camilleross.org/datamatch/reference/build_copernicus_args.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/cache_filename.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/cached_index_file.html</loc></url>
+<url><loc>https://camilleross.org/datamatch/reference/carry_provenance.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/catalog_entry.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/ccmp_dictionary.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/ccmp_variables.html</loc></url>
@@ -44,9 +45,11 @@
 <url><loc>https://camilleross.org/datamatch/reference/cefi_release_of.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/cefi_server.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/cefi_variables.html</loc></url>
+<url><loc>https://camilleross.org/datamatch/reference/cf_time_dates.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/check_columns.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/check_direction.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/check_time_direction.html</loc></url>
+<url><loc>https://camilleross.org/datamatch/reference/check_two_dimensional.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/climate_index_status.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/climate_indices.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/contiguous_runs.html</loc></url>
@@ -62,6 +65,7 @@
 <url><loc>https://camilleross.org/datamatch/reference/download_day.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/downscale_grid.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/downscale_time.html</loc></url>
+<url><loc>https://camilleross.org/datamatch/reference/drop_never_observed.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/eml_attribute.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/eml_coverage.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/eml_methods.html</loc></url>
@@ -76,6 +80,7 @@
 <url><loc>https://camilleross.org/datamatch/reference/fetch_bathymetry.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/fetch_climate_index.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/fill_satellite_gaps.html</loc></url>
+<url><loc>https://camilleross.org/datamatch/reference/finish_partial.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/forecast_variables.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/fvcom_archive.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/fvcom_archives.html</loc></url>
@@ -114,6 +119,7 @@
 <url><loc>https://camilleross.org/datamatch/reference/layer_depths.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/marmap_cache_file.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/matchData.html</loc></url>
+<url><loc>https://camilleross.org/datamatch/reference/matched_names.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/member_key.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/numeric_for_plot.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/obdaac_assemble.html</loc></url>
@@ -130,6 +136,8 @@
 <url><loc>https://camilleross.org/datamatch/reference/parse_dates.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/parse_decimal_year_csv.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/parse_index_table.html</loc></url>
+<url><loc>https://camilleross.org/datamatch/reference/partial_path.html</loc></url>
+<url><loc>https://camilleross.org/datamatch/reference/period_bounds.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/period_keys.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/period_label.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/period_midpoint.html</loc></url>
@@ -146,6 +154,7 @@
 <url><loc>https://camilleross.org/datamatch/reference/read_day_deepest.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/read_day_hourly.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/read_rapid_netcdf.html</loc></url>
+<url><loc>https://camilleross.org/datamatch/reference/redact_appkey.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/refresh_climate_index.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/regrid.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/regrid_step.html</loc></url>
@@ -155,6 +164,7 @@
 <url><loc>https://camilleross.org/datamatch/reference/resolve_time_methods.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/resolve_variables.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/row_sources.html</loc></url>
+<url><loc>https://camilleross.org/datamatch/reference/save_rds_atomic.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/select_time_step.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/short_hash.html</loc></url>
 <url><loc>https://camilleross.org/datamatch/reference/source_of.html</loc></url>

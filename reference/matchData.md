@@ -121,11 +121,17 @@ inference when the data cannot speak for itself.
 One row out per row of `dat`, in the same order, whatever happens. A
 period `source` does not cover gives `NA` for its columns and a warning
 naming the periods, rather than dropping those rows — a silent change in
-row count is a worse outcome than a visible gap.
+row count is a worse outcome than a visible gap. A row whose own year or
+month (or day, or hour, at those resolutions) is missing belongs to no
+period: it is kept, with `NA` for every matched column, and a warning
+gives how many such rows there were. An empty `dat` returns an empty
+result with the matched columns added.
 
 `dat` keeps its own columns. One of `source`'s that collides with a name
 already in `dat` is suffixed `.matched`, so nothing of `dat`'s is
-overwritten or renamed.
+overwritten or renamed. Where `.matched` is taken too, as when the same
+variable is chained on a third time, the suffix is numbered:
+`.matched2`, `.matched3`.
 
 ## Which source a column came from
 
@@ -138,7 +144,14 @@ So each joined column gets a companion `<var>_source` naming the source
 and archive — `"hycom:GLBv53X"`, `"fvcom:GOM3"` — in the same spirit as
 the `<var>_source` column
 [`fill_satellite_gaps()`](https://camilleross.org/datamatch/reference/fill_satellite_gaps.md)
-writes. Pass `record_source = FALSE` to omit them.
+writes. Pass `record_source = FALSE` to omit them. A row that matched
+nothing is tagged `NA`, since no source produced its `NA` values.
+
+A `<var>_source` column already on `source` is joined like any other
+column and keeps its own values: the satellite/model tag from
+[`fill_satellite_gaps()`](https://camilleross.org/datamatch/reference/fill_satellite_gaps.md)
+is a finer record than the archive name, so it is never overwritten, and
+a `_source` column gets no `_source` tag of its own.
 
 These are provenance rather than measurements, but they travel with the
 variable they describe:

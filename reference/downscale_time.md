@@ -44,11 +44,16 @@ downscale_time(
 
   hold the first and last values constant beyond the outermost period
   midpoints. With `FALSE` those half-periods are `NA`, since there is no
-  second point to interpolate between.
+  second point to interpolate between. A cell with a value in one period
+  only holds it across that period, and is `NA` outside it.
 
 ## Value
 
-an `sf` POINT object with one row per cell per target step
+an `sf` POINT object with one row per cell per target step, covering
+only the months (or, from annual input, the years) the source has. The
+source tag
+([`source_of()`](https://camilleross.org/datamatch/reference/source_of.md))
+is carried across, and the recorded time step set to `to`.
 
 ## What this does and does not do
 

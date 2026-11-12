@@ -46,8 +46,11 @@ accessFVCOM(
 
 - dates:
 
-  the months to read, named as dates. On a monthly archive any date
-  selects the month containing it.
+  the dates to read. Data are fetched and cached a month at a time, so
+  each date fetches the month containing it. On a monthly archive that
+  month's mean is returned; on a sub-daily archive such as `GOM7` only
+  the rows for the named days are, with a warning for any day the
+  archive does not hold.
 
 - frequency:
 
@@ -171,6 +174,20 @@ makes a real mean from `frequency = "hourly"` if that is what is needed.
 
 `frequency` does nothing on a monthly archive such as `GOM3`, and saying
 so beats silently ignoring it.
+
+A sub-daily archive described by
+[`fvcom_archive()`](https://camilleross.org/datamatch/reference/fvcom_archive.md)
+with `frequency = "hourly"` is usually one file or aggregation rather
+than one file per month. It is read a month at a time all the same,
+keeping only the time steps that fall in each month.
+
+## The current month
+
+The operational archive grows by a day at a time, so the month in
+progress is incomplete whenever it is read. A month that has not ended -
+its last day is today or later - is read afresh on every call and never
+written to the cache, so a later call sees the days added since. Every
+month that has ended is cached as usual.
 
 ## Only monthly means, on the hindcast
 

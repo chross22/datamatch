@@ -1,9 +1,6 @@
 # Download a Copernicus subset through the command line client
 
-Wraps one `copernicusmarine subset` call. Arguments are passed to
-[`system2()`](https://rdrr.io/r/base/system2.html) as a character vector
-rather than pasted into a shell string, so paths containing spaces are
-handled by the process boundary instead of by quoting.
+Wraps one `copernicusmarine subset` call.
 
 ## Usage
 
@@ -83,6 +80,29 @@ download_copernicus_subset(
 ## Value
 
 `0`, invisibly, on success; errors otherwise
+
+## Quoting
+
+[`system2()`](https://rdrr.io/r/base/system2.html) does not pass its
+arguments to the process one by one. On Unix it pastes the command and
+arguments into a single string and hands that to the shell, so an
+unquoted cache path containing a space is split into two arguments, and
+a `dataset_id` such as `"ds;echo X"` runs a second command. Every
+argument is therefore quoted with
+[`shQuote()`](https://rdrr.io/r/base/shQuote.html) before the call. The
+executable is quoted by
+[`system2()`](https://rdrr.io/r/base/system2.html) itself, so it is not
+quoted again here; its path is expanded first, because a quoted `~` is
+not expanded by the shell.
+
+## Partial files
+
+The client writes into a uniquely named working directory beside
+`ofile`, and the file is renamed into place only once the client has
+exited successfully. A download that is interrupted or fails part way
+therefore never leaves a truncated file at `ofile` for a later call to
+take as cached. A client that reports success without writing the file
+is an error.
 
 ## Retries
 

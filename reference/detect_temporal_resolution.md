@@ -26,8 +26,10 @@ one of "hour", "day", "month", or "year"
 A single time step per year is genuinely ambiguous - it looks the same
 whether the data is annual, or monthly but subset to one month. Annual
 is inferred only with positive evidence for it: several years present,
-each stamped on the same single month, as annual products conventionally
-are. Everything else falls back to monthly, because guessing too coarse
-is the more damaging error - it silently matches observations to a time
-step from a different month, whereas guessing too fine leaves them
-unmatched and warns. Pass `temporal_resolution` explicitly to override.
+each stamped on January, as annual products conventionally are. Several
+years of one other month - a run of Julys - are read as monthly, with a
+warning. Everything else falls back to monthly, because guessing too
+coarse is the more damaging error - it silently matches observations to
+a time step from a different month, whereas guessing too fine leaves
+them unmatched and warns. Pass `temporal_resolution` explicitly to
+override.

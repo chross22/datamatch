@@ -37,7 +37,10 @@ downscale_grid(
 
   the target grid: either a resolution in the CRS's units (one number
   for square cells, or `c(x, y)`), or another `sf` object whose grid to
-  adopt — which is the form that puts two products onto one grid.
+  adopt — which is the form that puts two products onto one grid. An
+  `sf` grid in another CRS is transformed into `env_dat`'s first. Both
+  `env_dat` and an `sf` target need at least two distinct coordinates in
+  each direction; a single row or column of points is refused.
 
 - vars:
 
@@ -64,7 +67,9 @@ downscale_grid(
 ## Value
 
 an `sf` POINT object on the target grid, with the same
-`YEAR`/`MONTH`/`DAY` columns as the input
+`YEAR`/`MONTH`/`DAY` columns, source tag
+([`source_of()`](https://camilleross.org/datamatch/reference/source_of.md))
+and recorded time step as the input
 
 ## What this does and does not do
 

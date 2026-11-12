@@ -15,7 +15,9 @@ cached_index_file(url, index, entry, max_age = NULL, refresh = FALSE)
 
 - url:
 
-  where to download from
+  where to download from. A URL other than the catalog's is cached under
+  a name carrying its hash, so it neither reads nor replaces the catalog
+  file's copy.
 
 - index:
 

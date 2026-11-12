@@ -1,6 +1,11 @@
-# Every target time step spanned by the source
+# Every target time step within the periods the source covers
 
-Every target time step spanned by the source
+Built from the year-month combinations actually present, not from every
+year crossed with every month. A crossing turned a November-to-February
+series into one also covering January and February of the first year and
+November and December of the second - four months nobody fetched, filled
+by extrapolation or left `NA`. Annual input covers all twelve months of
+each year present, since that is the period an annual value describes.
 
 ## Usage
 

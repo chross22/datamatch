@@ -32,3 +32,8 @@ raw code therefore considers only the entries that request it directly.
 Asking for `"so"` gets surface salinity, which is what the code means;
 bottom salinity is reachable by its catalog name, which is the only
 thing that distinguishes it.
+
+In forecast mode, codes are looked up in
+[`forecast_variables()`](https://camilleross.org/datamatch/reference/forecast_variables.md)
+first, so a code only the forecast publishes - `tob`, `sob` - resolves
+as well.

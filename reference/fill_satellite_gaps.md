@@ -39,7 +39,9 @@ fill_satellite_gaps(satellite, model, vars, rescale = FALSE)
 ## Value
 
 `satellite` with gaps filled, plus a `<var>_source` factor column per
-variable recording `"satellite"` or `"model"`
+variable recording `"satellite"`, `"model"`, or `"missing"` for a cell
+left `NA` because neither source had a value there - including a time
+step the model does not cover at all
 
 ## What this does and does not do
 

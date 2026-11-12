@@ -62,7 +62,9 @@ is stamped `DAY = 1`; annual output `MONTH = 1, DAY = 1`, matching what
 [`accessCopernicus()`](https://camilleross.org/datamatch/reference/accessCopernicus.md)
 returns for non-daily products so that
 [`matchData()`](https://camilleross.org/datamatch/reference/matchData.md)
-reads the resolution back correctly.
+reads the resolution back correctly. The input's source tag
+([`source_of()`](https://camilleross.org/datamatch/reference/source_of.md))
+is carried onto the result, and its recorded time step set to `to`.
 
 ## Hourly to daily
 

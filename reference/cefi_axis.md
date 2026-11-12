@@ -21,3 +21,10 @@ cefi_axis(handle)
 ## Value
 
 a list with `name`, the axis it found, and `dates`
+
+## Details
+
+The unit is read rather than assumed: days, hours, minutes and seconds
+(and their CF abbreviations) are converted exactly. Months and years are
+refused, because their length depends on a calendar that the conversion
+would have to guess at, and so is anything unrecognised.
