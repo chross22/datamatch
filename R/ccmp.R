@@ -338,8 +338,11 @@ accessCCMP <- function(vars, years = NULL, months = NULL, bounding_box,
 
   failures <- character()
   for (i in which(needed)) {
-    raw <- copernicus_cache("ccmp", paste0("raw_", format(days[i], "%Y%m%d"),
-                                           ".nc"))
+    # A unique name rather than raw_YYYYMMDD.nc: two sessions fetching the same
+    # day into a shared cache would otherwise write into, read from and delete
+    # one another's working file.
+    raw <- partial_path(copernicus_cache(
+      "ccmp", paste0("raw_", format(days[i], "%Y%m%d"), ".nc")))
     failure <- download_ccmp_day(spec, days[i], raw)
     if (!is.null(failure)) {
       failures <- c(failures, failure)
@@ -381,14 +384,25 @@ accessCCMP <- function(vars, years = NULL, months = NULL, bounding_box,
 
     steps <- if (frequency == "daily") which(stamps == hour) else seq_along(stamps)
 
+    # A box across the prime meridian keeps both ends of the 0-360 axis and
+    # not the middle. A single read from the first kept column would take the
+    # middle instead and file it under the kept longitudes, so each contiguous
+    # run of columns is read on its own. keep_lon is in index order and so are
+    # the runs, which keeps the values in step with the labels below.
+    lon_runs <- contiguous_runs(keep_lon)
+
     frames <- lapply(steps, function(step) {
       frame <- expand.grid(x = to_180(lon[keep_lon]), y = lat[keep_lat])
       for (name in vars) {
-        values <- ncdf4::ncvar_get(
-          handle, entries[[name]]$variable,
-          start = c(min(keep_lon), min(keep_lat), step),
-          count = c(length(keep_lon), length(keep_lat), 1),
-          collapse_degen = TRUE)
+        values <- do.call(rbind, lapply(lon_runs, function(run) {
+          block <- ncdf4::ncvar_get(
+            handle, entries[[name]]$variable,
+            start = c(min(run), min(keep_lat), step),
+            count = c(length(run), length(keep_lat), 1),
+            collapse_degen = FALSE)
+          matrix(as.numeric(block), nrow = length(run))
+        }))
+        # Longitude varies fastest, as it does in expand.grid().
         frame[[name]] <- as.numeric(values)
       }
       frame$YEAR <- as.integer(format(days[i], "%Y"))
@@ -406,7 +420,7 @@ accessCCMP <- function(vars, years = NULL, months = NULL, bounding_box,
     # Land, where CCMP has no wind at all.
     frame <- frame[rowSums(!is.na(frame[vars])) > 0, , drop = FALSE]
     rownames(frame) <- NULL
-    saveRDS(frame, paths[i])
+    save_rds_atomic(frame, paths[i])
   }
 
   if (length(failures) > 0) {

@@ -22,7 +22,9 @@ filling, computed per time step over the cells where both exist}
 }
 \value{
 \code{satellite} with gaps filled, plus a \verb{<var>_source} factor column per
-variable recording \code{"satellite"} or \code{"model"}
+variable recording \code{"satellite"}, \code{"model"}, or \code{"missing"} for a cell left
+\code{NA} because neither source had a value there - including a time step the
+model does not cover at all
 }
 \description{
 Satellite ocean colour is missing wherever cloud, ice, or low sun angle blocked

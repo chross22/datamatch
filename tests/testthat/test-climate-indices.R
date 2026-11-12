@@ -141,6 +141,41 @@ test_that("a PSL file's declared missing code is honoured", {
   expect_false(any(series$AMO < -90))
 })
 
+test_that("a small declared missing code is honoured, as in pdo.data", {
+  # pdo.data declares -9.90, which is inside the range real anomalies reach, so
+  # only the footer can say it means missing. Read as data, Sep-Dec 2025 came
+  # back as four months of extreme PDO and hid that the series stops in August.
+  pdo <- c(
+    "         1948 2025",
+    "1948    -0.11  -0.74  -0.03  -1.33  -0.23   0.08  -0.92  -1.56  -1.74  -1.32  -0.89  -1.70",
+    "2025    -0.78  -0.82  -0.41  -0.57  -1.14  -2.32  -3.51  -2.71  -9.90  -9.90  -9.90  -9.90",
+    "-9.90",
+    "PDO: pacific decadal oscillation",
+    "info at https://psl.noaa.gov/data/climateindices/list/",
+    "updated 10/2025"
+  )
+
+  expect_equal(psl_missing_code(trimws(pdo)), -9.9)
+
+  series <- parse_index_table(pdo, format = "psl_table", name = "PDO")
+  expect_equal(nrow(series), 12 + 8)
+  expect_false(any(abs(series$PDO + 9.9) < 1e-6))
+  expect_equal(max(series$MONTH[series$YEAR == 2025]), 8)
+  # A real value near the code is kept: only the code itself is missing.
+  expect_true(-3.51 %in% series$PDO)
+
+  # The staleness check then sees where the series really ends.
+  expect_message(warn_if_stale(series, "PDO", climate_indices()$PDO),
+                 "2025-08")
+})
+
+test_that("a lone number before the data is not taken for the missing code", {
+  lines <- c("  2000  2000", "  5",
+             "2000    5.00    0.39    0.10    0.11    0.12    0.13    0.14    0.15    0.16    0.17    0.18    0.19",
+             "  -99.99")
+  expect_equal(psl_missing_code(trimws(lines)), -99.99)
+})
+
 test_that("a partial current year is padded rather than misaligned", {
   # Providers publish the running year with only the months so far. Without
   # padding, the shorter row would recycle and assign wrong months.
@@ -366,6 +401,37 @@ test_that("refresh = TRUE ignores a cache that is still fresh", {
   )
   expect_warning(cached_index_file("unused", "TEST", entry, refresh = TRUE),
                  "may be out of date")
+})
+
+test_that("a url override is cached apart from the catalog file", {
+  # Keyed by index name alone, an override was answered from the default's
+  # cache, and its download replaced the default's cached copy.
+  local_index_cache()
+  entry <- climate_indices()$NAO
+  default_file <- copernicus_cache("indices", "NAO.txt")
+  writeLines("default", default_file)
+
+  fetched <- character()
+  local_mocked_bindings(
+    download.file = function(url, destfile, ...) {
+      fetched <<- c(fetched, url)
+      writeLines(paste("from", url), destfile)
+      0L
+    },
+    .package = "utils"
+  )
+
+  other <- "https://mirror.invalid/nao.txt"
+  file <- cached_index_file(other, "NAO", entry)
+
+  expect_equal(fetched, other)
+  expect_false(identical(normalizePath(file), normalizePath(default_file)))
+  expect_match(basename(file), short_hash(other), fixed = TRUE)
+  expect_equal(readLines(file), paste("from", other))
+  # The catalog file's copy is untouched, and is still what the default reads.
+  expect_equal(readLines(default_file), "default")
+  expect_equal(cached_index_file(entry$url, "NAO", entry), default_file)
+  expect_length(fetched, 1)
 })
 
 test_that("a living series that has stopped short is reported", {

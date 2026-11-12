@@ -232,3 +232,35 @@ test_that("an invalid target is rejected before any work happens", {
   expect_error(upscale_grid(fine, to = -1), "positive resolution")
   expect_error(upscale_grid(fine, to = "0.5"), "positive resolution")
 })
+
+test_that("regridding keeps the source tag and the time step", {
+  fine <- grid_of(0.1)
+  attr(fine, "datamatch_source") <- "copernicus:X"
+  attr(fine, "datamatch_step") <- "month"
+
+  coarse <- upscale_grid(fine, to = 0.5)
+
+  expect_equal(source_of(coarse), "copernicus:X")
+  expect_equal(attr(coarse, "datamatch_step"), "month")
+})
+
+test_that("a target grid in another CRS is transformed first", {
+  fine <- grid_of(0.1)
+  target <- sf::st_transform(grid_of(0.5), 32619)
+
+  coarse <- upscale_grid(fine, to = target, min_coverage = 0)
+  same <- upscale_grid(fine, to = grid_of(0.5), min_coverage = 0)
+
+  expect_equal(sf::st_crs(coarse), sf::st_crs(fine))
+  expect_equal(nrow(coarse), nrow(same))
+})
+
+test_that("a single row or column is refused with a clear message", {
+  fine <- grid_of(0.1)
+  row <- sf::st_as_sf(data.frame(x = c(-70, -69.5, -69), y = 42),
+                      coords = c("x", "y"), crs = 4326)
+
+  expect_error(upscale_grid(fine, to = row), "single row")
+  expect_error(upscale_grid(fine[sf::st_coordinates(fine)[, 1] == -70, ], to = 0.5),
+               "single column")
+})

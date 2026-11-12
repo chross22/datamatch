@@ -61,7 +61,9 @@ covariate_columns <- function(env_dat) {
 #' @param rescale match the model's mean and variance to the satellite's before
 #'   filling, computed per time step over the cells where both exist
 #' @return `satellite` with gaps filled, plus a `<var>_source` factor column per
-#'   variable recording `"satellite"` or `"model"`
+#'   variable recording `"satellite"`, `"model"`, or `"missing"` for a cell left
+#'   `NA` because neither source had a value there - including a time step the
+#'   model does not cover at all
 #' @examples
 #' \dontrun{
 #' chl_sat <- accessCopernicus(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
@@ -90,7 +92,12 @@ fill_satellite_gaps <- function(satellite, model, vars, rescale = FALSE) {
 
   for (satellite_var in names(vars)) {
     model_var <- vars[[satellite_var]]
-    source <- rep("satellite", nrow(satellite))
+    # A cell starts as "missing" when the satellite has no value there, and only
+    # becomes "model" once a value is actually put in it. Starting every cell as
+    # "satellite" labelled a gap the model could not fill - no model step for
+    # that date, or a model NA - as an observation, which is the one thing the
+    # column exists to rule out.
+    source <- ifelse(is.na(satellite[[satellite_var]]), "missing", "satellite")
 
     for (i in seq_len(nrow(steps))) {
       step <- steps[i, ]

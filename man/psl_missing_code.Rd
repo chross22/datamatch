@@ -7,13 +7,16 @@
 psl_missing_code(lines)
 }
 \arguments{
-\item{lines}{the file's lines}
+\item{lines}{the file's lines, trimmed and with blank lines removed}
 }
 \value{
 the code, or \code{NULL} if not declared
 }
 \description{
 PSL files state their own missing-value code on a line after the data, rather
-than using a fixed convention.
+than using a fixed convention. The code is whatever number stands alone on the
+first such line, however small: \code{amon.us.long.data} declares \code{-99.99}, but
+\code{pdo.data} declares \code{-9.90}, which is well inside the range of real values and
+so cannot be recognised by its size.
 }
 \keyword{internal}

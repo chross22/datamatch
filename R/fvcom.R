@@ -391,7 +391,7 @@ fvcom_mesh_coordinates <- function(archive_name, spec, mesh) {
   on.exit(ncdf4::nc_close(handle), add = TRUE)
 
   coords <- fvcom_coordinates(handle, mesh)
-  saveRDS(coords, cached)
+  save_rds_atomic(coords, cached)
   coords
 }
 
@@ -553,6 +553,18 @@ fvcom_read_variable <- function(handle, entry, step, layers, keep) {
 #' `frequency` does nothing on a monthly archive such as `GOM3`, and saying so
 #' beats silently ignoring it.
 #'
+#' A sub-daily archive described by [fvcom_archive()] with
+#' `frequency = "hourly"` is usually one file or aggregation rather than one
+#' file per month. It is read a month at a time all the same, keeping only the
+#' time steps that fall in each month.
+#'
+#' @section The current month:
+#' The operational archive grows by a day at a time, so the month in progress is
+#' incomplete whenever it is read. A month that has not ended - its last day is
+#' today or later - is read afresh on every call and never written to the
+#' cache, so a later call sees the days added since. Every month that has ended
+#' is cached as usual.
+#'
 #' @section Only monthly means, on the hindcast:
 #' The hindcast is published hourly and as monthly means of those hours. Only the
 #' monthly aggregation is offered, because the hourly one cannot be opened: it
@@ -570,8 +582,11 @@ fvcom_read_variable <- function(handle, entry, step, layers, keep) {
 #' @param months <numeric> months to read. Required unless `dates` is given.
 #' @param bounding_box <list> named list with `xmin`, `xmax`, `ymin`, `ymax`, or
 #'   an `sf`/`sfc` object to take the bounding box of
-#' @param dates the months to read, named as dates. On a monthly archive any
-#'   date selects the month containing it.
+#' @param dates the dates to read. Data are fetched and cached a month at a
+#'   time, so each date fetches the month containing it. On a monthly archive
+#'   that month's mean is returned; on a sub-daily archive such as `GOM7` only
+#'   the rows for the named days are, with a warning for any day the archive
+#'   does not hold.
 #' @param frequency <char> for a sub-daily archive such as `GOM7`, `"daily"`
 #'   (the default) for one snapshot per day or `"hourly"` for every hour.
 #'   Ignored, with a warning, on a monthly archive.
@@ -680,9 +695,17 @@ accessFVCOM <- function(vars, years = NULL, months = NULL, bounding_box,
   }
   mesh <- meshes
 
-  # The archive is monthly, so a date selects the month containing it. Said
-  # rather than assumed, because `dates` on a daily Copernicus fetch means the
-  # days themselves.
+  # An sf or sfc box is reduced to its four edges here, once, so that every
+  # later use - the cache key as well as the mesh subset - sees the same named
+  # vector. Indexing an sf data frame by edge name fails with "undefined
+  # columns selected".
+  if (inherits(bounding_box, c("sf", "sfc"))) {
+    bounding_box <- sf::st_bbox(bounding_box)
+  }
+
+  # Data are fetched a month at a time, so a date selects the month containing
+  # it. On a monthly archive that month is what comes back; on a sub-daily one
+  # the rows are narrowed to the named days once the months are read.
   if (!is.null(dates)) {
     if (!is.null(years) || !is.null(months)) {
       stop("`dates` already names which time steps to read, so `years` and ",
@@ -707,6 +730,10 @@ accessFVCOM <- function(vars, years = NULL, months = NULL, bounding_box,
   # snapshot a day.
   sub_daily <- identical(spec$layout, "per_month") ||
     identical(spec$frequency, "hourly")
+  # Whether the URL names one file per month. A sub-daily archive described by
+  # fvcom_archive() is usually a single file or aggregation instead, whose URL
+  # carries no month to fill in.
+  per_month <- identical(spec$layout, "per_month")
 
   if (!sub_daily && frequency_given) {
     warning("`frequency` applies only to sub-daily archives, and ",
@@ -731,7 +758,11 @@ accessFVCOM <- function(vars, years = NULL, months = NULL, bounding_box,
   } else {
     coords <- fvcom_mesh_coordinates(archive_key, spec, mesh)
     keep <- fvcom_in_box(coords, bounding_box)
-    box_key <- paste(paste(range(keep), collapse = "-"), length(keep), sep = "|")
+    # The whole index set, hashed. Its range and length are not enough: mesh
+    # numbering is not spatially coherent, so two different boxes can select
+    # sets with the same first and last index and the same count, and the second
+    # would then be served the first one's points from the cache.
+    box_key <- short_hash(paste(keep, collapse = ","))
   }
 
   # Keyed on the month asked for rather than on the archive's own timestamp, so
@@ -746,24 +777,47 @@ accessFVCOM <- function(vars, years = NULL, months = NULL, bounding_box,
                                      "_", key, ".rds"))
   }, character(1))
 
-  needed <- if (overwrite) rep(TRUE, length(paths)) else !file.exists(paths)
+  # A month that has not ended is still being written. The operational archive
+  # adds each day to the current month's file, so caching it would freeze the
+  # month as it stood at the first fetch and serve that partial month for good.
+  # Such a month is read every time and never written to the cache, and a copy
+  # cached by an earlier version is not trusted.
+  month_start <- lubridate::ymd(paste(wanted, 1, sep = "-"))
+  month_end <- month_start + lubridate::days_in_month(month_start) - 1
+  still_open <- unname(month_end >= Sys.Date())
+
+  needed <- overwrite | still_open | !file.exists(paths)
+  # Months read in this call, held here so that an open month can be returned
+  # without passing through the cache.
+  fresh <- vector("list", length(paths))
+  keep_month <- function(i, frame) {
+    if (!still_open[i]) save_rds_atomic(frame, paths[i])
+    fresh[[i]] <<- frame
+  }
 
   # Only reach for the network when something is actually missing. A wholly
   # cached request reads from disk and never opens the archive.
   if (any(needed) && sub_daily) {
-    # A per-month archive is one file per month, so each month is opened in turn
-    # rather than one aggregation being indexed into.
-    for (i in which(needed)) {
+    # One month, read from its own file or from the single file a non-monthly
+    # layout holds everything in. A function rather than a loop body so that the
+    # connection is closed by on.exit() however the reads end.
+    read_month <- function(i) {
       parts <- as.integer(strsplit(wanted[i], "-", fixed = TRUE)[[1]])
       month_spec <- spec
-      month_spec$url <- sprintf(spec$url, parts[1], parts[1], parts[2])
-
-      handle <- tryCatch(fvcom_open(month_spec), error = function(e) e)
-      if (inherits(handle, "error")) {
-        warning("No file for ", wanted[i], " in this archive; skipping.",
-                call. = FALSE)
-        next
+      if (per_month) {
+        month_spec$url <- sprintf(spec$url, parts[1], parts[1], parts[2])
+        handle <- tryCatch(fvcom_open(month_spec), error = function(e) e)
+        if (inherits(handle, "error")) {
+          warning("No file for ", wanted[i], " in this archive; skipping.",
+                  call. = FALSE)
+          return(NULL)
+        }
+      } else {
+        # One file for every month, so failing to open it is not a missing
+        # month and is raised as it is.
+        handle <- fvcom_open(month_spec)
       }
+      on.exit(ncdf4::nc_close(handle), add = TRUE)
 
       # This file's own mesh. Read per file because it can differ between
       # months, which is why it is not cached for these archives.
@@ -773,11 +827,21 @@ accessFVCOM <- function(vars, years = NULL, months = NULL, bounding_box,
       times <- fvcom_hourly_times(handle)
       hours <- as.integer(format(times, "%H", tz = "UTC"))
       days <- as.integer(format(times, "%d", tz = "UTC"))
+      # Only the steps that fall in the month being read. A single file holds
+      # every month, and even a per-month file can carry the first hour of the
+      # next; either way a step outside the month must not be stamped with it.
+      in_month <- format(times, "%Y-%m", tz = "UTC") ==
+        sprintf("%04d-%02d", parts[1], parts[2])
+      if (!any(in_month)) {
+        warning("No time steps for ", wanted[i], " in this archive; skipping.",
+                call. = FALSE)
+        return(NULL)
+      }
 
       # Every hour of the month, or one snapshot per day. The default is the
       # snapshot: a month of hourly GOM7 is 720 reads of a 207,081-node field,
       # which is hours of transfer to keep a shelf-sized corner of it.
-      steps <- if (step == "hour") seq_along(times) else which(hours == hour)
+      steps <- which(in_month & (step == "hour" | hours == hour))
 
       layers <- handle$dim$siglay$len %||% 1L
       frames <- lapply(steps, function(s) {
@@ -792,12 +856,16 @@ accessFVCOM <- function(vars, years = NULL, months = NULL, bounding_box,
         if (step == "hour") frame$HOUR <- hours[s]
         frame
       })
-      ncdf4::nc_close(handle)
 
-      if (length(frames) == 0) next
+      if (length(frames) == 0) return(NULL)
       frame <- dplyr::bind_rows(frames)
       rownames(frame) <- NULL
-      saveRDS(frame, paths[i])
+      frame
+    }
+
+    for (i in which(needed)) {
+      frame <- read_month(i)
+      if (!is.null(frame)) keep_month(i, frame)
     }
   } else if (any(needed)) {
     handle <- fvcom_open(spec)
@@ -840,20 +908,44 @@ accessFVCOM <- function(vars, years = NULL, months = NULL, bounding_box,
       frame$DAY <- 1L
       rownames(frame) <- NULL
 
-      saveRDS(frame, paths[i])
+      keep_month(i, frame)
     }
   }
 
-  usable <- file.exists(paths)
+  read <- !vapply(fresh, is.null, logical(1))
+  # An open month is only ever served from this call's read, never from disk.
+  usable <- read | (!still_open & file.exists(paths))
   if (!any(usable)) {
     stop("None of the requested months are in this archive, which covers ",
          format(spec$start, "%Y-%m"), " to ", format(spec$end, "%Y-%m"), ".",
          call. = FALSE)
   }
-  frames <- lapply(paths[usable], readRDS)
+  frames <- lapply(which(usable), function(i) {
+    if (read[i]) fresh[[i]] else readRDS(paths[i])
+  })
+  rows <- dplyr::bind_rows(frames)
 
-  out <- sf::st_as_sf(dplyr::bind_rows(frames), coords = c("x", "y"),
-                      crs = sf::st_crs(4326))
+  # A sub-daily archive is fetched and cached a month at a time, but `dates`
+  # names days, so only those days are returned. The rest of each month stays
+  # in the cache for the next request that wants it.
+  if (!is.null(dates) && sub_daily) {
+    stamped <- as.Date(sprintf("%04d-%02d-%02d", as.integer(rows$YEAR),
+                               as.integer(rows$MONTH), as.integer(rows$DAY)))
+    rows <- rows[stamped %in% dates, , drop = FALSE]
+    rownames(rows) <- NULL
+    absent <- dates[!dates %in% stamped]
+    if (nrow(rows) == 0) {
+      stop("None of the requested dates are in this archive.", call. = FALSE)
+    }
+    if (length(absent) > 0) {
+      warning(length(absent), " requested date(s) have no data in this ",
+              "archive and are absent from the result: ",
+              paste(utils::head(format(absent), 5), collapse = ", "),
+              if (length(absent) > 5) ", ..." else "", call. = FALSE)
+    }
+  }
+
+  out <- sf::st_as_sf(rows, coords = c("x", "y"), crs = sf::st_crs(4326))
   attr(out, "datamatch_step") <- step
   stamp_source(out, "fvcom", archive_key)
 }

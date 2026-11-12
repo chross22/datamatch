@@ -973,3 +973,101 @@ test_that("both names are exported", {
   expect_true("accessCopernicus" %in% exports)
   expect_true("accessEnvDat" %in% exports)
 })
+
+test_that("a cell empty at one step comes back as NA, so a gap can be filled", {
+  # Two days, one cell clouded on the first and clear on the second, and one
+  # cell empty on both (land).
+  day_raster <- function(values) {
+    r <- terra::rast(nrows = 2, ncols = 2, nlyrs = 1)
+    terra::values(r) <- values
+    names(r) <- "CHL"
+    path <- tempfile(fileext = ".tif")
+    terra::writeRaster(r, path)
+    path
+  }
+  first <- day_raster(c(1, NA, 3, NA))
+  second <- day_raster(c(1, 2, 3, NA))
+  item <- function(path, day) {
+    list(ofile = path, year = 2020L, month = 1L, day = day)
+  }
+
+  # The bug: terra's default dropped the clouded cell, so the gap was an absent
+  # row that fill_satellite_gaps() had nothing to fill in.
+  expect_equal(nrow(read_day(item(first, 1L), "CHL")), 4)
+
+  local_mocked_bindings(copernicus_cache = function(...) {
+    if (grepl("_2020-01-01_", list(...)[[2]])) first else second
+  })
+  local_mocked_bindings(file_exists = function(...) TRUE, .package = "fs")
+  out <- accessCopernicus(vars = "CHL", product_id = "P",
+                          dataset_id = "cmems_test_P1D-m",
+                          dates = c("2020-01-01", "2020-01-02"),
+                          bounding_box = list(xmin = -1, xmax = 1, ymin = -1,
+                                              ymax = 1))
+
+  # Day 1 keeps its gap as NA; the land cell, empty on both days, is dropped
+  # so that matchData() does not join a coastal observation to it.
+  expect_equal(sum(out$DAY == 1), 3)
+  expect_equal(sum(is.na(out$CHL)), 1)
+  expect_equal(nrow(out), 6)
+})
+
+test_that("forecast days from today onward are fetched afresh and not cached", {
+  vars <- "thetao"
+  raster_path <- write_fake_raster(vars)
+  written <- character(0)
+
+  local_mocked_bindings(copernicus_cache = function(...) raster_path)
+  # Everything reports as cached, so only a day that is never taken from the
+  # cache is downloaded.
+  local_mocked_bindings(file_exists = function(...) TRUE, .package = "fs")
+  local_mocked_bindings(
+    download_copernicus_subset = function(ofile, ...) {
+      written <<- c(written, ofile)
+      file.copy(raster_path, ofile)
+      invisible(0)
+    }
+  )
+
+  out <- accessCopernicus(vars = vars, product_id = "P",
+                          dataset_id = "cmems_mod_glo_phy-thetao_anfc_0.083deg_P1D-m",
+                          dates = c(Sys.Date() - 1, Sys.Date()),
+                          mode = "forecast",
+                          bounding_box = list(xmin = -70, xmax = -60,
+                                              ymin = 40, ymax = 45))
+
+  # Yesterday came from the cache; today was downloaded, outside the cache.
+  expect_length(written, 1)
+  expect_false(written == raster_path)
+  expect_match(written, "copernicus-forecast-")
+  # And the provisional copy did not outlive the call.
+  expect_false(file.exists(written))
+  expect_equal(nrow(out), 2 * 4)
+})
+
+test_that("an sf bounding box is accepted, as documented", {
+  vars <- "thetao"
+  raster_path <- write_fake_raster(vars)
+  names_seen <- character(0)
+  local_mocked_bindings(copernicus_cache = function(...) {
+    names_seen <<- c(names_seen, list(...)[[2]])
+    raster_path
+  })
+  local_mocked_bindings(file_exists = function(...) TRUE, .package = "fs")
+
+  bb <- list(xmin = -70, xmax = -60, ymin = 40, ymax = 45)
+  box <- sf::st_as_sf(sf::st_as_sfc(sf::st_bbox(unlist(bb),
+                                                crs = sf::st_crs(4326))))
+
+  # The bug: the cache filename indexed the sf data frame by edge name and
+  # failed with "undefined columns selected".
+  out <- accessCopernicus(vars = vars, product_id = "P",
+                          dataset_id = "cmems_mod_glo_phy_my_0.083deg_P1D-m",
+                          dates = "2020-01-01", bounding_box = box)
+  expect_s3_class(out, "sf")
+
+  # And it names the same cache file as the equivalent list.
+  expect_equal(names_seen,
+               cache_filename("P", "cmems_mod_glo_phy_my_0.083deg_P1D-m",
+                              as.Date("2020-01-01"), vars, bb, c(0, 1)))
+})

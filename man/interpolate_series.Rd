@@ -4,7 +4,7 @@
 \alias{interpolate_series}
 \title{Interpolate one cell's series onto the target time steps}
 \usage{
-interpolate_series(x, y, xout, method, extrapolate)
+interpolate_series(x, y, xout, method, extrapolate, lower = NULL, upper = NULL)
 }
 \arguments{
 \item{x}{source times, as numeric days}
@@ -16,6 +16,10 @@ interpolate_series(x, y, xout, method, extrapolate)
 \item{method}{\code{"step"}, \code{"linear"}, or \code{"spline"}}
 
 \item{extrapolate}{hold end values constant beyond the source range}
+
+\item{lower, upper}{the start and (exclusive) end of each source period, as
+numeric days. Used only when a single value is present, to tell which
+targets lie inside its period; \code{NULL} keeps only an exact time match.}
 }
 \value{
 numeric vector of length \code{length(xout)}

@@ -280,7 +280,12 @@ read_day <- function(item, vars) {
   # Put the layers in the order they were requested before anything is named.
   x <- order_layers(x, vars)
 
-  as.data.frame(x, xy = TRUE) |>
+  # na.rm = FALSE keeps cells that are empty in every layer. terra drops them by
+  # default, which turns a cloud gap in a satellite field into an absent row
+  # rather than an NA, and fill_satellite_gaps() can only fill an NA. Cells that
+  # are empty at every time step are dropped later, once all days are read; see
+  # drop_never_observed().
+  as.data.frame(x, xy = TRUE, na.rm = FALSE) |>
     dplyr::mutate(YEAR = item$year, MONTH = item$month, DAY = item$day)
 }
 
@@ -336,12 +341,39 @@ read_day_hourly <- function(item, vars) {
     # sets of names into one very wide, very empty table rather than stacking
     # them. Stripped back to the bare codes, which every hour shares.
     names(slice) <- vars
-    as.data.frame(slice, xy = TRUE) |>
+    # Empty cells kept, as in read_day().
+    as.data.frame(slice, xy = TRUE, na.rm = FALSE) |>
       dplyr::mutate(YEAR = item$year, MONTH = item$month, DAY = item$day,
                     HOUR = hour)
   })
 
   dplyr::bind_rows(frames)
+}
+
+#' Drop the grid cells that hold no value at any time step
+#'
+#' The readers keep cells that are empty at a time step, so that a cloud gap
+#' arrives as an `NA` that [fill_satellite_gaps()] can fill. A cell that is empty
+#' at every time step of the request is a different case: land, or outside the
+#' product's domain. Those are dropped, as they always were, because
+#' [matchData()] joins each observation to the nearest cell. Kept, an
+#' observation on the coast would join to the land cell beside it and take its
+#' `NA` instead of the nearest value at sea.
+#'
+#' The two cannot be told apart from the data alone when a cell is clouded at
+#' every requested time step, as it may be on a one-date request. Such a cell is
+#' dropped like land, which is how every cloud gap was treated before.
+#'
+#' @param covars a data frame of `x`, `y`, value columns and time columns
+#' @param value_columns <char> the value columns
+#' @return `covars` without the cells that never hold a value
+#' @keywords internal
+drop_never_observed <- function(covars, value_columns) {
+  has_value <- rowSums(!is.na(covars[value_columns])) > 0
+  cell <- paste(covars$x, covars$y)
+  covars <- covars[cell %in% cell[has_value], , drop = FALSE]
+  rownames(covars) <- NULL
+  covars
 }
 
 #' Read one time step's full depth column, keeping the deepest wet level
@@ -622,6 +654,18 @@ stop_if_legacy_positional <- function(vars) {
 #' successful ones stay in the cache, and the error names each day that failed —
 #' so re-running the same call retries only those.
 #'
+#' In forecast mode, a day from today onward is still a forecast, and the product
+#' replaces it with an analysis once the day has passed. Those days are
+#' downloaded on every call and never cached, so the forecast is not served for
+#' that day after the analysis exists. Days before today are cached as usual.
+#'
+#' @section Empty cells:
+#' A cell with no value at a time step - cloud over a satellite field, typically
+#' - comes back as a row with `NA`, so [fill_satellite_gaps()] can fill it. A
+#' cell with no value at any requested time step is land or outside the
+#' product's domain, and is dropped. A cell clouded at every requested time step
+#' cannot be told apart from land and is dropped too.
+#'
 #' @param vars <char> variables to access: names from [variable_dictionary()],
 #'   raw Copernicus variable codes, or a mixture
 #' @param years <numeric> years of data to access. Required unless `dates` is
@@ -644,7 +688,8 @@ stop_if_legacy_positional <- function(vars) {
 #' @param mode <char> `"reanalysis"` (the default) for the multi-year hindcast,
 #'   or `"forecast"` for the analysis-and-forecast products, which run to about
 #'   ten days ahead. See [forecast_variables()] for which variables have a
-#'   forecast equivalent and how the identifiers differ.
+#'   forecast equivalent and how the identifiers differ. In forecast mode, days
+#'   from today onward are not cached; see the Downloading in parallel section.
 #' @param product_id <char> product identification string from the Copernicus
 #'   Marine Data Store. Optional when `vars` are catalog names.
 #' @param dataset_id <char> dataset identification string from the Copernicus
@@ -814,22 +859,47 @@ accessCopernicus <- function(vars, years = NULL, months = NULL,
     stop("The request names no time steps to fetch.", call. = FALSE)
   }
 
+  # An sf or sfc box is reduced to its four edges once, here, so that the cache
+  # filename and the download request both see the same named vector.
+  if (inherits(bounding_box, c("sf", "sfc"))) {
+    bounding_box <- sf::st_bbox(bounding_box)
+  }
+
+  # In forecast mode a day from today onward is still a forecast, and the
+  # product replaces it with an analysis once the day has passed. Cached, the
+  # forecast would be served for that day for good. Such days are downloaded
+  # to a directory of this session's own and removed afterwards, so every call
+  # fetches them afresh.
+  provisional_dir <- NULL
+  if (mode == "forecast") {
+    provisional_dir <- tempfile("copernicus-forecast-")
+    on.exit(unlink(provisional_dir, recursive = TRUE), add = TRUE)
+  }
+
   # Each day's date and cache path, resolved once, so the download and read
   # phases below agree on where the file is without recomputing it.
   work_items <- lapply(work_items, function(item) {
     item$time <- lubridate::ymd(paste(item$year, item$month, item$day, sep = "-"))
-    item$ofile <- copernicus_cache(
-      "tmp", cache_filename(product_id, dataset_id, item$time, var_codes,
-                            bounding_box, depth))
+    name <- cache_filename(product_id, dataset_id, item$time, var_codes,
+                           bounding_box, depth)
+    item$provisional <- mode == "forecast" && item$time >= Sys.Date()
+    item$ofile <- if (item$provisional) {
+      dir.create(provisional_dir, showWarnings = FALSE, recursive = TRUE)
+      file.path(provisional_dir, name)
+    } else {
+      copernicus_cache("tmp", name)
+    }
     item
   })
 
   # Only the days not already on disk cost anything. Everything else is a local
-  # read, which is why the cache exists.
+  # read, which is why the cache exists. A provisional forecast day is never
+  # taken from disk.
   needed <- if (overwrite) {
     work_items
   } else {
-    Filter(function(item) !fs::file_exists(item$ofile), work_items)
+    Filter(function(item) item$provisional || !fs::file_exists(item$ofile),
+           work_items)
   }
 
   if (length(needed) > 0) {
@@ -907,6 +977,7 @@ accessCopernicus <- function(vars, years = NULL, months = NULL,
            "download returned ", ncol(covars) - 6, ".", call. = FALSE)
     }
     names(covars) <- c("x", "y", var_names, "YEAR", "MONTH", "DAY", "HOUR")
+    covars <- drop_never_observed(covars, var_names)
   } else {
     covars <- dplyr::bind_rows(lapply(work_items, read_day, vars = var_codes))
 
@@ -924,6 +995,7 @@ accessCopernicus <- function(vars, years = NULL, months = NULL,
     # Columns take the names the caller asked for, so requesting "SST" yields a
     # column called SST rather than thetao.
     names(covars) <- c("x", "y", var_names, "YEAR", "MONTH", "DAY")
+    covars <- drop_never_observed(covars, var_names)
   }
 
   # Convert data to sf and return

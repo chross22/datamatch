@@ -201,6 +201,70 @@ test_that("an HTML login page is not written to disk as a netCDF file", {
   }
 })
 
+test_that("a failed download does not print the Earthdata appkey", {
+  # download.file() quotes the URL it failed on, and the appkey is in that URL's
+  # query string, so an unredacted failure puts a credential in the console, in
+  # logs and in CI output.
+  key <- "s3cretAPPKEY0123"
+  credentials <- list(kind = "appkey", key = key)
+  local_mocked_bindings(
+    download.file = function(url, destfile, ...) {
+      stop("cannot open URL '", url, "': HTTP status was '500 Server Error'")
+    },
+    .package = "utils"
+  )
+
+  failure <- obdaac_download("AQUA_MODIS.20200601.L3m.DAY.CHL.chlor_a.9km.nc",
+                             withr::local_tempfile(fileext = ".nc"),
+                             credentials)
+  expect_false(grepl(key, failure, fixed = TRUE))
+  expect_match(failure, "appkey=<redacted>", fixed = TRUE)
+  # The rest of the message survives, so the failure is still diagnosable.
+  expect_match(failure, "500 Server Error", fixed = TRUE)
+
+  # A warning from download.file() quotes the URL too.
+  local_mocked_bindings(
+    download.file = function(url, destfile, ...) {
+      warning("URL '", url, "': status was 'Couldn't resolve host name'")
+    },
+    .package = "utils"
+  )
+  failure <- obdaac_download("x.nc", withr::local_tempfile(fileext = ".nc"),
+                             credentials)
+  expect_false(grepl(key, failure, fixed = TRUE))
+
+  # And end to end: the warning accessOBDAAC() raises for the failed step.
+  skip_if_not_installed("ncdf4")
+  cache <- file.path(tempdir(), paste0("datamatch-obdaac-", sample.int(1e6, 1)))
+  withr::local_options(datamatch.cache = cache,
+                       datamatch.earthdata_appkey = key)
+  withr::defer(unlink(cache, recursive = TRUE))
+  shown <- character()
+  withCallingHandlers(
+    try(accessOBDAAC(vars = "CHL", dates = "2020-06-01",
+                     bounding_box = list(xmin = -70, xmax = -66,
+                                         ymin = 41, ymax = 44),
+                     resolution = "9km"), silent = TRUE),
+    warning = function(w) {
+      shown <<- c(shown, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    },
+    message = function(m) {
+      shown <<- c(shown, conditionMessage(m))
+      invokeRestart("muffleMessage")
+    }
+  )
+  expect_true(any(grepl("could not be read", shown)))
+  expect_false(any(grepl(key, shown, fixed = TRUE)))
+  # No working copy is left behind in the cache.
+  expect_length(list.files(file.path(cache, "obdaac"), pattern = "^raw_"), 0)
+})
+
+test_that("redact_appkey leaves a message without a key alone", {
+  expect_equal(redact_appkey("nothing here", NULL), "nothing here")
+  expect_equal(redact_appkey("a?appkey=abc&b=1"), "a?appkey=<redacted>&b=1")
+})
+
 test_that("the dictionary describes itself rather than FVCOM", {
   dictionary <- obdaac_dictionary()
 

@@ -752,8 +752,8 @@ accessCEFI <- function(vars, years = NULL, months = NULL, bounding_box,
     resolved <- cefi_fetch(spec, entries, files, plan[needed, , drop = FALSE],
                            bounding_box, frequency, init)
     for (i in seq_along(resolved)) {
-      if (!is.null(resolved[[i]])) saveRDS(resolved[[i]],
-                                           plan$path[needed][i])
+      if (!is.null(resolved[[i]])) save_rds_atomic(resolved[[i]],
+                                                   plan$path[needed][i])
     }
   }
 
@@ -786,6 +786,11 @@ accessCEFI <- function(vars, years = NULL, months = NULL, bounding_box,
 #' all. So both decode the same way, and the reader does not need to know which
 #' it is looking at.
 #'
+#' The unit is read rather than assumed: days, hours, minutes and seconds (and
+#' their CF abbreviations) are converted exactly. Months and years are refused,
+#' because their length depends on a calendar that the conversion would have to
+#' guess at, and so is anything unrecognised.
+#'
 #' @param handle an open `ncdf4` handle
 #' @return a list with `name`, the axis it found, and `dates`
 #' @keywords internal
@@ -797,13 +802,50 @@ cefi_axis <- function(handle) {
   }
 
   axis <- handle$dim[[name]]
-  epoch <- as.Date(trimws(sub("^.*since\\s+", "", axis$units)))
-  if (is.na(epoch)) {
-    stop("Could not read the epoch from the CEFI axis units '", axis$units,
-         "'.", call. = FALSE)
+  list(name = name, dates = cf_time_dates(axis$vals, axis$units))
+}
+
+#' Convert CF time values to dates, reading the unit they are in
+#'
+#' @param vals <numeric> the axis values
+#' @param units <char> the axis `units` attribute, `"<unit> since <epoch>"`
+#' @return <Date> one per value
+#' @keywords internal
+cf_time_dates <- function(vals, units) {
+  parts <- regmatches(units, regexec("^\\s*(\\S+)\\s+since\\s+(.+)$",
+                                     units, ignore.case = TRUE))[[1]]
+  if (length(parts) != 3) {
+    stop("Could not read the CEFI axis units '", units, "'; expected ",
+         "'<unit> since <epoch>'.", call. = FALSE)
+  }
+  unit <- tolower(parts[2])
+
+  # Seconds per unit. Adding the values to the epoch as days whatever the unit
+  # said would put an hourly axis 24 times too far along the calendar.
+  seconds <- switch(unit,
+    d = , day = , days = 86400,
+    h = , hr = , hrs = , hour = , hours = 3600,
+    min = , mins = , minute = , minutes = 60,
+    s = , sec = , secs = , second = , seconds = 1,
+    NA_real_)
+  if (unit %in% c("month", "months", "year", "years", "yr", "yrs")) {
+    stop("The CEFI axis is in ", unit, " ('", units, "'). A month or a year ",
+         "has no fixed length outside a stated calendar, so these values are ",
+         "not converted rather than converted on a guess.", call. = FALSE)
+  }
+  if (is.na(seconds)) {
+    stop("Unrecognised time unit '", parts[2], "' in the CEFI axis units '",
+         units, "'.", call. = FALSE)
   }
 
-  list(name = name, dates = epoch + axis$vals)
+  epoch <- suppressWarnings(lubridate::ymd_hms(trimws(parts[3]), truncated = 3,
+                                               tz = "UTC"))
+  if (is.na(epoch)) {
+    stop("Could not read the epoch from the CEFI axis units '", units, "'.",
+         call. = FALSE)
+  }
+
+  as.Date(epoch + as.numeric(vals) * seconds, tz = "UTC")
 }
 
 #' Read the requested time steps of one CEFI variable

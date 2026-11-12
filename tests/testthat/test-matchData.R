@@ -522,3 +522,93 @@ test_that("points still report their own coordinates exactly", {
   expect_equal(matched$LON, -69.9)
   expect_equal(matched$LAT, 42.1)
 })
+
+# Regressions ---------------------------------------------------------------
+
+# A monthly source over a 2 x 2 grid, optionally stamped as an access function
+# would stamp it. Values encode the month, so a wrong-period join is visible.
+monthly_source <- function(months = 1:2, year = 2020, stamp = NULL) {
+  grid <- expand.grid(lon = c(-70, -69.5), lat = c(42, 42.5))
+  df <- do.call(rbind, lapply(months, function(m) {
+    cbind(grid, YEAR = year, MONTH = m, DAY = 1, SST = m * 10 + seq_len(nrow(grid)))
+  }))
+  out <- sf::st_as_sf(df, coords = c("lon", "lat"), crs = 4326)
+  if (!is.null(stamp)) attr(out, "datamatch_source") <- stamp
+  out
+}
+
+obs_at <- function(year, month) {
+  sf::st_as_sf(data.frame(id = seq_along(year), lon = -70, lat = 42,
+                          YEAR = year, MONTH = month, DAY = 1),
+               coords = c("lon", "lat"), crs = 4326)
+}
+
+test_that("a row with a missing year or month is kept, unmatched, and counted", {
+  obs <- obs_at(c(2020, NA, 2020), c(1, 1, NA))
+
+  expect_warning(matched <- matchData(obs, monthly_source()),
+                 "2 row\\(s\\) of `dat` have a missing YEAR/MONTH")
+
+  expect_equal(nrow(matched), 3)
+  expect_equal(matched$id, 1:3)
+  expect_equal(matched$SST, c(11, NA, NA))
+})
+
+test_that("a source's own _source column is kept, not overwritten or re-tagged", {
+  source <- monthly_source(stamp = "copernicus:X")
+  source$SST_source <- factor("satellite", levels = c("satellite", "model", "missing"))
+
+  matched <- matchData(obs_at(2020, 1), source)
+
+  expect_equal(as.character(matched$SST_source), "satellite")
+  expect_false("SST_source_source" %in% names(matched))
+})
+
+test_that("rows with no matching period get an NA source tag", {
+  matched <- suppressWarnings(
+    matchData(obs_at(c(2020, 2020), c(1, 5)), monthly_source(stamp = "copernicus:X")))
+
+  expect_equal(matched$SST_source, c("copernicus:X", NA))
+})
+
+test_that("a multi-archive source leaves no bookkeeping columns behind", {
+  source <- monthly_source()
+  source$.datamatch_source <- ifelse(source$MONTH == 1, "hycom:A", "hycom:B")
+
+  matched <- matchData(obs_at(c(2020, 2020), c(1, 2)), source)
+
+  expect_equal(matched$SST_source, c("hycom:A", "hycom:B"))
+  expect_false(any(grepl("^\\.datamatch", names(matched))))
+})
+
+test_that("chaining the same variable three times numbers the suffix", {
+  source <- monthly_source(stamp = "copernicus:X")
+  matched <- matchData(obs_at(2020, 1), source)
+  matched <- matchData(matched, source)
+  matched <- matchData(matched, source)
+
+  expect_true(all(c("SST", "SST.matched", "SST.matched2") %in% names(matched)))
+  expect_true(all(c("SST_source", "SST.matched_source", "SST.matched2_source")
+                  %in% names(matched)))
+  expect_equal(matched$SST.matched2, 11)
+})
+
+test_that("an empty dat returns an empty result with the matched columns", {
+  matched <- matchData(obs_at(2020, 1)[0, ], monthly_source(stamp = "copernicus:X"))
+
+  expect_s3_class(matched, "sf")
+  expect_equal(nrow(matched), 0)
+  expect_true(all(c("SST", "SST_source", "LON", "LAT") %in% names(matched)))
+})
+
+test_that("a single non-January month across years is not read as annual", {
+  julys <- rbind(monthly_source(months = 7, year = 2019),
+                 monthly_source(months = 7, year = 2020))
+
+  expect_warning(res <- detect_temporal_resolution(julys), "treated as monthly")
+  expect_equal(res, "month")
+
+  # So a January observation is not given July's value.
+  matched <- suppressWarnings(matchData(obs_at(2020, 1), julys))
+  expect_true(is.na(matched$SST))
+})

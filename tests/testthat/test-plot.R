@@ -130,6 +130,19 @@ test_that("plot_matched keeps unmatched observations rather than dropping them",
   expect_false(any(is.na(values[1:2])))
 })
 
+test_that("plot_matched draws a variable whose matched values are all equal", {
+  # A constant gives cut() a zero range and so 101 identical breaks, which it
+  # refuses with "'breaks' are not unique".
+  matched <- sf::st_as_sf(
+    data.frame(lon = c(-69.5, -69.25, -69), lat = c(42.5, 42.5, 42.75),
+               CHL = c(1.5, 1.5, NA)),
+    coords = c("lon", "lat"), crs = 4326)
+
+  values <- quietly(plot_matched(matched, "CHL"))
+
+  expect_equal(values, c(1.5, 1.5, NA))
+})
+
 test_that("categorical columns can be mapped rather than erroring", {
   env <- plot_fixture()
   env$SRC <- factor(rep(c("satellite", "model"), length.out = nrow(env)),

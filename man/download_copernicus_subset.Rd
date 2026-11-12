@@ -54,10 +54,29 @@ with no output under QUIET, leaving the caller an empty failure to explain.}
 \code{0}, invisibly, on success; errors otherwise
 }
 \description{
-Wraps one \verb{copernicusmarine subset} call. Arguments are passed to \code{\link[=system2]{system2()}}
-as a character vector rather than pasted into a shell string, so paths
-containing spaces are handled by the process boundary instead of by quoting.
+Wraps one \verb{copernicusmarine subset} call.
 }
+\section{Quoting}{
+
+\code{\link[=system2]{system2()}} does not pass its arguments to the process one by one. On Unix it
+pastes the command and arguments into a single string and hands that to the
+shell, so an unquoted cache path containing a space is split into two
+arguments, and a \code{dataset_id} such as \code{"ds;echo X"} runs a second command.
+Every argument is therefore quoted with \code{\link[=shQuote]{shQuote()}} before the call. The
+executable is quoted by \code{\link[=system2]{system2()}} itself, so it is not quoted again here;
+its path is expanded first, because a quoted \code{~} is not expanded by the
+shell.
+}
+
+\section{Partial files}{
+
+The client writes into a uniquely named working directory beside \code{ofile}, and
+the file is renamed into place only once the client has exited successfully.
+A download that is interrupted or fails part way therefore never leaves a
+truncated file at \code{ofile} for a later call to take as cached. A client that
+reports success without writing the file is an error.
+}
+
 \section{Retries}{
 
 The API is intermittently unavailable under load, and a failed request is

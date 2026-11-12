@@ -20,6 +20,8 @@ on:
 permissions:
   contents: read
   issues: write
+  # To read the reports earlier runs uploaded; see "Fetch earlier reports".
+  actions: read
 
 jobs:
   check-sources:
@@ -44,10 +46,49 @@ jobs:
             any::testthat
           needs: check
 
+      # An archive that will not open counts as drift only after failing several
+      # checks in a row (UNREACHABLE_RUNS in the script), so the script needs the
+      # reports of the last few runs. A missing report - the first run, an
+      # expired artifact - just shortens the history; it is not an error. The
+      # script keeps one report per week, so more runs are fetched than weeks
+      # are needed, leaving room for manual reruns.
+      - name: Fetch earlier reports
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p history
+          for id in $(gh run list --workflow source-check.yaml --status completed \
+                        --limit 12 --json databaseId --jq '.[].databaseId'); do
+            gh run download "$id" --name source-check-report --dir "history/$id" \
+              2>/dev/null || true
+          done
+        shell: bash
+
       - name: Check the source catalogs against the live services
         id: catalogs
-        continue-on-error: true
-        run: Rscript inst/scripts/check_sources.R --markdown sources.md
+        run: |
+          set +e
+          Rscript inst/scripts/check_sources.R --markdown sources.md \
+            --json sources.json --history history
+          echo "status=$?" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-check-report
+          path: |
+            sources.md
+            sources.json
+          if-no-files-found: ignore
+          retention-days: 90
+
+      # Exit 2 means no service answered at all, which is not drift.
+      - name: Report unreachable services
+        if: steps.catalogs.outputs.status == '2'
+        run: |
+          echo "::warning::No source could be reached; no drift conclusion drawn."
 
       - name: Run the network tests
         id: network
@@ -58,26 +99,100 @@ jobs:
             df <- as.data.frame(out); \
             if (sum(df$failed) + sum(df$error) > 0) quit(status = 1)'
 
-      - name: Open an issue when something has drifted
-        if: steps.catalogs.outcome == 'failure' || steps.network.outcome == 'failure'
+      # One rolling issue rather than one per week, so a drift that goes unfixed
+      # does not pile up duplicates. A clean run closes it.
+      #
+      # Only a run whose catalog check actually ran can say anything. When setup
+      # fails or the run is cancelled, the status is empty and the network tests
+      # are skipped, and reading that as "nothing drifted, tests passed" would
+      # close an open issue on no evidence at all.
+      - name: Open, update or close the issue
+        if: >-
+          ${{ !cancelled() && steps.catalogs.outcome == 'success' &&
+          steps.catalogs.outputs.status != '' }}
         uses: actions/github-script@v7
+        env:
+          CATALOG_STATUS: ${{ steps.catalogs.outputs.status }}
+          NETWORK_OUTCOME: ${{ steps.network.outcome }}
         with:
           script: |
             const fs = require('fs');
-            let body = 'The weekly source check reported a problem.\n\n';
+            const title = 'Source check: an archive has drifted';
+            const label = 'data-sources';
+            const status = process.env.CATALOG_STATUS;
+            const outcome = process.env.NETWORK_OUTCOME;
+            const drifted = status === '1';
+            // Exit 2: no service answered, so the catalogs say nothing either way.
+            const unreachable = status === '2';
+            const testsFailed = outcome === 'failure';
+            // Clean means the tests ran and passed. Skipped or cancelled is not.
+            const testsPassed = outcome === 'success';
+
+            const run = `[${context.workflow}](${context.serverUrl}/` +
+                        `${context.repo.owner}/${context.repo.repo}/actions/runs/` +
+                        `${context.runId})`;
+            const today = new Date().toISOString().slice(0, 10);
+
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: label,
+            });
+            const open = existing.data.find(i => i.title.startsWith(title));
+
+            if (!drifted && !testsFailed) {
+              // Closing needs positive evidence from both halves: a catalog
+              // check that reached the services and found nothing, and network
+              // tests that ran and passed.
+              if (unreachable || status !== '0' || !testsPassed) {
+                core.info(`No conclusion drawn (catalog status '${status}', ` +
+                          `network tests '${outcome}'); the issue is left as is.`);
+                return;
+              }
+              if (open) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  issue_number: open.number,
+                  body: `The ${run} on ${today} found nothing drifted and the ` +
+                        'network tests passed. Closing.',
+                });
+                await github.rest.issues.update({
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  issue_number: open.number, state: 'closed',
+                  state_reason: 'completed',
+                });
+              }
+              return;
+            }
+
+            let body = '';
             try {
               body += fs.readFileSync('sources.md', 'utf8');
             } catch (e) {
               body += '_The catalog check produced no report; see the run log._';
             }
-            body += '\n\nChoosing a replacement archive or version is a judgement ' +
-                    'about which run to track, so this check does not guess one.\n\n' +
-                    `[Run log](${context.serverUrl}/${context.repo.owner}/` +
-                    `${context.repo.repo}/actions/runs/${context.runId})`;
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `Source check: an archive has drifted (${new Date().toISOString().slice(0, 10)})`,
-              body: body,
-              labels: ['data-sources']
-            });
+            if (unreachable) {
+              body += '\n\nNo service answered the catalog check, so no drift ' +
+                      'conclusion was drawn from it.';
+            }
+            if (testsFailed) {
+              body += '\n\n**The network tests failed.** See the run log for ' +
+                      'which; a test failure can be a service outage rather ' +
+                      'than drift' +
+                      (unreachable ? ', and with no service answering, an ' +
+                                     'outage is the likelier reading.' : '.');
+            }
+            body += '\n\n---\n_Checked by ' + run + ' on ' + today + '._';
+
+            if (open) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: open.number, body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title, labels: [label], body,
+              });
+            }

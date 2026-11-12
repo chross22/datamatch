@@ -68,7 +68,9 @@
 #'   output keeps its `YEAR`/`MONTH`/`DAY` and drops `HOUR`; monthly output is
 #'   stamped `DAY = 1`; annual output `MONTH = 1, DAY = 1`, matching what
 #'   [accessCopernicus()] returns for non-daily products so that
-#'   [matchData()] reads the resolution back correctly.
+#'   [matchData()] reads the resolution back correctly. The input's source tag
+#'   ([source_of()]) is carried onto the result, and its recorded time step set
+#'   to `to`.
 #' @examples
 #' \dontrun{
 #' daily <- accessCopernicus(vars = "SST", years = 2010, months = 1:12,
@@ -147,9 +149,9 @@ upscale_time <- function(env_dat, to = c("month", "year", "day"), vars = NULL,
   # day in one month, which is indistinguishable by inspection from monthly, and
   # detect_temporal_resolution() falls back to "month". matchData() would then
   # join by month and quietly ignore the day. Nothing has to be inferred here,
-  # because `to` says exactly what was produced.
-  attr(out, "datamatch_step") <- to
-  out
+  # because `to` says exactly what was produced. The source tag is carried
+  # across as well, since the values still came from the same place.
+  carry_provenance(out, env_dat, step = to)
 }
 
 #' Interpolate environmental data onto a finer time step
@@ -194,8 +196,12 @@ upscale_time <- function(env_dat, to = c("month", "year", "day"), vars = NULL,
 #'   variables, or a named vector per variable
 #' @param extrapolate hold the first and last values constant beyond the outermost
 #'   period midpoints. With `FALSE` those half-periods are `NA`, since there is no
-#'   second point to interpolate between.
-#' @return an `sf` POINT object with one row per cell per target step
+#'   second point to interpolate between. A cell with a value in one period only
+#'   holds it across that period, and is `NA` outside it.
+#' @return an `sf` POINT object with one row per cell per target step, covering
+#'   only the months (or, from annual input, the years) the source has. The
+#'   source tag ([source_of()]) is carried across, and the recorded time step
+#'   set to `to`.
 #' @examples
 #' \dontrun{
 #' monthly <- accessCopernicus(vars = "SST", years = 2010, months = 1:12, bounding_box = bb)
@@ -224,6 +230,7 @@ downscale_time <- function(env_dat, to = c("day", "month"), vars = NULL,
   cell <- paste(coords[, 1], coords[, 2], sep = "_")
 
   source_time <- period_midpoint(flat, from)
+  source_bounds <- period_bounds(flat, from)
   target_dates <- target_time_steps(flat, from, to)
 
   # `step` is a lookup, not an interpolation: a target step takes the value of
@@ -261,7 +268,9 @@ downscale_time <- function(env_dat, to = c("day", "month"), vars = NULL,
         values[rows][match(target_period, source_period[rows])]
       } else {
         interpolate_series(as.numeric(source_time[rows]), values[rows],
-                           target_num, methods[[v]], extrapolate)
+                           target_num, methods[[v]], extrapolate,
+                           lower = as.numeric(source_bounds$start[rows]),
+                           upper = as.numeric(source_bounds$end[rows]))
       }
       interpolated[((k - 1) * n_steps + 1):(k * n_steps)] <- series
     }
@@ -276,8 +285,7 @@ downscale_time <- function(env_dat, to = c("day", "month"), vars = NULL,
   out <- sf::st_as_sf(out, coords = c("x", "y"), crs = sf::st_crs(env_dat))
   # As in upscale_time(): `to` states the step, so nothing has to be inferred
   # from a result that may cover too few periods to say.
-  attr(out, "datamatch_step") <- to
-  out
+  carry_provenance(out, env_dat, step = to)
 }
 
 #' Interpolate one cell's series onto the target time steps
@@ -287,16 +295,29 @@ downscale_time <- function(env_dat, to = c("day", "month"), vars = NULL,
 #' @param xout target times, as numeric days
 #' @param method `"step"`, `"linear"`, or `"spline"`
 #' @param extrapolate hold end values constant beyond the source range
+#' @param lower,upper the start and (exclusive) end of each source period, as
+#'   numeric days. Used only when a single value is present, to tell which
+#'   targets lie inside its period; `NULL` keeps only an exact time match.
 #' @return numeric vector of length `length(xout)`
 #' @keywords internal
-interpolate_series <- function(x, y, xout, method, extrapolate) {
+interpolate_series <- function(x, y, xout, method, extrapolate,
+                               lower = NULL, upper = NULL) {
   ok <- !is.na(y)
   # One point defines no slope and no curve, so every method degenerates to
   # holding it - which is what "step" would have done anyway.
   if (sum(ok) == 0) return(rep(NA_real_, length(xout)))
   if (sum(ok) == 1) {
-    return(if (extrapolate) rep(y[ok], length(xout))
-           else ifelse(xout == x[ok], y[ok], NA_real_))
+    if (extrapolate) return(rep(y[ok], length(xout)))
+    # Without extrapolation the value is held over its own period and no
+    # further. Comparing against the midpoint alone returned NA for every day:
+    # a month's midpoint is fractional for an even-length month, so no target
+    # day ever equals it, and a lone month came back entirely empty.
+    inside <- if (!is.null(lower) && !is.null(upper)) {
+      xout >= lower[ok] & xout < upper[ok]
+    } else {
+      xout == x[ok]
+    }
+    return(ifelse(inside, y[ok], NA_real_))
   }
 
   rule <- if (extrapolate) 2 else 1
@@ -432,7 +453,33 @@ period_midpoint <- function(flat, from) {
   }
 }
 
-#' Every target time step spanned by the source
+#' Start and end of the period each row's value covers
+#'
+#' @param flat a data frame with YEAR/MONTH/DAY columns
+#' @param from source resolution
+#' @return a list of Date vectors `start` and `end`, the end exclusive
+#' @keywords internal
+period_bounds <- function(flat, from) {
+  if (from == "day") {
+    start <- lubridate::ymd(paste(flat$YEAR, flat$MONTH, flat$DAY, sep = "-"))
+    list(start = start, end = start + 1)
+  } else if (from == "month") {
+    start <- lubridate::ymd(paste(flat$YEAR, flat$MONTH, 1, sep = "-"))
+    list(start = start, end = start + lubridate::days_in_month(start))
+  } else {
+    list(start = lubridate::ymd(paste(flat$YEAR, 1, 1, sep = "-")),
+         end = lubridate::ymd(paste(flat$YEAR + 1, 1, 1, sep = "-")))
+  }
+}
+
+#' Every target time step within the periods the source covers
+#'
+#' Built from the year-month combinations actually present, not from every
+#' year crossed with every month. A crossing turned a November-to-February
+#' series into one also covering January and February of the first year and
+#' November and December of the second - four months nobody fetched, filled by
+#' extrapolation or left `NA`. Annual input covers all twelve months of each
+#' year present, since that is the period an annual value describes.
 #'
 #' @param flat a data frame with YEAR/MONTH/DAY columns
 #' @param from source resolution
@@ -440,22 +487,19 @@ period_midpoint <- function(flat, from) {
 #' @return a Date vector of the steps to produce
 #' @keywords internal
 target_time_steps <- function(flat, from, to) {
-  years <- sort(unique(flat$YEAR))
-
-  if (to == "month") {
-    months <- if (from == "year") 1:12 else sort(unique(flat$MONTH))
-    dates <- expand.grid(YEAR = years, MONTH = months)
-    dates <- dates[order(dates$YEAR, dates$MONTH), ]
-    return(lubridate::ymd(paste(dates$YEAR, dates$MONTH, 1, sep = "-")))
+  periods <- if (from == "year") {
+    expand.grid(MONTH = 1:12, YEAR = sort(unique(stats::na.omit(flat$YEAR))))
+  } else {
+    unique(flat[stats::complete.cases(flat[c("YEAR", "MONTH")]), c("YEAR", "MONTH")])
   }
+  periods <- periods[order(periods$YEAR, periods$MONTH), , drop = FALSE]
+  starts <- lubridate::ymd(paste(periods$YEAR, periods$MONTH, 1, sep = "-"))
+
+  if (to == "month") return(starts)
 
   # Daily: every day of every month the source covers.
-  months <- if (from == "year") 1:12 else sort(unique(flat$MONTH))
-  out <- do.call(c, lapply(years, function(y) {
-    do.call(c, lapply(months, function(m) {
-      start <- lubridate::ymd(paste(y, m, 1, sep = "-"))
-      seq(start, by = "day", length.out = lubridate::days_in_month(start))
-    }))
+  out <- do.call(c, lapply(seq_along(starts), function(i) {
+    seq(starts[i], by = "day", length.out = lubridate::days_in_month(starts[i]))
   }))
   sort(out)
 }

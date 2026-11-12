@@ -49,7 +49,8 @@ given explicitly.}
 \item{mode}{\if{html}{\out{<char>}} \code{"reanalysis"} (the default) for the multi-year hindcast,
 or \code{"forecast"} for the analysis-and-forecast products, which run to about
 ten days ahead. See \code{\link[=forecast_variables]{forecast_variables()}} for which variables have a
-forecast equivalent and how the identifiers differ.}
+forecast equivalent and how the identifiers differ. In forecast mode, days
+from today onward are not cached; see the Downloading in parallel section.}
 
 \item{product_id}{\if{html}{\out{<char>}} product identification string from the Copernicus
 Marine Data Store. Optional when \code{vars} are catalog names.}
@@ -249,5 +250,21 @@ cost more in serialisation than the read saves.
 A day that fails does not abort the others. Every day is attempted, the
 successful ones stay in the cache, and the error names each day that failed —
 so re-running the same call retries only those.
+
+In forecast mode, a day from today onward is still a forecast, and the product
+replaces it with an analysis once the day has passed. Those days are
+downloaded on every call and never cached, so the forecast is not served for
+that day after the analysis exists. Days before today are cached as usual.
+}
+
+\section{Empty cells}{
+
+A cell with no value at a time step - cloud over a satellite field, typically
+\itemize{
+\item comes back as a row with \code{NA}, so \code{\link[=fill_satellite_gaps]{fill_satellite_gaps()}} can fill it. A
+cell with no value at any requested time step is land or outside the
+product's domain, and is dropped. A cell clouded at every requested time step
+cannot be told apart from land and is dropped too.
+}
 }
 

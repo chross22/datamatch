@@ -85,6 +85,56 @@
 
 ## Bug fixes
 
+These came out of a whole-package audit. Each has a regression test that fails
+on the previous code.
+
+* **PSL's PDO missing months were read as data.** `pdo.data` marks a missing
+  month `-9.90`, and only codes below -90 were recognised, so September to
+  December 2025 arrived as PDO = -9.9 and the series looked current. The code
+  declared at the foot of each PSL file is now honoured whatever its size.
+* **`downscale_time()` invented months the source never covered.** Target steps
+  crossed every year with every month, so a November-to-February series produced
+  January 2010 and December 2011, extrapolated under `method = "linear"`.
+* **Cloud gaps never reached `fill_satellite_gaps()`.** Copernicus reads dropped
+  cells missing in every layer. Gaps are now kept; cells empty at every
+  requested step are still dropped as land, so a cell clouded on every requested
+  date is too. Unfilled cells are labelled `"missing"`, not `"satellite"`.
+* **CCMP boxes crossing the prime meridian put values under the wrong
+  longitudes**, and **`ASPECT` pointed 180 degrees the wrong way** (it was
+  computed on depth, not elevation).
+* **FVCOM sub-daily caching:** different boxes could share a cache file and
+  return each other's points; a single-file hourly `fvcom_archive()` was stamped
+  with every requested month; the current GOM7 month was never refreshed; and
+  `dates` returned whole months rather than the days named.
+* **Copernicus forecast days were cached for good.** Days from today onward are
+  no longer cached in forecast mode.
+* **Resampling dropped provenance and the time step**, so `matchData()` wrote no
+  `_source` columns and could read a single-month series as annual, matching a
+  January observation to July. A single non-January month across years now
+  warns.
+* **`matchData()`**: a missing `YEAR` or `MONTH` in `dat` added all-missing rows
+  (they are now kept unmatched, with a warning); a source's own `CHL_source` was
+  overwritten; unmatched rows were still tagged with a source; and multi-archive
+  sources left `.datamatch_source.1` behind.
+* **`fetch_climate_index(url = )` returned the cached default file.** An
+  override is cached under its own name. **CEFI time axes were assumed to be in
+  days**; the unit is now read, and months or years are refused.
+* **`accessCopernicus()` passed unquoted arguments to the shell**, so a cache
+  path containing a space was split and a `dataset_id` containing `;` ran a
+  second command. **The Earthdata `appkey` was printed in OB.DAAC download
+  warnings**; it is now redacted.
+* **Crashes fixed:** an `sf` bounding box in `accessCopernicus()` and
+  `accessFVCOM()`; a HYCOM box narrower than one grid step; an ERDDAP dataset
+  with no time range; a third chained `matchData()` of one variable; an empty
+  `dat`; a regridding target in another CRS; `plot_matched()` on constant
+  values. A one-row or one-column grid is refused with a clear message.
+* **Cache files are written whole or not at all**, through a working file renamed
+  into place, so an interrupted or concurrent fetch cannot leave a truncated
+  file. NetCDF handles in HYCOM and FVCOM are closed when a read fails.
+* **The weekly source check no longer closes the drift issue when the check did
+  not run**, and counts an unreachable archive once per ISO week, ignoring
+  total-outage runs.
+
 * **`ccmp_dictionary()` and `erddap_dictionary()` no longer print as FVCOM.**
   `print.datamatch_dictionary()` told the dictionaries apart by the absence of
   the Copernicus `product` column, which is true of four of them, so every
@@ -93,6 +143,17 @@
   dictionary now carries a tag saying which source it describes, and prints its
   own header, its own explanation of the last column, and its own
   `Full descriptions:` line.
+
+* **The weekly source check no longer reports drift that is not there.** It had
+  filed the same issue every Monday since 2026-08-24 for two findings that came
+  from the checker itself. It compared GOM7's January 2025 file against mesh
+  sizes quoted for March 2025 onward, though the catalog marks that mesh as
+  varying. It also required four variables that GOM7 declares it does not carry.
+  Mesh sizes are now skipped where `mesh_varies` is set, and each archive is held
+  to the variables it declares. An archive that will not open is retried, and
+  counts as drifted only after three consecutive failed checks. The HYCOM server
+  fails to open a different archive most weeks. The workflow now keeps one
+  rolling issue, comments on it, and closes it when a run is clean.
 
 ## Refusals worth knowing about
 

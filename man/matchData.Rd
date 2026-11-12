@@ -101,11 +101,15 @@ cannot speak for itself.
 One row out per row of \code{dat}, in the same order, whatever happens. A period
 \code{source} does not cover gives \code{NA} for its columns and a warning naming the
 periods, rather than dropping those rows — a silent change in row count is a
-worse outcome than a visible gap.
+worse outcome than a visible gap. A row whose own year or month (or day, or
+hour, at those resolutions) is missing belongs to no period: it is kept, with
+\code{NA} for every matched column, and a warning gives how many such rows there
+were. An empty \code{dat} returns an empty result with the matched columns added.
 
 \code{dat} keeps its own columns. One of \code{source}'s that collides with a name
 already in \code{dat} is suffixed \code{.matched}, so nothing of \code{dat}'s is overwritten
-or renamed.
+or renamed. Where \code{.matched} is taken too, as when the same variable is
+chained on a third time, the suffix is numbered: \code{.matched2}, \code{.matched3}.
 }
 
 \section{Which source a column came from}{
@@ -118,7 +122,13 @@ has no record of which produced what.
 So each joined column gets a companion \verb{<var>_source} naming the source and
 archive — \code{"hycom:GLBv53X"}, \code{"fvcom:GOM3"} — in the same spirit as the
 \verb{<var>_source} column \code{\link[=fill_satellite_gaps]{fill_satellite_gaps()}} writes. Pass
-\code{record_source = FALSE} to omit them.
+\code{record_source = FALSE} to omit them. A row that matched nothing is tagged
+\code{NA}, since no source produced its \code{NA} values.
+
+A \verb{<var>_source} column already on \code{source} is joined like any other column
+and keeps its own values: the satellite/model tag from
+\code{\link[=fill_satellite_gaps]{fill_satellite_gaps()}} is a finer record than the archive name, so it is
+never overwritten, and a \verb{_source} column gets no \verb{_source} tag of its own.
 
 These are provenance rather than measurements, but they travel with the
 variable they describe: \code{\link[=covariate_columns]{covariate_columns()}} reports them, and resampling

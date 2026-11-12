@@ -2,7 +2,7 @@
 % Please edit documentation in R/retime.R
 \name{target_time_steps}
 \alias{target_time_steps}
-\title{Every target time step spanned by the source}
+\title{Every target time step within the periods the source covers}
 \usage{
 target_time_steps(flat, from, to)
 }
@@ -17,6 +17,11 @@ target_time_steps(flat, from, to)
 a Date vector of the steps to produce
 }
 \description{
-Every target time step spanned by the source
+Built from the year-month combinations actually present, not from every
+year crossed with every month. A crossing turned a November-to-February
+series into one also covering January and February of the first year and
+November and December of the second - four months nobody fetched, filled by
+extrapolation or left \code{NA}. Annual input covers all twelve months of each
+year present, since that is the period an annual value describes.
 }
 \keyword{internal}

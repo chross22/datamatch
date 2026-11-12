@@ -385,8 +385,8 @@ obdaac_download <- function(file, destination, credentials) {
         url, destination, mode = "wb", quiet = TRUE, method = "curl",
         extra = c("-n", "-L", "-c", shQuote(cookies), "-b", shQuote(cookies)))
     }
-  }, error = function(e) conditionMessage(e),
-     warning = function(w) conditionMessage(w))
+  }, error = function(e) redact_appkey(conditionMessage(e), credentials$key),
+     warning = function(w) redact_appkey(conditionMessage(w), credentials$key))
 
   if (!identical(status, 0L) || !file.exists(destination)) {
     if (file.exists(destination)) unlink(destination)
@@ -407,6 +407,28 @@ obdaac_download <- function(file, destination, credentials) {
       "date the sensor did not return also lands here."))
   }
   NULL
+}
+
+#' Remove an Earthdata appkey from a message
+#'
+#' The appkey travels in the query string, and `download.file()` quotes the URL
+#' it failed on, so a failure message carries the key. Those messages are
+#' collected and shown as a warning, which ends up on the console, in logs and
+#' in CI output. The key is a credential, so it is replaced wherever it appears:
+#' after `appkey=`, and as a literal string in case a message carries it in some
+#' other form.
+#'
+#' @param x <char> messages
+#' @param key <char> the appkey in use, if any
+#' @return `x` with the key replaced by `<redacted>`
+#' @keywords internal
+redact_appkey <- function(x, key = NULL) {
+  x <- gsub("(appkey=)[^&#[:space:]'\"]+", "\\1<redacted>", x,
+            ignore.case = TRUE)
+  if (length(key) == 1 && !is.na(key) && nzchar(key)) {
+    x <- gsub(key, "<redacted>", x, fixed = TRUE)
+  }
+  x
 }
 
 #' Read a bounding box out of one OB.DAAC Level-3 mapped file
@@ -692,7 +714,11 @@ accessOBDAAC <- function(vars, years = NULL, months = NULL, bounding_box,
     files <- work[[as.character(i)]]
     frame <- NULL
     for (name in vars) {
-      raw <- copernicus_cache("obdaac", paste0("raw_", files[[name]]))
+      # A unique name rather than raw_<file>: two sessions fetching the same
+      # file into a shared cache would otherwise write into, read from and
+      # delete one another's working copy.
+      raw <- partial_path(copernicus_cache("obdaac",
+                                           paste0("raw_", files[[name]])))
       failure <- obdaac_download(files[[name]], raw, credentials)
       if (!is.null(failure)) {
         failures <- c(failures, failure)
@@ -708,7 +734,8 @@ accessOBDAAC <- function(vars, years = NULL, months = NULL, bounding_box,
 
       if (inherits(piece, "error")) {
         failures <- c(failures, paste0("  ", files[[name]], ": ",
-                                       conditionMessage(piece)))
+                                       redact_appkey(conditionMessage(piece),
+                                                     credentials$key)))
         frame <- NULL
         break
       }
@@ -736,10 +763,13 @@ accessOBDAAC <- function(vars, years = NULL, months = NULL, bounding_box,
     # variable present is not a measurement.
     frame <- frame[rowSums(!is.na(frame[vars])) > 0, , drop = FALSE]
     rownames(frame) <- NULL
-    saveRDS(frame, paths[i])
+    save_rds_atomic(frame, paths[i])
   }
 
   if (length(failures) > 0) {
+    # Redacted again here, as the last point before anything is shown, so that
+    # a failure message added later cannot carry the key out by another route.
+    failures <- redact_appkey(failures, credentials$key)
     warning(length(failures), " time step(s) could not be read:\n",
             paste(utils::head(failures, 5), collapse = "\n"),
             if (length(failures) > 5) "\n  ..." else "",

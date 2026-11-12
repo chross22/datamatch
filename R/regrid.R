@@ -77,7 +77,10 @@ grid_resolution <- function(env_dat) {
 #'   over - match it to points, or regrid a regular product onto it.
 #' @param to the target grid: either a resolution in the CRS's units (one number
 #'   for square cells, or `c(x, y)`), or another `sf` object whose grid to adopt —
-#'   which is the form that puts two products onto one grid.
+#'   which is the form that puts two products onto one grid. An `sf` grid in
+#'   another CRS is transformed into `env_dat`'s first. Both `env_dat` and an
+#'   `sf` target need at least two distinct coordinates in each direction; a
+#'   single row or column of points is refused.
 #' @param vars columns to resample; `NULL` uses all covariate columns, as
 #'   [covariate_columns()] reports them
 #' @param method one of `"mean"`, `"median"`, `"min"`, `"max"`, `"sum"`, `"mode"`;
@@ -87,7 +90,8 @@ grid_resolution <- function(env_dat) {
 #' @param keep_counts add a `<var>_coverage` column per variable, giving the
 #'   fraction of source cells that carried a value
 #' @return an `sf` POINT object on the target grid, with the same
-#'   `YEAR`/`MONTH`/`DAY` columns as the input
+#'   `YEAR`/`MONTH`/`DAY` columns, source tag ([source_of()]) and recorded time
+#'   step as the input
 #' @examples
 #' \dontrun{
 #' chl <- accessCopernicus(vars = "CHL", years = 2010, months = 1:12, bounding_box = bb)
@@ -151,7 +155,8 @@ upscale_grid <- function(env_dat, to, vars = NULL, method = "mean",
 #' @param idw_power distance exponent for `method = "idw"`. Higher concentrates
 #'   weight on the nearest points, approaching `nearest` in the limit.
 #' @return an `sf` POINT object on the target grid, with the same
-#'   `YEAR`/`MONTH`/`DAY` columns as the input
+#'   `YEAR`/`MONTH`/`DAY` columns, source tag ([source_of()]) and recorded time
+#'   step as the input
 #' @examples
 #' \dontrun{
 #' # Model chlorophyll (0.25 deg) onto the satellite grid, blockiness intact
@@ -201,6 +206,7 @@ regrid <- function(env_dat, to, vars = NULL, method, direction,
 
   methods <- resolve_methods(method, vars, env_dat, direction)
   source_res <- grid_resolution(env_dat)
+  check_two_dimensional(source_res, "`env_dat`")
   target <- target_template(env_dat, to, source_res, direction)
 
   crs <- sf::st_crs(env_dat)
@@ -239,7 +245,11 @@ regrid <- function(env_dat, to, vars = NULL, method, direction,
   # drop-in for the one it came from.
   ordered <- c(intersect(names(env_dat), names(out)),
                setdiff(names(out), names(env_dat)))
-  out[c(setdiff(ordered, attr(out, "sf_column")), attr(out, "sf_column"))]
+  out <- out[c(setdiff(ordered, attr(out, "sf_column")), attr(out, "sf_column"))]
+  # The pieces are built from scratch, so they carry none of the input's
+  # attributes. The source tag and the time step are both unchanged by a
+  # spatial resample, and are put back for source_of() and matchData().
+  carry_provenance(out, env_dat)
 }
 
 #' Resample one time step
@@ -372,7 +382,17 @@ target_template <- function(env_dat, to, source_res, direction) {
   crs_wkt <- sf::st_crs(env_dat)$wkt
 
   if (inherits(to, c("sf", "sfc"))) {
+    # A target grid in another CRS is brought into the source's before its
+    # spacing is read. Its coordinates were otherwise taken as though they were
+    # in the source's units - metres read as degrees - and the template built
+    # from them covered nothing, which surfaced as an opaque error from the
+    # data-frame code downstream rather than anything naming the CRS.
+    if (!is.na(sf::st_crs(to)) && !is.na(sf::st_crs(env_dat)) &&
+        sf::st_crs(to) != sf::st_crs(env_dat)) {
+      to <- sf::st_transform(to, sf::st_crs(env_dat))
+    }
     target_res <- grid_resolution(to)
+    check_two_dimensional(target_res, "The target grid `to`")
     xy <- sf::st_coordinates(sf::st_geometry(to))
     # Half a cell out from the outermost centres gives the cell edges.
     ext <- terra::ext(min(xy[, 1]) - target_res[["x"]] / 2,
@@ -398,6 +418,30 @@ target_template <- function(env_dat, to, source_res, direction) {
 
   check_direction(source_res, target_res, direction)
   template
+}
+
+#' Refuse a grid with no spacing in one direction
+#'
+#' A single row or a single column of points has no cell size across it, so
+#' [grid_resolution()] reports `NA` there and no raster can be built. Left to
+#' run, that failed inside terra with "invalid extent", which names neither the
+#' object nor the cause.
+#'
+#' @param res a resolution from [grid_resolution()]
+#' @param what how to name the object in the error
+#' @return `NULL`, invisibly; called for the error
+#' @keywords internal
+check_two_dimensional <- function(res, what) {
+  flat <- names(res)[is.na(res)]
+  if (length(flat) == 0) return(invisible(NULL))
+  stop(what, " has only one distinct ", paste(flat, collapse = " and "),
+       " coordinate, so it is a single ",
+       if (identical(flat, "y")) "row" else if (identical(flat, "x")) "column" else "point",
+       " rather than a grid,
+and has no cell size in that direction to ",
+       "resample with. Regridding needs at least two
+cells in each direction; ",
+       "for a line of points, use matchData() instead.", call. = FALSE)
 }
 
 #' Refuse a resampling that runs the wrong way

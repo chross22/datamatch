@@ -101,6 +101,42 @@ test_that("the .das parser reads variables, units and the time range", {
   expect_equal(span[1], as.Date("2002-06-01"))
 })
 
+test_that("a custom dataset with no time range is read rather than crashing", {
+  # A DAS whose time axis has no actual_range gives erddap_dataset() a start and
+  # end of NA. Compared directly, that stopped the read with "missing value
+  # where TRUE/FALSE needed" before any request was made.
+  das <- c("Attributes {", "  time {",
+           '    String units "seconds since 1970-01-01T00:00:00Z";', "  }",
+           "  latitude {", '    String units "degrees_north";', "  }",
+           "  longitude {", '    String units "degrees_east";', "  }",
+           "  sst {", '    String units "degree_C";', "  }", "}")
+  local_mocked_bindings(
+    erddap_metadata = function(server, dataset_id) erddap_parse_das(das))
+  spec <- erddap_dataset("https://erddap.invalid/erddap", "noRange",
+                         variables = c(SST = "sst"))
+  expect_true(is.na(spec$start))
+  expect_true(is.na(spec$end))
+
+  cache <- file.path(tempdir(), paste0("datamatch-erddap-", sample.int(1e6, 1)))
+  withr::local_options(datamatch.cache = cache)
+  withr::defer(unlink(cache, recursive = TRUE))
+  # The read itself is replaced, so nothing is requested from a server.
+  local_mocked_bindings(
+    erddap_read_day = function(spec, vars, day, bounding_box) {
+      data.frame(x = -68.75, y = 43.25, SST = 12.5,
+                 YEAR = as.integer(format(day, "%Y")),
+                 MONTH = as.integer(format(day, "%m")),
+                 DAY = as.integer(format(day, "%d")))
+    })
+
+  out <- accessERDDAP(vars = "SST", dates = c("2015-06-15", "2015-06-16"),
+                      bounding_box = list(xmin = -69, xmax = -68.5,
+                                          ymin = 43, ymax = 43.5),
+                      dataset = spec)
+  expect_s3_class(out, "sf")
+  expect_equal(out$DAY, c(15L, 16L))
+})
+
 # ---- network ----------------------------------------------------------------
 
 test_that("MUR returns the documented shape at its stated resolution", {

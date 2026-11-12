@@ -37,7 +37,9 @@ an \code{sf} POINT object with one row per cell per target period. Daily
 output keeps its \code{YEAR}/\code{MONTH}/\code{DAY} and drops \code{HOUR}; monthly output is
 stamped \code{DAY = 1}; annual output \verb{MONTH = 1, DAY = 1}, matching what
 \code{\link[=accessCopernicus]{accessCopernicus()}} returns for non-daily products so that
-\code{\link[=matchData]{matchData()}} reads the resolution back correctly.
+\code{\link[=matchData]{matchData()}} reads the resolution back correctly. The input's source tag
+(\code{\link[=source_of]{source_of()}}) is carried onto the result, and its recorded time step set
+to \code{to}.
 }
 \description{
 Combines the time steps falling inside each target period into one value, so an

@@ -201,6 +201,30 @@ test_that("a forecast file is chosen by its initialisation", {
   expect_true(is.na(cefi_file_for(files, "tos", init = "i199901")))
 })
 
+test_that("a time axis is decoded in the unit it declares", {
+  # A stand-in for an open ncdf4 handle: cefi_axis() reads only $dim.
+  handle <- function(units, vals) {
+    list(dim = list(time = list(units = units, vals = vals)))
+  }
+
+  days <- cefi_axis(handle("days since 1993-01-01 00:00:00", c(0, 15.5, 45)))
+  expect_equal(days$name, "time")
+  expect_equal(days$dates, as.Date(c("1993-01-01", "1993-01-16", "1993-02-15")))
+
+  # Read as days, 48 hours would land seven weeks on rather than two days.
+  hours <- cefi_axis(handle("hours since 1993-01-01", c(0, 48, 744)))
+  expect_equal(hours$dates, as.Date(c("1993-01-01", "1993-01-03", "1993-02-01")))
+  seconds <- cefi_axis(handle("seconds since 1970-01-01T00:00:00Z", 86400 * 3))
+  expect_equal(seconds$dates, as.Date("1970-01-04"))
+
+  # Months and years depend on a calendar, so they are refused, not guessed.
+  expect_error(cefi_axis(handle("months since 1993-01-01", 1:3)), "calendar")
+  expect_error(cefi_axis(handle("years since 1993-01-01", 1)), "calendar")
+  expect_error(cefi_axis(handle("fortnights since 1993-01-01", 1)),
+               "Unrecognised time unit")
+  expect_error(cefi_axis(handle("days since sometime", 1)), "epoch")
+})
+
 test_that("the dictionary describes itself rather than FVCOM", {
   dictionary <- cefi_dictionary()
 

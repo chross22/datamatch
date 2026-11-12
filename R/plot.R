@@ -248,8 +248,16 @@ plot_matched <- function(matched, var = NULL, palette = "viridis", main = NULL,
   colours <- grDevices::hcl.colors(100, palette)
   index <- if (all(missing)) integer(0) else {
     finite <- values[!missing]
-    as.integer(cut(finite, breaks = seq(min(finite), max(finite), length.out = 101),
-                   include.lowest = TRUE))
+    if (min(finite) == max(finite)) {
+      # Every matched value is the same, which leaves no range to divide into
+      # colour bands; cut() refuses breaks that are all equal. One value gets
+      # one colour, taken from the middle of the palette.
+      rep(50L, length(finite))
+    } else {
+      as.integer(cut(finite,
+                     breaks = seq(min(finite), max(finite), length.out = 101),
+                     include.lowest = TRUE))
+    }
   }
 
   graphics::plot(coords[, 1], coords[, 2], type = "n", asp = 1,

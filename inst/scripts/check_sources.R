@@ -20,10 +20,19 @@
 #
 # Usage:
 #   Rscript inst/scripts/check_sources.R [--json <path>] [--markdown <path>]
+#                                        [--history <dir>]
 #
-# Exits 0 when everything resolves, 1 when anything has drifted, 2 when nothing
-# could be reached at all - which is not the same as drift and is reported
-# separately.
+# Exits 0 when nothing has drifted, 1 when anything has, 2 when nothing could be
+# reached at all - which is not the same as drift and is reported separately.
+#
+# An archive that cannot be opened is not drift either, at first. The HYCOM
+# THREDDS server fails to open a different archive most weeks and then serves it
+# the next, so one failure says nothing about the catalog. An archive is only
+# reported as drifted once it has been unreachable in UNREACHABLE_RUNS
+# consecutive weeks, counted from the --json reports of earlier runs placed
+# under --history: one report per ISO week, so a manual rerun does not count as
+# another week, and none from a run that reached nothing at all. Without
+# --history, unreachable archives are listed but never counted as drift.
 
 suppressMessages({
   library(jsonlite)
@@ -37,6 +46,17 @@ arg_value <- function(flag, default = NULL) {
 }
 markdown_path <- arg_value("--markdown")
 json_path <- arg_value("--json")
+history_dir <- arg_value("--history")
+
+# Consecutive checks an archive must fail before it counts as drift. Weekly runs,
+# so three is three weeks: long enough to outlast a server outage, short enough
+# that a moved archive is reported within the month.
+UNREACHABLE_RUNS <- 3L
+
+# Each open is retried before it is recorded as a failure, since most of the
+# failures seen are a server that refuses one request and answers the next.
+OPEN_ATTEMPTS <- 3L
+OPEN_BACKOFF_SECONDS <- c(30, 90)
 
 suppressMessages(pkgload::load_all(quiet = TRUE))
 
@@ -54,8 +74,18 @@ note <- function(source, entry, kind, detail) {
 # and every claim about it checked against that one handle.
 with_handle <- function(url, f) {
   attempted <<- attempted + 1L
-  handle <- tryCatch(ncdf4::nc_open(url), error = function(e) e)
-  if (inherits(handle, "error")) return(conditionMessage(handle))
+  for (attempt in seq_len(OPEN_ATTEMPTS)) {
+    handle <- tryCatch(ncdf4::nc_open(url), error = function(e) e)
+    if (!inherits(handle, "error")) break
+    if (attempt < OPEN_ATTEMPTS) {
+      message("    open failed (", conditionMessage(handle), "); retrying in ",
+              OPEN_BACKOFF_SECONDS[attempt], " s")
+      Sys.sleep(OPEN_BACKOFF_SECONDS[attempt])
+    }
+  }
+  if (inherits(handle, "error")) {
+    return(paste0(conditionMessage(handle), " (", OPEN_ATTEMPTS, " attempts)"))
+  }
   reached <<- reached + 1L
   on.exit(ncdf4::nc_close(handle), add = TRUE)
   f(handle)
@@ -77,8 +107,13 @@ for (name in names(fvcom_archives())) {
   message("  ", name)
   failure <- with_handle(url, function(handle) {
     # The mesh sizes are quoted in the documentation and used to describe what
-    # the archive is, so a change in them is a change in the product.
-    for (field in c("nodes", "elements")) {
+    # the archive is, so a change in them is a change in the product - except
+    # where the catalog already says the mesh moves between files. There the
+    # sizes are descriptive, the reader takes the mesh from each file, and the
+    # file opened here (the first month) need not be one the sizes describe:
+    # GOM7's January 2025 file is on an older mesh than the one quoted.
+    fields <- if (isTRUE(spec$mesh_varies)) character(0) else c("nodes", "elements")
+    for (field in fields) {
       dimension <- if (field == "nodes") "node" else "nele"
       claimed <- spec[[field]]
       actual <- handle$dim[[dimension]]$len
@@ -88,10 +123,13 @@ for (name in names(fvcom_archives())) {
       }
     }
 
-    # Every variable the catalog offers for this archive must exist in it.
+    # Every variable the catalog offers for this archive must exist in it. An
+    # archive that declares a subset is held to that subset: GOM7 saves no
+    # surface forcing or wind stress, says so, and refuses requests for them.
+    offered <- spec$variables %||% names(fvcom_variables())
     absent <- Filter(function(v) {
       is.null(handle$var[[fvcom_variables()[[v]]$variable]])
-    }, names(fvcom_variables()))
+    }, offered)
     if (length(absent) > 0) {
       note("fvcom", name, "variables absent", paste(absent, collapse = ", "))
     }
@@ -177,13 +215,113 @@ for (name in names(ccmp_versions())) {
 
 findings <- if (length(findings) > 0) do.call(rbind, findings) else NULL
 
-# ---- report ------------------------------------------------------------------
+# ---- unreachable archives: drift only when it persists ---------------------
+
+# Earlier reports, newest first, at most one per ISO week. Each records when it
+# ran and the entries it could not open.
+#
+# The threshold is a number of weeks, and a report is not a week. A
+# workflow_dispatch rerun on the same day as the scheduled run, or a second
+# rerun later that week, would otherwise count as further consecutive failures
+# and could declare drift within hours. So the history is thinned to the newest
+# report in each ISO week, and the week this run falls in is left to this run.
+#
+# A report from a run that reached nothing at all (exit 2) is left out entirely.
+# That was the runner's network or a general outage, not evidence about any one
+# archive, and counting it would let one bad Monday advance every streak.
+read_history <- function(history_dir, today = Sys.Date()) {
+  if (is.null(history_dir) || !dir.exists(history_dir)) return(list())
+  files <- list.files(history_dir, pattern = "\\.json$", recursive = TRUE,
+                      full.names = TRUE)
+  history <- Filter(Negate(is.null), lapply(files, function(f) {
+    tryCatch(jsonlite::read_json(f, simplifyVector = TRUE),
+             error = function(e) NULL)
+  }))
+  history <- Filter(function(h) {
+    !is.null(h$date) && !is.na(as.Date(h$date, optional = TRUE)) &&
+      !isTRUE(h$outage) && !identical(as.integer(h$reached), 0L)
+  }, history)
+  if (length(history) == 0) return(list())
+
+  # Ordered by the full timestamp where a report has one, so two reports from
+  # the same day do not tie; older reports carry only the date.
+  stamp <- vapply(history, function(h) h$time %||% paste0(h$date, "T00:00:00Z"),
+                  "")
+  history <- history[order(stamp, decreasing = TRUE)]
+
+  week <- vapply(history, function(h) iso_week(as.Date(h$date)), "")
+  keep <- !duplicated(week) & week != iso_week(today)
+  history[keep]
+}
+
+iso_week <- function(date) format(date, "%G-W%V")
+
+# The Monday that starts a date's ISO week, as a day count, so that weeks can be
+# checked for adjacency across a year boundary.
+week_start <- function(date) {
+  date <- as.Date(date)
+  as.numeric(date) - (as.integer(format(date, "%u")) - 1L)
+}
+
+# Consecutive weeks, this one included, in which an entry could not be opened.
+# A week with no report breaks the streak: nothing is known about it, and
+# counting across the gap would treat two failures a month apart as a run.
+streak <- function(key, history, today = Sys.Date()) {
+  n <- 1L
+  expected <- week_start(today) - 7
+  for (h in history) {
+    if (week_start(h$date) != expected) break
+    if (!key %in% h$unreachable) break
+    n <- n + 1L
+    expected <- expected - 7
+  }
+  n
+}
+
+history <- read_history(history_dir)
+
+entry_key <- function(source, entry) paste(source, entry, sep = "/")
+
+unreachable_now <- if (is.null(findings)) character(0) else
+  with(findings[findings$kind == "unreachable", , drop = FALSE],
+       entry_key(source, entry))
+
+transient <- NULL
+if (!is.null(findings)) {
+  is_unreachable <- findings$kind == "unreachable"
+  runs <- vapply(entry_key(findings$source, findings$entry), streak, 1L,
+                 history = history)
+  persistent <- is_unreachable & runs >= UNREACHABLE_RUNS
+  findings$kind[persistent] <- paste0("unreachable in ", runs[persistent],
+                                      " consecutive checks")
+  transient <- findings[is_unreachable & !persistent, , drop = FALSE]
+  transient$runs <- runs[is_unreachable & !persistent]
+  findings <- findings[!is_unreachable | persistent, , drop = FALSE]
+  if (nrow(findings) == 0) findings <- NULL
+  if (nrow(transient) == 0) transient <- NULL
+}
 
 if (!is.null(json_path)) {
+  # A run that reached nothing records no per-archive failures, so that a later
+  # run does not count a general outage toward any archive's streak.
+  outage <- reached == 0
   jsonlite::write_json(
-    list(attempted = attempted, reached = reached,
-         findings = if (is.null(findings)) list() else findings),
+    list(date = format(Sys.Date()),
+         time = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
+         event = Sys.getenv("GITHUB_EVENT_NAME", "local"),
+         attempted = attempted, reached = reached, outage = outage,
+         unreachable = if (outage) character(0) else unreachable_now,
+         findings = if (is.null(findings) || outage) list() else findings),
     json_path, auto_unbox = TRUE, pretty = TRUE)
+}
+
+# ---- report ------------------------------------------------------------------
+
+table_rows <- function(df) {
+  apply(df, 1, function(r) {
+    paste0("| ", r[["source"]], " | `", r[["entry"]], "` | ", r[["kind"]],
+           " | `", substr(r[["detail"]], 1, 160), "` |")
+  })
 }
 
 report <- c(
@@ -195,9 +333,9 @@ report <- c(
 )
 
 if (is.null(findings)) {
-  report <- c(report, paste("Every archive resolves, carries the variables the",
-                            "catalog claims, and covers the period it says.",
-                            "No action needed."))
+  report <- c(report, paste("Every reachable archive resolves, carries the",
+                            "variables the catalog claims, and covers the",
+                            "period it says. No action needed."))
 } else {
   report <- c(report,
     "The following no longer match the services. Each would fail at fetch time ",
@@ -205,14 +343,24 @@ if (is.null(findings)) {
     "",
     "| Source | Entry | Problem | Detail |",
     "|---|---|---|---|",
-    apply(findings, 1, function(r) {
-      paste0("| ", r[["source"]], " | `", r[["entry"]], "` | ", r[["kind"]],
-             " | `", substr(r[["detail"]], 1, 160), "` |")
-    }),
+    table_rows(findings),
     "",
     "Fix by updating `fvcom_archives()`, `hycom_archives()` or ",
     "`ccmp_versions()`. Choosing a replacement is a judgement about which run ",
     "or version to track, so this check deliberately does not guess one.")
+}
+
+if (!is.null(transient)) {
+  transient$kind <- paste0("unreachable (", transient$runs, " of ",
+                           UNREACHABLE_RUNS, " checks)")
+  report <- c(report, "",
+    paste0("Not yet counted as drift: these could not be opened after ",
+           OPEN_ATTEMPTS, " attempts, but have not failed in ", UNREACHABLE_RUNS,
+           " consecutive checks."),
+    "",
+    "| Source | Entry | Problem | Detail |",
+    "|---|---|---|---|",
+    table_rows(transient))
 }
 
 # Unreachable is not drift. A university THREDDS server being down for an

@@ -294,7 +294,9 @@ fetch_climate_index <- function(index, years = NULL, url = NULL,
 #' so the cache expires on an interval matched to how often the provider
 #' actually publishes.
 #'
-#' @param url where to download from
+#' @param url where to download from. A URL other than the catalog's is cached
+#'   under a name carrying its hash, so it neither reads nor replaces the
+#'   catalog file's copy.
 #' @param index the index name, used for the cache path and messages
 #' @param entry the catalog entry, for its `updates` cadence
 #' @param max_age maximum cache age in days; `NULL` uses the cadence default
@@ -304,7 +306,14 @@ fetch_climate_index <- function(index, years = NULL, url = NULL,
 cached_index_file <- function(url, index, entry, max_age = NULL,
                               refresh = FALSE) {
   extension <- if (identical(entry$format, "rapid_netcdf")) ".nc" else ".txt"
-  file <- copernicus_cache("indices", paste0(index, extension))
+  # A `url` override names a different file from the catalog's. Keyed by index
+  # name alone, it would be answered from the default's cache, and a download
+  # from it would replace the default's cached copy. The URL's hash keeps the
+  # two apart, while the catalog URL keeps the plain name that
+  # climate_index_status() looks for.
+  key <- if (is.null(entry$url) || identical(url, entry$url)) index else
+    paste0(index, "-", short_hash(url))
+  file <- copernicus_cache("indices", paste0(key, extension))
   max_age <- max_age %||% index_max_age(entry$updates)
 
   usable <- !refresh && file.exists(file) && file.size(file) > 0 &&
@@ -316,7 +325,9 @@ cached_index_file <- function(url, index, entry, max_age = NULL,
   previous <- options(timeout = max(300, getOption("timeout", 60)))
   on.exit(options(previous), add = TRUE)
 
-  partial <- paste0(file, ".part")
+  # A unique working name, so two sessions refreshing the same index do not
+  # write into one another's partial download.
+  partial <- partial_path(file)
   downloaded <- tryCatch({
     utils::download.file(url, destfile = partial, mode = "wb", quiet = TRUE)
     file.exists(partial) && file.size(partial) > 0
@@ -344,7 +355,7 @@ cached_index_file <- function(url, index, entry, max_age = NULL,
 
   # Rename only once the download is complete, so an interrupted fetch cannot
   # leave a truncated file in the cache to be trusted later.
-  file.rename(partial, file)
+  finish_partial(partial, file)
   file
 }
 
@@ -726,14 +737,23 @@ parse_decimal_year_csv <- function(lines, name) {
 #' Missing-value code declared in a PSL index file
 #'
 #' PSL files state their own missing-value code on a line after the data, rather
-#' than using a fixed convention.
+#' than using a fixed convention. The code is whatever number stands alone on the
+#' first such line, however small: `amon.us.long.data` declares `-99.99`, but
+#' `pdo.data` declares `-9.90`, which is well inside the range of real values and
+#' so cannot be recognised by its size.
 #'
-#' @param lines the file's lines
+#' @param lines the file's lines, trimmed and with blank lines removed
 #' @return the code, or `NULL` if not declared
 #' @keywords internal
 psl_missing_code <- function(lines) {
-  candidates <- suppressWarnings(as.numeric(lines))
-  declared <- candidates[!is.na(candidates) & candidates < -90]
+  # Only a line after the last data row is the footer. Looking there, rather
+  # than anywhere in the file, keeps a stray lone number in the header from
+  # being taken for the code.
+  data_rows <- which(grepl("^\\d{4}([ \t]+-?[0-9.]+)+$", lines))
+  footer <- if (length(data_rows) == 0) lines else
+    lines[-seq_len(max(data_rows))]
+  candidates <- suppressWarnings(as.numeric(footer))
+  declared <- candidates[!is.na(candidates)]
   if (length(declared) == 0) NULL else declared[1]
 }
 

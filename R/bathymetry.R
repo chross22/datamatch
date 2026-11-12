@@ -29,8 +29,9 @@ bathymetry_variables <- function() {
     ),
     ASPECT = list(
       label = "Bottom aspect", units = "degrees",
-      description = paste("Compass direction the seafloor slope faces, computed",
-                          "from the depth grid. Meaningless where the bottom is",
+      description = paste("Compass direction the seafloor slope faces, that is,",
+                          "the direction in which it deepens: 90 where depth",
+                          "increases eastward. Meaningless where the bottom is",
                           "flat, so expect noise in deep basins.")
     ),
     TPI = list(
@@ -185,7 +186,11 @@ bathymetry_layers <- function(bathy) {
   depth[depth <= 0] <- NA
   names(depth) <- "DEPTH"
 
-  terrain <- terra::terrain(depth, v = c("slope", "aspect"), unit = "degrees")
+  # Aspect is the downhill direction of the surface it is given. On depth,
+  # downhill is toward shallower water, which points 180 degrees away from the
+  # way the seafloor faces, so it is computed on elevation (land still masked)
+  # instead. Slope is a magnitude and is the same on either.
+  terrain <- terra::terrain(-depth, v = c("slope", "aspect"), unit = "degrees")
   names(terrain) <- c("SLOPE", "ASPECT")
 
   # TPI is computed on depth rather than elevation, so its sign follows the

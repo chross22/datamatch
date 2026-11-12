@@ -110,10 +110,12 @@ test_that("a time step the model lacks leaves those gaps unfilled", {
   filled <- fill_satellite_gaps(sources$satellite, partial, c(CHL = "CHL_MODEL"))
 
   # Month 3's gaps have nothing to fill from, and must stay NA rather than
-  # borrowing another month's values.
-  march_gaps <- filled$MONTH == 3 & filled$CHL_source == "satellite" &
-    is.na(filled$CHL)
+  # borrowing another month's values. They are labelled "missing": an NA is
+  # not a satellite observation, which is what the column exists to say.
+  march_gaps <- filled$MONTH == 3 & is.na(filled$CHL)
   expect_true(any(march_gaps))
+  expect_true(all(filled$CHL_source[march_gaps] == "missing"))
+  expect_false(any(filled$CHL_source[is.na(filled$CHL)] == "satellite"))
 })
 
 test_that("unnamed vars assume the same column name in both sources", {

@@ -26,6 +26,9 @@ and the input to \code{BOTS}, which is not. Resolving a raw code therefore
 considers only the entries that request it directly. Asking for \code{"so"} gets
 surface salinity, which is what the code means; bottom salinity is reachable
 by its catalog name, which is the only thing that distinguishes it.
+
+In forecast mode, codes are looked up in \code{\link[=forecast_variables]{forecast_variables()}} first, so a
+code only the forecast publishes - \code{tob}, \code{sob} - resolves as well.
 }
 
 \keyword{internal}

@@ -308,3 +308,81 @@ test_that("matchData carries a per-row source into <var>_source", {
   # The bookkeeping column does not survive into the result.
   expect_false(".datamatch_source" %in% names(matched))
 })
+
+# ---- offline reads against a synthetic archive ------------------------------
+
+# A small HYCOM-shaped NetCDF: water_temp on (lon, lat, depth, time) at a
+# 0.08-degree step, three-hourly on 2010-06-15, each cell's value identifying
+# its longitude and latitude index.
+write_fake_hycom <- function() {
+  path <- tempfile(fileext = ".nc")
+  lon <- ncdf4::ncdim_def("lon", "degrees_east", seq(-69, -68.6, by = 0.08))
+  lat <- ncdf4::ncdim_def("lat", "degrees_north", seq(43, 43.4, by = 0.08))
+  depth <- ncdf4::ncdim_def("depth", "m", c(0, 2))
+  hours <- as.numeric(difftime(as.POSIXct("2010-06-15", tz = "UTC"),
+                               as.POSIXct("2000-01-01", tz = "UTC"),
+                               units = "hours")) + seq(0, 21, by = 3)
+  time <- ncdf4::ncdim_def("time", "hours since 2000-01-01 00:00:00", hours)
+  temp <- ncdf4::ncvar_def("water_temp", "degC", list(lon, lat, depth, time),
+                           missval = -30000)
+  nc <- ncdf4::nc_create(path, list(temp))
+  values <- array(0, dim = c(6, 6, 2, 8))
+  for (i in 1:6) for (j in 1:6) values[i, j, , ] <- 10 * i + j
+  ncdf4::ncvar_put(nc, temp, values)
+  ncdf4::nc_close(nc)
+  path
+}
+
+test_that("a box narrower than one grid step returns its one cell", {
+  skip_if_not_installed("ncdf4")
+  path <- write_fake_hycom()
+  cache <- tempfile("hycom-cache-")
+  dir.create(cache)
+  local_mocked_bindings(
+    hycom_open = function(spec, year) ncdf4::nc_open(path),
+    copernicus_cache = function(...) file.path(cache, ...)
+  )
+  dir.create(file.path(cache, "hycom"))
+
+  # The bug: ncdf4 dropped the degenerate longitude and latitude axes, and the
+  # trim that followed failed with "incorrect number of dimensions".
+  bb <- list(xmin = -68.85, xmax = -68.83, ymin = 43.15, ymax = 43.17)
+  out <- accessHYCOM(vars = "SST", dates = "2010-06-15", bounding_box = bb)
+
+  expect_equal(nrow(out), 1)
+  # Longitude index 3 (-68.84), latitude index 3 (43.16).
+  expect_equal(out$SST, 33)
+
+  # A box one cell wide but several tall keeps the latitudes in order.
+  bb <- list(xmin = -68.85, xmax = -68.83, ymin = 43, ymax = 43.17)
+  out <- accessHYCOM(vars = "SST", dates = "2010-06-15", bounding_box = bb)
+  expect_equal(sort(out$SST), c(31, 32, 33))
+})
+
+test_that("the archive connection is closed when a read fails", {
+  skip_if_not_installed("ncdf4")
+  path <- write_fake_hycom()
+  cache <- tempfile("hycom-cache-")
+  dir.create(file.path(cache, "hycom"), recursive = TRUE)
+  closed <- 0
+  real_close <- ncdf4::nc_close
+  local_mocked_bindings(
+    nc_close = function(nc) {
+      closed <<- closed + 1
+      real_close(nc)
+    },
+    .package = "ncdf4"
+  )
+  local_mocked_bindings(
+    hycom_open = function(spec, year) ncdf4::nc_open(path),
+    copernicus_cache = function(...) file.path(cache, ...),
+    hycom_read_variable = function(...) stop("connection reset")
+  )
+
+  bb <- list(xmin = -69, xmax = -68.6, ymin = 43, ymax = 43.4)
+  expect_error(accessHYCOM(vars = "SST", dates = "2010-06-15",
+                           bounding_box = bb), "connection reset")
+  expect_equal(closed, 1)
+  # And nothing half-written was left in the cache to be trusted later.
+  expect_length(list.files(file.path(cache, "hycom")), 0)
+})

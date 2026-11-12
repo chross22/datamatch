@@ -105,6 +105,66 @@ test_that("the version catalog describes what it serves", {
   expect_equal(built, "Y2010/M06/CCMP_Wind_Analysis_20100615_V03.1_L4.nc")
 })
 
+# A global CCMP day in miniature: a 0-360 grid whose every variable holds its
+# own longitude, so a value filed under the wrong longitude shows at once.
+write_ccmp_nc <- function(path) {
+  lon <- seq(0, 359, by = 1)
+  lat <- 40:45
+  lon_dim <- ncdf4::ncdim_def("longitude", "degrees_east", lon)
+  lat_dim <- ncdf4::ncdim_def("latitude", "degrees_north", lat)
+  time_dim <- ncdf4::ncdim_def("time", "hours since 2010-06-15 00:00:00",
+                               c(0, 6, 12, 18), unlim = FALSE)
+  defs <- lapply(c("ws", "uwnd", "vwnd", "nobs"), function(v) {
+    ncdf4::ncvar_def(v, "m/s", list(lon_dim, lat_dim, time_dim), NA)
+  })
+  handle <- ncdf4::nc_create(path, defs)
+  grid <- array(rep(lon, times = length(lat) * 4),
+                dim = c(length(lon), length(lat), 4))
+  for (def in defs) ncdf4::ncvar_put(handle, def, grid)
+  ncdf4::nc_close(handle)
+  path
+}
+
+test_that("a box across the prime meridian keeps values under their longitudes", {
+  skip_if_not_installed("ncdf4")
+
+  cache <- file.path(tempdir(), paste0("datamatch-ccmp-", sample.int(1e6, 1)))
+  withr::local_options(datamatch.cache = cache)
+  withr::defer(unlink(cache, recursive = TRUE))
+  source_file <- write_ccmp_nc(tempfile(fileext = ".nc"))
+
+  # The download is replaced by a copy of the synthetic file, so no URL is
+  # contacted.
+  written_to <- character()
+  local_mocked_bindings(
+    download.file = function(url, destfile, ...) {
+      written_to <<- c(written_to, destfile)
+      file.copy(source_file, destfile, overwrite = TRUE)
+      0L
+    },
+    .package = "utils"
+  )
+
+  wind <- accessCCMP(vars = c("UWND", "WSPD"), dates = "2010-06-15",
+                     bounding_box = list(xmin = -3, xmax = 2,
+                                         ymin = 41, ymax = 43))
+
+  x <- sf::st_coordinates(wind)[, 1]
+  expect_setequal(unique(x), -3:2)
+  # The stored value is the 0-360 longitude of its cell; read as one block
+  # from the first kept column it would be 0-5 everywhere.
+  expect_equal(wind$UWND, x %% 360)
+  expect_equal(wind$WSPD, x %% 360)
+  # The working copy of the global file is not left in the cache, and is not at
+  # the fixed raw_YYYYMMDD.nc name a concurrent fetch of the same day would also
+  # use.
+  expect_length(list.files(file.path(cache, "ccmp"), pattern = "^raw_"), 0)
+  expect_length(written_to, 1)
+  expect_false(basename(written_to) == "raw_20100615.nc")
+  expect_equal(normalizePath(dirname(written_to)),
+               normalizePath(file.path(cache, "ccmp")))
+})
+
 # ---- network ----------------------------------------------------------------
 
 test_that("a real fetch returns negative-west coordinates", {

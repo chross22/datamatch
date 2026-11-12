@@ -110,3 +110,23 @@ stamp_source <- function(x, source, detail) {
 is_bookkeeping_column <- function(names) {
   grepl("_depth$", names) | names == ".datamatch_source"
 }
+
+#' Carry a fetched object's provenance onto something derived from it
+#'
+#' Resampling builds a new object from columns, and a new object starts with
+#' none of the attributes the access function left on the old one. Without this,
+#' an upscaled or retimed grid answered [source_of()] with `NA`, and
+#' [matchData()] wrote no `<var>_source` columns for it - so the record of which
+#' source a value came from was lost at the first resample.
+#'
+#' @param to the derived object
+#' @param from the object it was derived from
+#' @param step <char> the time step `to` is on, or `NULL` to carry `from`'s
+#' @return `to`, with `datamatch_source` and `datamatch_step` set
+#' @keywords internal
+carry_provenance <- function(to, from, step = attr(from, "datamatch_step")) {
+  tag <- source_of(from)
+  if (!is.na(tag)) attr(to, "datamatch_source") <- tag
+  attr(to, "datamatch_step") <- step
+  to
+}

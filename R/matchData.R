@@ -49,11 +49,15 @@
 #' One row out per row of `dat`, in the same order, whatever happens. A period
 #' `source` does not cover gives `NA` for its columns and a warning naming the
 #' periods, rather than dropping those rows — a silent change in row count is a
-#' worse outcome than a visible gap.
+#' worse outcome than a visible gap. A row whose own year or month (or day, or
+#' hour, at those resolutions) is missing belongs to no period: it is kept, with
+#' `NA` for every matched column, and a warning gives how many such rows there
+#' were. An empty `dat` returns an empty result with the matched columns added.
 #'
 #' `dat` keeps its own columns. One of `source`'s that collides with a name
 #' already in `dat` is suffixed `.matched`, so nothing of `dat`'s is overwritten
-#' or renamed.
+#' or renamed. Where `.matched` is taken too, as when the same variable is
+#' chained on a third time, the suffix is numbered: `.matched2`, `.matched3`.
 #'
 #' @section Which source a column came from:
 #' The access functions share variable names on purpose, so `SST` from
@@ -64,7 +68,13 @@
 #' So each joined column gets a companion `<var>_source` naming the source and
 #' archive — `"hycom:GLBv53X"`, `"fvcom:GOM3"` — in the same spirit as the
 #' `<var>_source` column [fill_satellite_gaps()] writes. Pass
-#' `record_source = FALSE` to omit them.
+#' `record_source = FALSE` to omit them. A row that matched nothing is tagged
+#' `NA`, since no source produced its `NA` values.
+#'
+#' A `<var>_source` column already on `source` is joined like any other column
+#' and keeps its own values: the satellite/model tag from
+#' [fill_satellite_gaps()] is a finer record than the archive name, so it is
+#' never overwritten, and a `_source` column gets no `_source` tag of its own.
 #'
 #' These are provenance rather than measurements, but they travel with the
 #' variable they describe: [covariate_columns()] reports them, and resampling
@@ -160,6 +170,11 @@ matchData <- function(dat, source,
 
   source_geom <- attr(source, "sf_column")
   source_vars <- setdiff(names(source), c(time_columns(), source_geom))
+  # The per-row source tag of a multi-archive fetch is consumed below to build
+  # the `<var>_source` columns, not joined as a variable. Joining it as well
+  # selected it twice, which left `.datamatch_source.1` and a
+  # `.datamatch_source_source` tag in the result, or failed outright.
+  source_vars <- source_vars[source_vars != ".datamatch_source"]
 
   # Both sides need a CRS before they can be reconciled. Without one,
   # st_transform() fails with "crs not found: is it missing?", which is true but
@@ -183,9 +198,13 @@ matchData <- function(dat, source,
   # ".matched" suffix. Otherwise st_join() disambiguates them as ".x"/".y",
   # which both renames the caller's column and makes the result's column names
   # depend on whether a given period actually matched anything.
+  #
+  # The suffix is numbered once ".matched" is itself taken, so the third match of
+  # the same variable onto one table gets ".matched2" rather than a second
+  # ".matched" that collides with the first and fails the join.
   collisions <- intersect(source_vars, names(dat))
   if (length(collisions) > 0) {
-    renamed <- paste0(collisions, ".matched")
+    renamed <- matched_names(collisions, source_vars, taken = names(dat))
     names(source)[match(collisions, names(source))] <- renamed
     source_vars[match(collisions, source_vars)] <- renamed
   }
@@ -205,16 +224,46 @@ matchData <- function(dat, source,
   order_key <- ".datamatch_row_order"
   dat[[order_key]] <- seq_len(nrow(dat))
 
-  periods <- unique(sf::st_drop_geometry(dat)[match_keys])
+  # Whether a row's period was found in `source` at all. Used for the source
+  # tags below: a row that matched nothing came from no source, and tagging it
+  # with one would claim a provenance its NA does not have.
+  found_key <- ".datamatch_period_found"
+
+  # Rows not joined to anything still come back, with NA in every matched
+  # column. The NA is indexed out of the source column rather than written as a
+  # bare NA, so it keeps that column's type - a factor its levels, a number its
+  # class - and the pieces bind without coercion.
+  as_unmatched <- function(rows) {
+    for (v in c(source_vars, row_source_col)) {
+      rows[[v]] <- source[[v]][rep(NA_integer_, nrow(rows))]
+    }
+    rows[[found_key]] <- rep(FALSE, nrow(rows))
+    # Geometry after the joined columns, as st_join() leaves it, so an empty
+    # result has the same column order as a full one.
+    geom <- attr(rows, "sf_column")
+    rows[c(setdiff(names(rows), c(geom, found_key)), geom, found_key)]
+  }
+
+  # A missing YEAR or MONTH is not a period. Compared with `==`, it made the
+  # row subset return a row of NAs for every such row, in every period, so the
+  # result gained junk rows and lost the one-row-out-per-row-in guarantee. Those
+  # rows are set aside instead, kept, and given NA for everything joined.
+  dat_keys <- sf::st_drop_geometry(dat)[match_keys]
+  has_keys <- stats::complete.cases(dat_keys)
+  source_keys <- sf::st_drop_geometry(source)[match_keys]
+
+  periods <- unique(dat_keys[has_keys, , drop = FALSE])
   matched <- vector("list", nrow(periods))
   unmatched_periods <- character()
 
   for (i in seq_len(nrow(periods))) {
-    in_period <- rep(TRUE, nrow(dat))
+    in_period <- has_keys
     source_in_period <- rep(TRUE, nrow(source))
     for (key in match_keys) {
-      in_period <- in_period & dat[[key]] == periods[[key]][i]
-      source_in_period <- source_in_period & source[[key]] == periods[[key]][i]
+      in_period <- in_period & dat_keys[[key]] %in% periods[[key]][i]
+      # %in% rather than ==, so a source row with a missing time is simply not
+      # in the period instead of selecting a row of NAs.
+      source_in_period <- source_in_period & source_keys[[key]] %in% periods[[key]][i]
     }
 
     rows <- dat[in_period, ]
@@ -224,13 +273,27 @@ matchData <- function(dat, source,
       # st_nearest_feature cannot join against an empty set, so fill the matched
       # columns with NA rather than dropping the rows. Dropping them would
       # silently change the row count of the result.
-      for (v in c(source_vars, row_source_col)) rows[[v]] <- NA
       unmatched_periods <- c(unmatched_periods,
                              paste(unlist(periods[i, , drop = TRUE]), collapse = "-"))
-      matched[[i]] <- rows
+      matched[[i]] <- as_unmatched(rows)
     } else {
-      matched[[i]] <- sf::st_join(rows, source_slice, join = sf::st_nearest_feature)
+      joined <- sf::st_join(rows, source_slice, join = sf::st_nearest_feature)
+      joined[[found_key]] <- rep(TRUE, nrow(joined))
+      matched[[i]] <- joined
     }
+  }
+
+  if (any(!has_keys)) {
+    warning(sum(!has_keys), " row(s) of `dat` have a missing ",
+            paste(match_keys, collapse = "/"),
+            ", so belong to no period and were not matched.\nThey are kept, ",
+            "with NA in every matched column.", call. = FALSE)
+  }
+  # An empty `dat` lands here too, with no periods at all. It is returned with
+  # the columns a match would have added, so code that binds or inspects the
+  # result sees the same structure whether or not any rows came in.
+  if (any(!has_keys) || length(matched) == 0) {
+    matched <- c(matched, list(as_unmatched(dat[!has_keys, ])))
   }
 
   if (length(unmatched_periods) > 0) {
@@ -245,7 +308,12 @@ matchData <- function(dat, source,
   # iterated be the chronologically first one.
   column_order <- names(matched[[1]])
   matched <- lapply(matched, function(x) x[column_order])
-  matched_data <- do.call(rbind, matched)
+  # rbind() on sf objects warns about the bounding box of an empty piece, and
+  # binding one piece is a no-op, so empty pieces are left out unless nothing
+  # else is left.
+  nonempty <- vapply(matched, nrow, integer(1)) > 0
+  if (any(nonempty)) matched <- matched[nonempty] else matched <- matched[1]
+  matched_data <- if (length(matched) == 1) matched[[1]] else do.call(rbind, matched)
 
   # Back into the order the rows arrived in, and drop the bookkeeping column.
   matched_data <- matched_data[order(matched_data[[order_key]]), ]
@@ -262,7 +330,9 @@ matchData <- function(dat, source,
   # is used rather than the centroid because it is guaranteed to lie *on* the
   # feature, which a centroid is not for a crescent-shaped area or a curved track.
   geometry_types <- unique(as.character(sf::st_geometry_type(matched_data)))
-  representative <- if (identical(geometry_types, "POINT")) {
+  representative <- if (nrow(matched_data) == 0) {
+    matrix(numeric(0), ncol = 2)
+  } else if (identical(geometry_types, "POINT")) {
     sf::st_coordinates(matched_data)
   } else {
     sf::st_coordinates(
@@ -282,16 +352,79 @@ matchData <- function(dat, source,
   # from a reanalysis into the model as it was running at the time, and which
   # side of that seam a value came from is a property of the row, not the fetch.
   per_row <- if (length(row_source_col)) matched_data[[".datamatch_source"]] else NULL
-  provenance <- if (!is.null(per_row)) per_row else source_of(source)
+  provenance <- if (!is.null(per_row)) {
+    as.character(per_row)
+  } else {
+    rep(source_of(source), nrow(matched_data))
+  }
+  # A row whose period `source` does not cover, or whose own time is missing,
+  # took nothing from the source, so it is tagged NA like the values beside it.
+  provenance[!matched_data[[found_key]]] <- NA_character_
+  # Decided on the source rather than on the rows, so an all-unmatched or empty
+  # result still has the columns a stamped source would have given it.
+  stamped <- !is.null(per_row) || !is.na(source_of(source))
 
-  if (record_source && !all(is.na(provenance))) {
-    for (v in source_vars) {
-      matched_data[[paste0(v, "_source")]] <- provenance
+  if (record_source && stamped) {
+    # A `<var>_source` column the source already carries - the satellite/model
+    # tag fill_satellite_gaps() writes, say - is a variable's provenance rather
+    # than a variable, so it gets no tag of its own (no `CHL_source_source`).
+    # And no tag replaces an existing column: the finer record that column
+    # holds is worth more than the archive name, and overwriting it would
+    # destroy it without a trace.
+    tagged <- source_vars[!grepl("_source$", source_vars)]
+    for (v in tagged) {
+      tag_col <- paste0(v, "_source")
+      if (tag_col %in% names(matched_data)) next
+      matched_data[[tag_col]] <- provenance
     }
   }
   if (length(row_source_col)) matched_data[[".datamatch_source"]] <- NULL
+  matched_data[[found_key]] <- NULL
 
   matched_data
+}
+
+#' Unique names for source columns that collide with `dat`'s
+#'
+#' `.matched` first, then `.matched2`, `.matched3` and so on, so chaining the
+#' same variable onto one table any number of times never produces two columns
+#' of the same name. A `<var>_source` column follows its variable's rename -
+#' `CHL_source` becomes `CHL.matched_source` beside `CHL.matched` - so the tag
+#' stays next to the value it describes.
+#'
+#' @param collisions <char> source columns whose names `dat` already has
+#' @param source_vars <char> every column being joined from the source
+#' @param taken <char> names already in use in `dat`
+#' @return <char> one new name per element of `collisions`
+#' @keywords internal
+matched_names <- function(collisions, source_vars, taken) {
+  taken <- c(taken, source_vars)
+  renamed <- stats::setNames(character(length(collisions)), collisions)
+
+  fresh <- function(base) {
+    k <- 1
+    repeat {
+      candidate <- paste0(base, ".matched", if (k > 1) k else "")
+      if (!candidate %in% taken) return(candidate)
+      k <- k + 1
+    }
+  }
+
+  # Variables before their tags, so a tag can follow the name its variable got.
+  is_tag <- grepl("_source$", collisions) &
+    sub("_source$", "", collisions) %in% collisions
+  for (v in c(collisions[!is_tag], collisions[is_tag])) {
+    base <- sub("_source$", "", v)
+    candidate <- if (v %in% collisions[is_tag]) {
+      paste0(renamed[[base]], "_source")
+    } else {
+      fresh(v)
+    }
+    if (candidate %in% taken) candidate <- fresh(v)
+    renamed[[v]] <- candidate
+    taken <- c(taken, candidate)
+  }
+  unname(renamed[collisions])
 }
 
 #' Infer the temporal resolution of a set of time steps
@@ -302,8 +435,9 @@ matchData <- function(dat, source,
 #'
 #' A single time step per year is genuinely ambiguous - it looks the same whether
 #' the data is annual, or monthly but subset to one month. Annual is inferred only
-#' with positive evidence for it: several years present, each stamped on the same
-#' single month, as annual products conventionally are. Everything else falls back
+#' with positive evidence for it: several years present, each stamped on January,
+#' as annual products conventionally are. Several years of one other month - a run
+#' of Julys - are read as monthly, with a warning. Everything else falls back
 #' to monthly, because guessing too coarse is the more damaging error - it silently
 #' matches observations to a time step from a different month, whereas guessing too
 #' fine leaves them unmatched and warns. Pass `temporal_resolution` explicitly to
@@ -344,7 +478,21 @@ detect_temporal_resolution <- function(x) {
   if (any(months_per_year > 1)) return("month")
 
   years <- unique(times$YEAR)
-  if (length(years) > 1 && length(unique(times$MONTH)) == 1) return("year")
+  months <- unique(times$MONTH)
+  if (length(years) > 1 && length(months) == 1) {
+    # Annual data is stamped on January by convention - accessCopernicus() and
+    # upscale_time() both do it. A single month that is not January across
+    # several years is far more often a seasonal subset of monthly data, a run
+    # of Julys, and reading it as annual would join a January observation to
+    # July's value. Monthly is the safe reading; the warning says how to
+    # override it if the data really is annual.
+    if (identical(as.numeric(months), 1)) return("year")
+    warning("The data has one time step per year, all in month ", months,
+            ". That could be annual data or\na single month of monthly data ",
+            "per year; it is treated as monthly, so observations\nin other ",
+            "months go unmatched. If it is annual, pass ",
+            "temporal_resolution = \"year\".", call. = FALSE)
+  }
 
   "month"
 }

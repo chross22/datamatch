@@ -26,6 +26,19 @@ test_that("bathymetry_layers converts elevation to positive depth plus terrain",
   expect_true(all(depth > 0))
 })
 
+test_that("aspect is the direction the seafloor deepens toward", {
+  skip_if_not_installed("marmap")
+
+  # mock_bathy() is a plane deepening eastward, so the seafloor faces east.
+  # Computed on depth rather than elevation, aspect came out as 270.
+  layers <- bathymetry_layers(mock_bathy(lat = seq(41, 43, by = 0.5)))
+  aspect <- terra::values(layers[["ASPECT"]], na.rm = TRUE)
+
+  expect_gt(length(aspect), 0)
+  expect_equal(unique(round(as.numeric(aspect), 6)), 90)
+  expect_true(all(terra::values(layers[["SLOPE"]], na.rm = TRUE) > 0))
+})
+
 test_that("TPI is positive on a bank and negative in a basin", {
   skip_if_not_installed("marmap")
 

@@ -19,4 +19,10 @@ initialisation, which is what makes a lead time placeable on a calendar at
 all. So both decode the same way, and the reader does not need to know which
 it is looking at.
 }
+\details{
+The unit is read rather than assumed: days, hours, minutes and seconds (and
+their CF abbreviations) are converted exactly. Months and years are refused,
+because their length depends on a calendar that the conversion would have to
+guess at, and so is anything unrecognised.
+}
 \keyword{internal}

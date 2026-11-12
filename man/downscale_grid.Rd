@@ -21,7 +21,10 @@ over - match it to points, or regrid a regular product onto it.}
 
 \item{to}{the target grid: either a resolution in the CRS's units (one number
 for square cells, or \code{c(x, y)}), or another \code{sf} object whose grid to adopt —
-which is the form that puts two products onto one grid.}
+which is the form that puts two products onto one grid. An \code{sf} grid in
+another CRS is transformed into \code{env_dat}'s first. Both \code{env_dat} and an
+\code{sf} target need at least two distinct coordinates in each direction; a
+single row or column of points is refused.}
 
 \item{vars}{columns to resample; \code{NULL} uses all covariate columns, as
 \code{\link[=covariate_columns]{covariate_columns()}} reports them}
@@ -38,7 +41,8 @@ weight on the nearest points, approaching \code{nearest} in the limit.}
 }
 \value{
 an \code{sf} POINT object on the target grid, with the same
-\code{YEAR}/\code{MONTH}/\code{DAY} columns as the input
+\code{YEAR}/\code{MONTH}/\code{DAY} columns, source tag (\code{\link[=source_of]{source_of()}}) and recorded time
+step as the input
 }
 \description{
 Puts a coarse field onto a finer grid, so a 0.25 degree model variable can join

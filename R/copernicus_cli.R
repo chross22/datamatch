@@ -164,9 +164,24 @@ build_copernicus_args <- function(dataset_id, vars, bb, depth, time, ofile,
 
 #' Download a Copernicus subset through the command line client
 #'
-#' Wraps one `copernicusmarine subset` call. Arguments are passed to [system2()]
-#' as a character vector rather than pasted into a shell string, so paths
-#' containing spaces are handled by the process boundary instead of by quoting.
+#' Wraps one `copernicusmarine subset` call.
+#'
+#' @section Quoting:
+#' [system2()] does not pass its arguments to the process one by one. On Unix it
+#' pastes the command and arguments into a single string and hands that to the
+#' shell, so an unquoted cache path containing a space is split into two
+#' arguments, and a `dataset_id` such as `"ds;echo X"` runs a second command.
+#' Every argument is therefore quoted with [shQuote()] before the call. The
+#' executable is quoted by [system2()] itself, so it is not quoted again here;
+#' its path is expanded first, because a quoted `~` is not expanded by the
+#' shell.
+#'
+#' @section Partial files:
+#' The client writes into a uniquely named working directory beside `ofile`, and
+#' the file is renamed into place only once the client has exited successfully.
+#' A download that is interrupted or fails part way therefore never leaves a
+#' truncated file at `ofile` for a later call to take as cached. A client that
+#' reports success without writing the file is an error.
 #'
 #' @section Retries:
 #' The API is intermittently unavailable under load, and a failed request is
@@ -188,19 +203,52 @@ download_copernicus_subset <- function(dataset_id, vars, bb, depth, time, ofile,
                                        verbose = FALSE, dry_run = FALSE,
                                        log_level = "ERROR") {
   app <- copernicus_app()
+
+  # A dry run writes nothing, so it needs no working directory. A real one is
+  # written beside the cache file, on the same filesystem, so that the final
+  # rename is atomic.
+  target <- ofile
+  if (!dry_run) {
+    workdir <- partial_path(ofile)
+    if (!dir.create(workdir, recursive = TRUE, showWarnings = FALSE)) {
+      stop("Could not create a working directory for the download at ",
+           workdir, call. = FALSE)
+    }
+    on.exit(unlink(workdir, recursive = TRUE), add = TRUE)
+    target <- file.path(workdir, basename(ofile))
+  }
+
   args <- build_copernicus_args(dataset_id = dataset_id, vars = vars, bb = bb,
-                                depth = depth, time = time, ofile = ofile,
+                                depth = depth, time = time, ofile = target,
                                 overwrite = overwrite, dry_run = dry_run,
                                 log_level = log_level)
+  # Arguments quoted for the shell that system2() runs the command through; see
+  # the Quoting section. system2() quotes the command itself, and quoting it
+  # here as well would make it a name no file has.
+  command <- path.expand(app)
+  quoted <- shQuote(args)
 
-  if (verbose) cat("CMD:", app, paste(args, collapse = " "), "\n")
+  if (verbose) cat("CMD:", command, paste(quoted, collapse = " "), "\n")
 
   for (attempt in seq_len(tries)) {
-    output <- suppressWarnings(system2(app, args, stdout = TRUE, stderr = TRUE))
+    output <- suppressWarnings(system2(command, quoted, stdout = TRUE,
+                                       stderr = TRUE))
     status <- attr(output, "status") %||% 0
 
     if (verbose) cat(paste(output, collapse = "\n"), "\n")
-    if (status == 0) return(invisible(0))
+    if (status == 0) {
+      if (!dry_run) {
+        if (!file.exists(target)) {
+          stop("The Copernicus client reported success but wrote no file.\n",
+               "  dataset: ", dataset_id[1], "\n",
+               "  file:    ", ofile, "\n",
+               "Client output:\n", paste(utils::tail(output, 20), collapse = "\n"),
+               call. = FALSE)
+        }
+        finish_partial(target, ofile)
+      }
+      return(invisible(0))
+    }
 
     if (attempt < tries) Sys.sleep(wait)
   }
@@ -241,6 +289,9 @@ download_copernicus_subset <- function(dataset_id, vars, bb, depth, time, ofile,
 #' @return a filename
 #' @keywords internal
 cache_filename <- function(product_id, dataset_id, time, vars, bb, depth) {
+  # An sf data frame indexed by edge name fails with "undefined columns
+  # selected", so a geometry is reduced to its bounding box first.
+  if (inherits(bb, c("sf", "sfc"))) bb <- sf::st_bbox(bb)
   key <- paste(
     paste(sort(vars), collapse = ","),
     # Rounded, so that floating-point noise in a bounding box does not make two

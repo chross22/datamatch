@@ -821,6 +821,9 @@ variable_dataset <- function(vars, mode = c("reanalysis", "forecast"),
 #' surface salinity, which is what the code means; bottom salinity is reachable
 #' by its catalog name, which is the only thing that distinguishes it.
 #'
+#' In forecast mode, codes are looked up in [forecast_variables()] first, so a
+#' code only the forecast publishes - `tob`, `sob` - resolves as well.
+#'
 #' @param var a catalog name (`"SST"`) or a Copernicus code (`"thetao"`)
 #' @param mode `"reanalysis"` or `"forecast"`
 #' @return the catalog entry, or `NULL` if the variable is not in the catalog
@@ -838,8 +841,15 @@ catalog_entry <- function(var, mode = "reanalysis") {
   if (mode == "forecast") {
     forecast <- forecast_variables()
     # A code may be given instead of a name, so map it back to its name first.
-    name <- if (var %in% names(catalog)) {
+    # The forecast's own codes are tried before the reanalysis's, because some
+    # exist only there: `tob` and `sob` are published by the forecast and by no
+    # reanalysis dataset, so looking only at the reanalysis codes left them
+    # unresolvable despite being exactly what a forecast fetch requests.
+    forecast_codes <- vapply(forecast, function(entry) entry$variable, character(1))
+    name <- if (var %in% names(catalog) || var %in% names(forecast)) {
       var
+    } else if (sum(forecast_codes == var) == 1) {
+      names(forecast_codes)[forecast_codes == var]
     } else {
       codes <- direct_codes()
       match <- which(codes == var)

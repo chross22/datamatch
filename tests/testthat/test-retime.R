@@ -333,3 +333,38 @@ test_that("aggregating to a step at or below the source is refused", {
   # And monthly data cannot be aggregated to days.
   expect_error(upscale_time(monthly_series(), to = "day"), "finer than")
 })
+
+test_that("downscaling covers only the months present, not every year x month", {
+  across_new_year <- rbind(monthly_series(months = 11:12, year = 2010L),
+                           monthly_series(months = 1:2, year = 2011L))
+
+  for (method in c("step", "linear")) {
+    daily <- downscale_time(across_new_year, to = "day", method = method)
+    present <- unique(paste(daily$YEAR, daily$MONTH))
+    expect_setequal(present, c("2010 11", "2010 12", "2011 1", "2011 2"))
+  }
+})
+
+test_that("upscale_time and downscale_time keep the source tag and set the step", {
+  daily <- daily_series(months = 1:2)
+  attr(daily, "datamatch_source") <- "copernicus:X"
+  attr(daily, "datamatch_step") <- "day"
+
+  monthly <- upscale_time(daily, to = "month")
+  expect_equal(source_of(monthly), "copernicus:X")
+  expect_equal(attr(monthly, "datamatch_step"), "month")
+
+  back <- downscale_time(monthly, to = "day")
+  expect_equal(source_of(back), "copernicus:X")
+  expect_equal(attr(back, "datamatch_step"), "day")
+})
+
+test_that("a single period without extrapolation fills its own days", {
+  # February 2020 has 29 days, so its midpoint falls between two days.
+  one <- monthly_series(months = 2)
+
+  cut <- downscale_time(one, to = "day", method = "linear", extrapolate = FALSE)
+
+  expect_equal(nrow(cut), 4 * 29)
+  expect_false(any(is.na(cut$V)))
+})

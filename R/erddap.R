@@ -348,10 +348,18 @@ accessERDDAP <- function(vars, years = NULL, months = NULL, bounding_box,
 
   stop_if_future(days, paste("The ERDDAP dataset", spec$label %||% dataset))
 
-  outside <- days < spec$start | (!is.na(spec$end) & days > spec$end)
+  # A dataset described by erddap_dataset() has no start or end when its DAS
+  # gives the time axis no actual_range. An unknown bound excludes nothing: the
+  # server is left to answer for days it does not have, and those surface as
+  # failures by name rather than being refused here on a guess.
+  has_start <- length(spec$start) == 1 && !is.na(spec$start)
+  has_end <- length(spec$end) == 1 && !is.na(spec$end)
+  outside <- rep(FALSE, length(days))
+  if (has_start) outside <- outside | days < spec$start
+  if (has_end) outside <- outside | days > spec$end
   if (any(outside)) {
-    span <- paste0(format(spec$start), " to ",
-                   if (is.na(spec$end)) "the present" else format(spec$end))
+    span <- paste0(if (has_start) format(spec$start) else "the start of the record",
+                   " to ", if (has_end) format(spec$end) else "the present")
     if (all(outside)) {
       stop(dataset_key, " covers ", span,
            ", and every requested day is outside it.", call. = FALSE)
@@ -393,7 +401,7 @@ accessERDDAP <- function(vars, years = NULL, months = NULL, bounding_box,
       next
     }
     if (is.null(frame) || nrow(frame) == 0) next
-    saveRDS(frame, paths[i])
+    save_rds_atomic(frame, paths[i])
   }
 
   if (length(failures) > 0) {

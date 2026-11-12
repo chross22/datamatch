@@ -480,3 +480,13 @@ test_that("the hourly wind reports its own product, not the monthly one", {
   expect_equal(infer_dataset("SST")$product_id,
                infer_dataset("SST", frequency = "daily")$product_id)
 })
+
+test_that("forecast-only codes resolve like their catalog names", {
+  # tob and sob are published by the forecast and by no reanalysis dataset.
+  expect_equal(catalog_entry("tob", mode = "forecast")$variable, "tob")
+  expect_equal(catalog_entry("sob", mode = "forecast")$variable, "sob")
+  expect_equal(unname(variable_dataset(c("tob", "sob"), mode = "forecast")),
+               unname(variable_dataset(c("BOTT", "BOTS"), mode = "forecast")))
+  expect_equal(infer_dataset("tob", mode = "forecast"),
+               infer_dataset("BOTT", mode = "forecast"))
+})

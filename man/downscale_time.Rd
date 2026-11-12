@@ -26,10 +26,14 @@ variables, or a named vector per variable}
 
 \item{extrapolate}{hold the first and last values constant beyond the outermost
 period midpoints. With \code{FALSE} those half-periods are \code{NA}, since there is no
-second point to interpolate between.}
+second point to interpolate between. A cell with a value in one period only
+holds it across that period, and is \code{NA} outside it.}
 }
 \value{
-an \code{sf} POINT object with one row per cell per target step
+an \code{sf} POINT object with one row per cell per target step, covering
+only the months (or, from annual input, the years) the source has. The
+source tag (\code{\link[=source_of]{source_of()}}) is carried across, and the recorded time step
+set to \code{to}.
 }
 \description{
 Puts a coarse series onto a finer one, so a monthly product can be matched to

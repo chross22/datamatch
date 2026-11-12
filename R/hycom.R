@@ -380,7 +380,11 @@ hycom_read_variable <- function(handle, entry, step, lon_window, lat_window) {
   }
 
   values <- ncdf4::ncvar_get(handle, entry$variable, start = start,
-                             count = count, collapse_degen = TRUE)
+                             count = count, collapse_degen = FALSE)
+  # Shaped explicitly as longitude by latitude. Left to ncdf4, a box narrower
+  # than one grid step on either axis loses that dimension, and the subsetting
+  # below then fails on a vector or a scalar instead of returning one cell.
+  values <- array(values, dim = c(lon_window$count, lat_window$count))
   # A wrapped longitude box is read as one contiguous span and trimmed here, so
   # only the cells actually asked for survive.
   values[lon_window$keep, , drop = FALSE]
@@ -698,15 +702,13 @@ accessHYCOM <- function(vars, years = NULL, months = NULL, bounding_box,
   by_year <- split(seq_along(days),
                    paste(day_archive, format(days, "%Y"), sep = "\r"))
 
-  for (year_label in names(by_year)) {
-    index <- by_year[[year_label]]
-    if (!any(needed[index])) next
-
-    parts <- strsplit(year_label, "\r", fixed = TRUE)[[1]]
-    spec <- archives[[parts[[1]]]]
-    year_label <- parts[[2]]
-
-    handle <- hycom_open(spec, as.integer(year_label))
+  # One archive-year's missing days, read and cached. A function rather than a
+  # loop body so that the connection is closed by on.exit() however the reads
+  # end: an OPeNDAP read that fails part way through would otherwise leave the
+  # handle open for the rest of the session.
+  read_archive_year <- function(index, spec, year) {
+    handle <- hycom_open(spec, year)
+    on.exit(ncdf4::nc_close(handle), add = TRUE)
     times <- hycom_times(handle)
     stamps <- format(times, "%Y-%m-%d %H", tz = "UTC")
 
@@ -743,10 +745,17 @@ accessHYCOM <- function(vars, years = NULL, months = NULL, bounding_box,
       # be from any other source in this package.
       frame <- frame[rowSums(!is.na(frame[vars])) > 0, , drop = FALSE]
       rownames(frame) <- NULL
-      saveRDS(frame, paths[i])
+      save_rds_atomic(frame, paths[i])
     }
+    invisible(NULL)
+  }
 
-    ncdf4::nc_close(handle)
+  for (year_label in names(by_year)) {
+    index <- by_year[[year_label]]
+    if (!any(needed[index])) next
+
+    parts <- strsplit(year_label, "\r", fixed = TRUE)[[1]]
+    read_archive_year(index, archives[[parts[[1]]]], as.integer(parts[[2]]))
   }
 
   usable <- file.exists(paths)
